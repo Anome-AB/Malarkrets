@@ -15,6 +15,7 @@ import {
 } from "@/db/schema";
 import { eq, and, count, sql } from "drizzle-orm";
 import { CourageSection } from "@/components/activity/courage-section";
+import { Card } from "@/components/ui/card";
 import { AppShell } from "@/components/layout/app-shell";
 import { ActivityDetailClient } from "./activity-detail-client";
 
@@ -244,7 +245,7 @@ export default async function ActivityDetailPage({
             )}
 
             {/* Card: Activity info */}
-            <div className="bg-white border border-[#dddddd] rounded-[10px] p-6">
+            <Card>
               <h2 className="text-2xl font-bold text-[#2d2d2d]">
                 {activity.title}
               </h2>
@@ -298,13 +299,13 @@ export default async function ActivityDetailPage({
               <p className="mt-4 text-[#2d2d2d] whitespace-pre-wrap leading-relaxed">
                 {activity.description}
               </p>
-            </div>
+            </Card>
 
             {/* Card: Courage section */}
             {wte && <CourageSection whatToExpect={wte} />}
 
             {/* Card: Comments & actions */}
-            <div className="bg-white border border-[#dddddd] rounded-[10px] p-6">
+            <Card>
               <ActivityDetailClient
                 activityId={id}
                 isAuthenticated={!!currentUserId}
@@ -314,13 +315,13 @@ export default async function ActivityDetailPage({
                 comments={activity.comments}
                 isCancelled={!!activity.cancelledAt}
               />
-            </div>
+            </Card>
           </div>
 
           {/* Right column: sidebar */}
           <div className="space-y-6">
             {/* Card: Participation status + actions */}
-            <div className="bg-white border border-[#dddddd] rounded-[10px] p-6 space-y-4">
+            <Card className="space-y-4">
               {/* Participation status */}
               {!currentUserId && (
                 <div>
@@ -378,7 +379,7 @@ export default async function ActivityDetailPage({
                   </span>
                 </div>
               )}
-            </div>
+            </Card>
           </div>
         </div>
       </div>

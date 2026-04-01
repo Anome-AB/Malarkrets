@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
 import { anonymizeUser, deleteTag, addTags } from "@/actions/admin";
@@ -135,11 +136,8 @@ export function AdminClient({ users, tags }: AdminClientProps) {
       <div className="space-y-10">
         {/* Users section */}
         <section>
-          <h2 className="text-lg font-semibold text-[#2d2d2d] mb-4">
-            Användare ({users.length})
-          </h2>
-          <div className="bg-white border border-[#dddddd] rounded-lg overflow-hidden">
-            <div className="overflow-x-auto">
+          <Card title={`Användare (${users.length})`} className="overflow-hidden">
+            <div className="overflow-x-auto -mx-6 -mb-6">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-[#f8f7f4] border-b border-[#dddddd]">
@@ -185,17 +183,12 @@ export function AdminClient({ users, tags }: AdminClientProps) {
                 </tbody>
               </table>
             </div>
-          </div>
+          </Card>
         </section>
 
         {/* Interest tags section */}
         <section>
-          <h2 className="text-lg font-semibold text-[#2d2d2d] mb-4">
-            Intressetaggar ({tags.length})
-          </h2>
-
-          {/* Add tags form */}
-          <div className="bg-white border border-[#dddddd] rounded-lg p-4 mb-4">
+          <Card title={`Intressetaggar (${tags.length})`} className="mb-4">
             <h3 className="text-sm font-medium text-[#2d2d2d] mb-2">
               Lägg till taggar
             </h3>
@@ -214,10 +207,10 @@ export function AdminClient({ users, tags }: AdminClientProps) {
             >
               Lägg till
             </Button>
-          </div>
+          </Card>
 
           {/* Tag list */}
-          <div className="bg-white border border-[#dddddd] rounded-lg p-4">
+          <Card>
             <div className="flex flex-wrap gap-2">
               {tags.map((tag) => (
                 <div
@@ -239,7 +232,7 @@ export function AdminClient({ users, tags }: AdminClientProps) {
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
         </section>
       </div>
     </>

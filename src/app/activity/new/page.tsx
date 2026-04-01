@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tag } from "@/components/ui/tag";
 import { useToast } from "@/components/ui/toast";
+import { Card } from "@/components/ui/card";
 import { createActivity } from "@/actions/activities";
 
 interface InterestTag {
@@ -120,8 +121,7 @@ export default function CreateActivityPage() {
       <h1 className="text-xl font-semibold text-[#2d2d2d] mb-6">Skapa ny aktivitet</h1>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Card: Grundläggande information */}
-          <div className="bg-white border border-[#dddddd] rounded-[10px] p-6 space-y-4">
-            <h2 className="text-base font-semibold text-[#2d2d2d]">Grundläggande information</h2>
+          <Card title="Grundläggande information" className="space-y-4">
             <Input
               label="Titel"
               placeholder="Vad ska ni göra?"
@@ -172,11 +172,10 @@ export default function CreateActivityPage() {
                 {...register("endTime")}
               />
             </div>
-          </div>
+          </Card>
 
           {/* Card: Begränsningar */}
-          <div className="bg-white border border-[#dddddd] rounded-[10px] p-6 space-y-4">
-            <h2 className="text-base font-semibold text-[#2d2d2d]">Begränsningar</h2>
+          <Card title="Begränsningar" className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Input
                 label="Max deltagare (valfritt)"
@@ -207,11 +206,10 @@ export default function CreateActivityPage() {
                 {...register("minAge")}
               />
             </div>
-          </div>
+          </Card>
 
           {/* Card: Intressetaggar */}
-          <div className="bg-white border border-[#dddddd] rounded-[10px] p-6">
-            <h2 className="text-base font-semibold text-[#2d2d2d] mb-3">Intressetaggar</h2>
+          <Card title="Intressetaggar">
             {loadingTags ? (
               <p className="text-sm text-[#666666]">Laddar taggar...</p>
             ) : userInterests.length === 0 ? (
@@ -234,12 +232,10 @@ export default function CreateActivityPage() {
             {selectedTags.length === 0 && (
               <p className="text-xs text-[#999999] mt-2">Välj minst en tagg</p>
             )}
-          </div>
+          </Card>
 
           {/* Card: Vad kan deltagare förvänta sig? */}
-          <div className="bg-white border border-[#dddddd] rounded-[10px] p-6 space-y-4">
-            <h2 className="text-base font-semibold text-[#2d2d2d]">Vad kan deltagare förvänta sig?</h2>
-
+          <Card title="Vad kan deltagare förvänta sig?" className="space-y-4">
             <label className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
@@ -284,7 +280,7 @@ export default function CreateActivityPage() {
                 {...register("latePolicy", { maxLength: { value: 200, message: "Max 200 tecken" } })}
               />
             </div>
-          </div>
+          </Card>
 
           {/* Submit */}
           <div className="pt-2">

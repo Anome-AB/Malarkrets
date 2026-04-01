@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Card } from "@/components/ui/card";
 import { ActivityCard } from "@/components/activity/activity-card";
 
 interface WhatToExpect {
@@ -64,7 +65,7 @@ export function MyActivitiesClient({
           Aktiviteter jag arrangerar
         </h2>
         {createdActivities.length === 0 ? (
-          <div className="bg-white border border-[#dddddd] rounded-[10px] p-6 text-center">
+          <Card className="text-center">
             <p className="text-[#666666] mb-3">
               Du har inte skapat några aktiviteter ännu.
             </p>
@@ -74,7 +75,7 @@ export function MyActivitiesClient({
             >
               Skapa aktivitet
             </Link>
-          </div>
+          </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {createdActivities.map((activity) => (
@@ -122,7 +123,7 @@ export function MyActivitiesClient({
           Aktiviteter jag är anmäld till
         </h2>
         {participatingActivities.length === 0 ? (
-          <div className="bg-white border border-[#dddddd] rounded-[10px] p-6 text-center">
+          <Card className="text-center">
             <p className="text-[#666666] mb-3">
               Du har inte anmält dig till några aktiviteter.
             </p>
@@ -132,7 +133,7 @@ export function MyActivitiesClient({
             >
               Utforska aktiviteter
             </Link>
-          </div>
+          </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {participatingActivities.map((activity) => (

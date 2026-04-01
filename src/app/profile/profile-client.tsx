@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tag } from "@/components/ui/tag";
 import { useToast } from "@/components/ui/toast";
@@ -122,10 +123,7 @@ export function ProfileClient({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Personal info */}
-      <section className="bg-white border border-[#dddddd] rounded-[10px] p-6">
-        <h2 className="text-lg font-semibold text-[#2d2d2d] mb-4">
-          Personlig information
-        </h2>
+      <Card title="Personlig information" className="space-y-4">
         <form onSubmit={handleProfileSubmit} className="space-y-4">
           <Input
             label="Visningsnamn"
@@ -189,13 +187,10 @@ export function ProfileClient({
             Spara ändringar
           </Button>
         </form>
-      </section>
+      </Card>
 
       {/* Interests */}
-      <section className="bg-white border border-[#dddddd] rounded-[10px] p-6">
-        <h2 className="text-lg font-semibold text-[#2d2d2d] mb-2">
-          Mina intressen
-        </h2>
+      <Card title="Mina intressen">
         <p className="text-sm text-[#666666] mb-4">
           Välj minst 3 intressen. Dessa styr vilka aktiviteter du ser.
         </p>
@@ -219,13 +214,10 @@ export function ProfileClient({
         >
           Spara intressen
         </Button>
-      </section>
+      </Card>
 
       {/* Blocked users */}
-      <section className="bg-white border border-[#dddddd] rounded-[10px] p-6">
-        <h2 className="text-lg font-semibold text-[#2d2d2d] mb-4">
-          Blockerade användare
-        </h2>
+      <Card title="Blockerade användare">
         {blockedUsers.length === 0 ? (
           <p className="text-sm text-[#666666]">
             Du har inte blockerat någon.
@@ -251,13 +243,10 @@ export function ProfileClient({
             ))}
           </ul>
         )}
-      </section>
+      </Card>
 
       {/* Danger zone */}
-      <section className="bg-red-50 border border-red-200 rounded-[10px] p-6">
-        <h2 className="text-lg font-semibold text-[#dc3545] mb-2">
-          Farligt område
-        </h2>
+      <Card variant="danger" title="Farligt område">
         <p className="text-sm text-[#666666] mb-6">
           Att radera ditt konto går inte att ångra. All data tas bort permanent.
         </p>
@@ -279,7 +268,7 @@ export function ProfileClient({
           confirmLabel="Radera mitt konto"
           variant="danger"
         />
-      </section>
+      </Card>
     </div>
   );
 }

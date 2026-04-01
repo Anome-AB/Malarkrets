@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Tag } from "@/components/ui/tag";
 import { useToast } from "@/components/ui/toast";
 import { updateActivity, cancelOrDeleteActivity } from "@/actions/activities";
+import { Card } from "@/components/ui/card";
 import { CancelActivityModal } from "@/components/activity/cancel-activity-modal";
 import Link from "next/link";
 
@@ -215,8 +216,7 @@ export default function EditActivityPage() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Card: Grundläggande information */}
-        <div className="bg-white border border-[#dddddd] rounded-[10px] p-6 space-y-4">
-          <h2 className="text-base font-semibold text-[#2d2d2d]">Grundläggande information</h2>
+        <Card title="Grundläggande information" className="space-y-4">
           <Input label="Titel" placeholder="Vad ska ni göra?" {...register("title", { required: "Titel krävs", minLength: { value: 3, message: "Minst 3 tecken" }, maxLength: { value: 200, message: "Max 200 tecken" } })} error={errors.title?.message} />
           <div className="flex flex-col gap-1">
             <label htmlFor="edit-description" className="text-sm font-medium text-[#2d2d2d]">Beskrivning</label>
@@ -228,11 +228,10 @@ export default function EditActivityPage() {
             <Input label="Starttid" type="datetime-local" {...register("startTime", { required: "Starttid krävs" })} error={errors.startTime?.message} />
             <Input label="Sluttid (valfritt)" type="datetime-local" {...register("endTime")} />
           </div>
-        </div>
+        </Card>
 
         {/* Card: Begränsningar */}
-        <div className="bg-white border border-[#dddddd] rounded-[10px] p-6 space-y-4">
-          <h2 className="text-base font-semibold text-[#2d2d2d]">Begränsningar</h2>
+        <Card title="Begränsningar" className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Input label="Max deltagare (valfritt)" type="number" min={2} max={500} placeholder="Obegränsat" {...register("maxParticipants")} />
             <div className="flex flex-col gap-1">
@@ -245,11 +244,10 @@ export default function EditActivityPage() {
             </div>
             <Input label="Lägsta ålder (valfritt)" type="number" min={0} max={120} placeholder="Ingen" {...register("minAge")} />
           </div>
-        </div>
+        </Card>
 
         {/* Card: Intressetaggar */}
-        <div className="bg-white border border-[#dddddd] rounded-[10px] p-6">
-          <h2 className="text-base font-semibold text-[#2d2d2d] mb-3">Intressetaggar</h2>
+        <Card title="Intressetaggar">
           {userInterests.length === 0 ? (
             <p className="text-sm text-[#666666]">Du har inga intressen valda. <a href="/onboarding" className="text-[#3d6b5e] underline">Välj intressen</a></p>
           ) : (
@@ -260,11 +258,10 @@ export default function EditActivityPage() {
             </div>
           )}
           {selectedTags.length === 0 && <p className="text-xs text-[#999999] mt-2">Välj minst en tagg</p>}
-        </div>
+        </Card>
 
         {/* Card: Vad kan deltagare förvänta sig? */}
-        <div className="bg-white border border-[#dddddd] rounded-[10px] p-6 space-y-4">
-          <h2 className="text-base font-semibold text-[#2d2d2d]">Vad kan deltagare förvänta sig?</h2>
+        <Card title="Vad kan deltagare förvänta sig?" className="space-y-4">
           <label className="flex items-center gap-3 cursor-pointer">
             <input type="checkbox" className="w-5 h-5 rounded border-[#dddddd] text-[#3d6b5e] focus:ring-[#3d6b5e]" {...register("okAlone")} />
             <span className="text-sm text-[#2d2d2d]">Okej att komma ensam</span>
@@ -286,7 +283,7 @@ export default function EditActivityPage() {
             <label htmlFor="edit-latePolicy" className="text-sm font-medium text-[#2d2d2d]">Om jag är sen? (valfritt)</label>
             <textarea id="edit-latePolicy" rows={2} placeholder="T.ex. 'Kom när du kan, vi börjar kl 18'" className="w-full px-3 py-2 rounded-[8px] border border-[#dddddd] text-[#2d2d2d] bg-white placeholder:text-[#999999] focus:outline-none focus:ring-1 focus:border-[#3d6b5e] focus:ring-[#3d6b5e] resize-y" {...register("latePolicy", { maxLength: { value: 200, message: "Max 200 tecken" } })} />
           </div>
-        </div>
+        </Card>
 
         {/* Submit */}
         <div className="pt-2">
@@ -297,10 +294,7 @@ export default function EditActivityPage() {
       </form>
 
       {/* Danger zone */}
-      <div className="bg-red-50 rounded-[10px] p-6 mt-8">
-        <h2 className="text-base font-semibold text-[#2d2d2d] mb-2">
-          Farligt område
-        </h2>
+      <Card variant="danger" title="Farligt område" className="mt-8">
         <p className="text-sm text-[#666666] mb-4">
           {participantCount > 0
             ? "Ställ in aktiviteten. Alla anmälda deltagare kommer meddelas."
@@ -313,7 +307,7 @@ export default function EditActivityPage() {
         >
           Ställ in aktivitet
         </Button>
-      </div>
+      </Card>
 
       <CancelActivityModal
         open={showCancelModal}
