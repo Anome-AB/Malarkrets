@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tag } from "@/components/ui/tag";
 import { useToast } from "@/components/ui/toast";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { updateProfile, updateInterests, deleteAccount } from "@/actions/profile";
 import { unblockUser } from "@/actions/blocking";
 
@@ -52,6 +53,7 @@ export function ProfileClient({
   const [birthDate, setBirthDate] = useState(profile.birthDate);
   const [gender, setGender] = useState(profile.gender);
   const [location, setLocation] = useState(profile.location);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Interest state
   const [selectedTags, setSelectedTags] = useState<number[]>(currentInterestIds);
@@ -261,17 +263,22 @@ export function ProfileClient({
         </p>
         <Button
           variant="danger"
-          onClick={async () => {
-            const confirmed = window.confirm(
-              "Ar du saker? Ditt konto och all data raderas permanent."
-            );
-            if (confirmed) {
-              await deleteAccount();
-            }
-          }}
+          onClick={() => setShowDeleteConfirm(true)}
         >
           Radera mitt konto
         </Button>
+        <ConfirmDialog
+          open={showDeleteConfirm}
+          onCancel={() => setShowDeleteConfirm(false)}
+          onConfirm={async () => {
+            setShowDeleteConfirm(false);
+            await deleteAccount();
+          }}
+          title="Radera ditt konto"
+          message="Är du säker? Ditt konto och all data raderas permanent. Detta kan inte ångras."
+          confirmLabel="Radera mitt konto"
+          variant="danger"
+        />
       </section>
     </div>
   );
