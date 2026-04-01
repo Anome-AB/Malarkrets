@@ -211,6 +211,7 @@ async function AuthenticatedFeed({
     whatToExpect: unknown;
     tags: Array<{ id: number; name: string; slug: string }>;
     participantCount: number;
+    creatorId: string | null;
   }> = [];
 
   if (activityIds.length > 0) {
@@ -259,6 +260,7 @@ async function AuthenticatedFeed({
       whatToExpect: a.whatToExpect,
       tags: tagsByActivity.get(a.id) ?? [],
       participantCount: countByActivity.get(a.id) ?? 0,
+      creatorId: a.creatorId,
     }));
   }
 
@@ -282,12 +284,14 @@ async function AuthenticatedFeed({
       activeFilter={interestParam}
       unreadCount={unreadCount}
       userInitials={userInitials}
+      isAdmin={userProfile.isAdmin}
     >
       <ActivityFeed
         initialActivities={enrichedActivities}
         userInterests={userInterestsList}
         activeFilter={interestParam}
         nextCursor={enrichedActivities.length === 20 ? lastId : null}
+        userId={userId}
       />
     </AppShell>
   );

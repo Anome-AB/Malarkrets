@@ -35,5 +35,6 @@ export async function getUserShellData(userId: string) {
     interests,
     unreadCount,
     initials,
+    isAdmin: userProfile?.isAdmin ?? false,
   };
 }

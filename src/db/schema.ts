@@ -76,6 +76,7 @@ export const users = pgTable("users", {
   gender: genderEnum().default("ej_angett"),
   avatarUrl: text("avatar_url"),
   location: text(),
+  isAdmin: boolean("is_admin").default(false).notNull(),
   municipalityId: varchar("municipality_id", { length: 100 }).default(
     "vasteras",
   ),

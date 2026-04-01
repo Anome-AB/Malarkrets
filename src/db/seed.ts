@@ -114,6 +114,55 @@ async function seed() {
 
   console.log(`  Inserted ${insertedUsers.length} demo users.`);
 
+  // ── 2b. Test users ────────────────────────────────────────────────────
+
+  console.log("Seeding test users...");
+
+  const testPasswordHash = await hash("testm", 12);
+
+  const testUserDefs = [
+    { email: "testanv1@malarkrets.se", displayName: "Test Användare 1", gender: "ej_angett" as const, birthDate: null, isAdmin: false },
+    { email: "testanv2@malarkrets.se", displayName: "Test Användare 2", gender: "man" as const, birthDate: "1990-01-15", isAdmin: false },
+    { email: "testanv3@malarkrets.se", displayName: "Test Användare 3", gender: "kvinna" as const, birthDate: "1995-06-20", isAdmin: false },
+    { email: "testadmin1@malarkrets.se", displayName: "Test Admin", gender: "ej_angett" as const, birthDate: null, isAdmin: true },
+  ];
+
+  const insertedTestUsers = await db
+    .insert(schema.users)
+    .values(
+      testUserDefs.map((u) => ({
+        ...u,
+        passwordHash: testPasswordHash,
+        emailVerified: true,
+        municipalityId: "vasteras",
+      }))
+    )
+    .returning();
+
+  const testUserMap = new Map(insertedTestUsers.map((u) => [u.email, u.id]));
+  console.log(`  Inserted ${insertedTestUsers.length} test users.`);
+
+  // Assign random interests to test users
+  const allTagNames = insertedTags.map((t) => t.name);
+  function pickRandom<T>(arr: T[], n: number): T[] {
+    const shuffled = [...arr].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, n);
+  }
+
+  const testInterestRows: { userId: string; tagId: number }[] = [];
+  for (const testUser of insertedTestUsers) {
+    const randomTags = pickRandom(allTagNames, 3 + Math.floor(Math.random() * 3)); // 3-5
+    for (const tagName of randomTags) {
+      const tagId = tagMap.get(tagName);
+      if (tagId) testInterestRows.push({ userId: testUser.id, tagId });
+    }
+  }
+
+  if (testInterestRows.length > 0) {
+    await db.insert(schema.userInterests).values(testInterestRows);
+  }
+  console.log(`  Assigned ${testInterestRows.length} test user interests.`);
+
   // ── 3. User interests ──────────────────────────────────────────────────
 
   console.log("Assigning user interests...");

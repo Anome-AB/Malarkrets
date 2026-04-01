@@ -15,6 +15,7 @@ interface AppShellProps {
   activeFilter: string | null;
   unreadCount: number;
   userInitials: string;
+  isAdmin?: boolean;
 }
 
 export function AppShell({
@@ -23,13 +24,14 @@ export function AppShell({
   activeFilter,
   unreadCount,
   userInitials,
+  isAdmin = false,
 }: AppShellProps) {
   return (
     <div className="min-h-screen bg-[#f8f7f4] flex flex-col">
       <TopNav unreadCount={unreadCount} userInitials={userInitials} />
 
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar interests={interests} activeFilter={activeFilter} />
+        <Sidebar interests={interests} activeFilter={activeFilter} isAdmin={isAdmin} />
 
         <main className="flex-1 overflow-y-auto pb-[56px] lg:pb-0">
           {children}

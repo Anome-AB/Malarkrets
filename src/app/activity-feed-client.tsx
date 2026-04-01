@@ -25,6 +25,7 @@ interface ActivityItem {
   whatToExpect: unknown;
   tags: Array<{ id: number; name: string; slug: string }>;
   participantCount: number;
+  creatorId: string | null;
 }
 
 interface Interest {
@@ -38,6 +39,7 @@ interface ActivityFeedProps {
   userInterests: Interest[];
   activeFilter: string | null;
   nextCursor: string | null;
+  userId?: string;
 }
 
 export function ActivityFeed({
@@ -45,6 +47,7 @@ export function ActivityFeed({
   userInterests,
   activeFilter,
   nextCursor,
+  userId,
 }: ActivityFeedProps) {
   const router = useRouter();
   const [searchText, setSearchText] = useState("");
@@ -134,6 +137,7 @@ export function ActivityFeed({
                   whatToExpect: activity.whatToExpect as WhatToExpect | null,
                   imageThumbUrl: activity.imageThumbUrl,
                 }}
+                isCreator={!!userId && activity.creatorId === userId}
                 onClick={handleCardClick}
               />
             ))}

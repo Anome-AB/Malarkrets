@@ -105,7 +105,7 @@ export async function deleteAccount() {
     await db
       .update(users)
       .set({
-        displayName: "Borttagen anvandare",
+        displayName: "Borttagen användare",
         birthDate: null,
         gender: null,
         location: null,
@@ -128,7 +128,7 @@ export async function deleteAccount() {
     console.error("deleteAccount error:", error);
     return {
       success: false,
-      error: "Nagot gick fel vid radering av konto",
+      error: "Något gick fel vid radering av konto",
     };
   }
 }

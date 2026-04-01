@@ -27,6 +27,7 @@ interface ActivityCardProps {
     whatToExpect: WhatToExpect | null;
     imageThumbUrl: string | null;
   };
+  isCreator?: boolean;
   onClick?: (id: string) => void;
 }
 
@@ -67,7 +68,7 @@ function ParticipantDots({
   );
 }
 
-export function ActivityCard({ activity, onClick }: ActivityCardProps) {
+export function ActivityCard({ activity, isCreator = false, onClick }: ActivityCardProps) {
   const wte = activity.whatToExpect;
 
   return (
@@ -89,6 +90,12 @@ export function ActivityCard({ activity, onClick }: ActivityCardProps) {
           alt=""
           className="w-full h-40 object-cover rounded-lg mb-3"
         />
+      )}
+
+      {isCreator && (
+        <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-[#d4edda] text-[#155724] mb-1">
+          Du arrangerar
+        </span>
       )}
 
       <h3 className="text-base font-semibold text-[#2d2d2d]">

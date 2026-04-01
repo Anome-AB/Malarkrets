@@ -19,6 +19,7 @@ export default async function OnboardingLayout({
         activeFilter={null}
         unreadCount={shellData.unreadCount}
         userInitials={shellData.initials}
+        isAdmin={shellData.isAdmin}
       >
         {children}
       </AppShell>

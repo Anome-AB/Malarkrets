@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { getUserShellData } from "@/lib/queries/user-shell-data";
 import { AppShell } from "@/components/layout/app-shell";
 
-export default async function CreateActivityLayout({
+export default async function EditActivityLayout({
   children,
 }: {
   children: ReactNode;

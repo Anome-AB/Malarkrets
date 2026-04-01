@@ -49,7 +49,7 @@ export function ActivityDetailClient({
         toast("Du har avanmalt dig", "success");
         router.refresh();
       } else {
-        toast(result.error ?? "Nagot gick fel", "error");
+        toast(result.error ?? "Något gick fel", "error");
       }
     });
   }
@@ -111,7 +111,7 @@ export function ActivityDetailClient({
           loading={leaving}
           onClick={handleLeave}
         >
-          Avanmal
+          Avanmäl
         </Button>
       )}
 

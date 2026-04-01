@@ -5,7 +5,7 @@ import {
   userInterests,
   userBlocks,
 } from "@/db/schema";
-import { sql, eq, and, gt, or, isNull, ne, count, desc, asc } from "drizzle-orm";
+import { sql, eq, and, gt, or, isNull, count, desc, asc } from "drizzle-orm";
 
 // Map user gender to activity restriction enum
 // User gender: man/kvinna/ej_angett → Activity restriction: man/kvinnor/alla
@@ -96,8 +96,6 @@ export async function getMatchedActivities(
         viewerAge !== null
           ? or(isNull(activities.minAge), sql`${activities.minAge} <= ${viewerAge}`)
           : isNull(activities.minAge),
-        // Don't show own activities
-        ne(activities.creatorId!, userId),
         // Specific tag filter
         ...(tagFilter !== undefined
           ? [eq(activityTags.tagId, tagFilter)]
