@@ -64,7 +64,7 @@ export function Sidebar({ interests, activeFilter, isAdmin = false }: SidebarPro
   const pathname = usePathname();
 
   return (
-    <aside className="w-[200px] bg-white border-r border-[#dddddd] hidden lg:block h-full overflow-y-auto">
+    <aside className="w-[200px] bg-white border-r border-[#dddddd] hidden lg:block h-full overflow-y-auto flex flex-col">
       <nav className="py-4">
         <ul className="space-y-1">
           {navItems.map((item) => {
@@ -73,7 +73,7 @@ export function Sidebar({ interests, activeFilter, isAdmin = false }: SidebarPro
               <li key={item.label}>
                 <Link
                   href={item.href}
-                  className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
+                  className={`flex items-center gap-3 px-4 py-3 text-sm transition-colors ${
                     isActive
                       ? "bg-[#e8f0ec] text-[#3d6b5e] font-semibold"
                       : "text-[#2d2d2d] hover:bg-[#f8f7f4]"
@@ -89,7 +89,7 @@ export function Sidebar({ interests, activeFilter, isAdmin = false }: SidebarPro
             <li>
               <Link
                 href="/admin"
-                className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
+                className={`flex items-center gap-3 px-4 py-3 text-sm transition-colors ${
                   pathname === "/admin"
                     ? "bg-[#e8f0ec] text-[#3d6b5e] font-semibold"
                     : "text-[#2d2d2d] hover:bg-[#f8f7f4]"
@@ -115,9 +115,9 @@ export function Sidebar({ interests, activeFilter, isAdmin = false }: SidebarPro
             <li>
               <Link
                 href="/"
-                className={`block px-3 py-1.5 text-sm rounded-md transition-colors ${
+                className={`flex items-center min-h-[44px] px-3 py-2 text-xs rounded-md transition-colors ${
                   activeFilter === null
-                    ? "bg-[#e8f0ec] text-[#3d6b5e] font-semibold"
+                    ? "bg-[#e8f0ec] text-[#3d6b5e] font-bold"
                     : "text-[#666666] hover:bg-[#f8f7f4] hover:text-[#2d2d2d]"
                 }`}
               >
@@ -130,7 +130,7 @@ export function Sidebar({ interests, activeFilter, isAdmin = false }: SidebarPro
                 <li key={interest.id}>
                   <Link
                     href={`/?intresse=${interest.slug}`}
-                    className={`block px-3 py-1.5 text-sm rounded-md transition-colors ${
+                    className={`flex items-center min-h-[44px] px-3 py-2 text-xs rounded-md transition-colors ${
                       isActive
                         ? "bg-[#e8f0ec] text-[#3d6b5e] font-semibold"
                         : "text-[#666666] hover:bg-[#f8f7f4] hover:text-[#2d2d2d]"
@@ -146,12 +146,12 @@ export function Sidebar({ interests, activeFilter, isAdmin = false }: SidebarPro
       )}
 
       {/* Logga ut */}
-      <div className="mt-auto px-4 py-3 border-t border-[#dddddd]">
+      <div className="mt-auto px-4 py-2 border-t border-[#dddddd]">
         <button
           onClick={() => {
             window.location.href = "/api/auth/signout";
           }}
-          className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#666666] hover:bg-[#f8f7f4] hover:text-[#2d2d2d] transition-colors rounded-md w-full"
+          className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#666666] hover:bg-[#f8f7f4] hover:text-[#dc3545] transition-colors rounded-md w-full"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />

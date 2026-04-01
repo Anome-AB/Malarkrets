@@ -208,7 +208,7 @@ export default async function ActivityDetailPage({
         {currentUserId && (
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-sm text-[#666666] hover:text-[#2d2d2d] transition-colors"
+            className="inline-flex items-center gap-1 text-sm font-medium text-[#3d6b5e] hover:underline mb-6"
           >
             <svg
               width="16"

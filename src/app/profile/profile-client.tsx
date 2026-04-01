@@ -254,11 +254,11 @@ export function ProfileClient({
       </section>
 
       {/* Danger zone */}
-      <section className="border-t border-[#dddddd] pt-8">
+      <section className="mt-8 bg-red-50 rounded-lg p-6">
         <h2 className="text-lg font-semibold text-[#dc3545] mb-2">
           Farligt område
         </h2>
-        <p className="text-sm text-[#666666] mb-4">
+        <p className="text-sm text-[#666666] mb-6">
           Att radera ditt konto går inte att ångra. All data tas bort permanent.
         </p>
         <Button

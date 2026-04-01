@@ -33,12 +33,12 @@ export function TopNav({ unreadCount, userInitials }: TopNavProps) {
       <div className="flex items-center gap-4">
         <Link
           href="/activity/new"
-          className="text-sm hover:underline hidden sm:inline"
+          className="text-sm hover:underline hidden sm:inline py-2 px-3"
         >
           Skapa aktivitet
         </Link>
 
-        <Link href="#" className="relative">
+        <Link href="#" className="relative w-11 h-11 flex items-center justify-center">
           <svg
             width="24"
             height="24"
@@ -53,7 +53,7 @@ export function TopNav({ unreadCount, userInitials }: TopNavProps) {
             <path d="M13.73 21a2 2 0 0 1-3.46 0" />
           </svg>
           {unreadCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 bg-[#e07a3a] text-white text-[10px] font-bold rounded-full w-[18px] h-[18px] flex items-center justify-center">
+            <span className="absolute top-0 right-0 bg-[#e07a3a] text-white text-[10px] font-bold rounded-full w-[18px] h-[18px] flex items-center justify-center">
               {unreadCount > 99 ? "99+" : unreadCount}
             </span>
           )}
@@ -63,7 +63,7 @@ export function TopNav({ unreadCount, userInitials }: TopNavProps) {
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-sm font-semibold select-none hover:bg-white/30 transition-colors"
+            className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-sm font-semibold select-none hover:bg-white/30 transition-colors"
             aria-haspopup="true"
             aria-expanded={menuOpen}
           >
