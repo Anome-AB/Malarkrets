@@ -144,6 +144,23 @@ export function Sidebar({ interests, activeFilter, isAdmin = false }: SidebarPro
           </ul>
         </div>
       )}
+
+      {/* Logga ut */}
+      <div className="mt-auto px-4 py-3 border-t border-[#dddddd]">
+        <button
+          onClick={() => {
+            window.location.href = "/api/auth/signout";
+          }}
+          className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#666666] hover:bg-[#f8f7f4] hover:text-[#2d2d2d] transition-colors rounded-md w-full"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          Logga ut
+        </button>
+      </div>
     </aside>
   );
 }
