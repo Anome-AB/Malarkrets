@@ -1,4 +1,5 @@
 import { auth, requireAuth } from "@/lib/auth";
+import { getUserShellData } from "@/lib/queries/user-shell-data";
 import { db } from "@/lib/db";
 import {
   users,
@@ -7,6 +8,7 @@ import {
   interestTags,
 } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { AppShell } from "@/components/layout/app-shell";
 import { ProfileClient } from "./profile-client";
 
 export default async function ProfilePage() {
@@ -59,15 +61,18 @@ export default async function ProfilePage() {
     .innerJoin(users, eq(users.id, userBlocks.blockedId))
     .where(eq(userBlocks.blockerId, userId));
 
-  return (
-    <div className="min-h-screen bg-[#f8f7f4]">
-      <header className="bg-[#3d6b5e] text-white">
-        <div className="max-w-2xl mx-auto px-6 py-4">
-          <h1 className="text-xl font-semibold">Min profil</h1>
-        </div>
-      </header>
+  // Get shell data for AppShell
+  const shellData = await getUserShellData(userId);
 
-      <main className="max-w-2xl mx-auto px-6 py-8">
+  return (
+    <AppShell
+      interests={shellData.interests}
+      activeFilter={null}
+      unreadCount={shellData.unreadCount}
+      userInitials={shellData.initials}
+    >
+      <div className="max-w-2xl mx-auto px-6 py-8">
+        <h1 className="text-xl font-semibold text-[#2d2d2d] mb-6">Min profil</h1>
         <ProfileClient
           profile={{
             displayName: profile.displayName ?? "",
@@ -84,7 +89,7 @@ export default async function ProfilePage() {
             displayName: b.displayName ?? "Anonym",
           }))}
         />
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tag } from "@/components/ui/tag";
 import { useToast } from "@/components/ui/toast";
-import { updateProfile, updateInterests } from "@/actions/profile";
+import { updateProfile, updateInterests, deleteAccount } from "@/actions/profile";
 import { unblockUser } from "@/actions/blocking";
 
 interface ProfileData {
@@ -259,7 +259,19 @@ export function ProfileClient({
         <p className="text-sm text-[#666666] mb-4">
           Att radera ditt konto går inte att ångra. All data tas bort permanent.
         </p>
-        <Button variant="danger">Radera mitt konto</Button>
+        <Button
+          variant="danger"
+          onClick={async () => {
+            const confirmed = window.confirm(
+              "Ar du saker? Ditt konto och all data raderas permanent."
+            );
+            if (confirmed) {
+              await deleteAccount();
+            }
+          }}
+        >
+          Radera mitt konto
+        </Button>
       </section>
     </div>
   );

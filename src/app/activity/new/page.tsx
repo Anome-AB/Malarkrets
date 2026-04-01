@@ -116,14 +116,8 @@ export default function CreateActivityPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f7f4]">
-      <header className="bg-[#3d6b5e] text-white">
-        <div className="max-w-2xl mx-auto px-6 py-4">
-          <h1 className="text-xl font-semibold">Skapa ny aktivitet</h1>
-        </div>
-      </header>
-
-      <main className="max-w-2xl mx-auto px-6 py-8">
+    <div className="max-w-2xl mx-auto px-6 py-8">
+      <h1 className="text-xl font-semibold text-[#2d2d2d] mb-6">Skapa ny aktivitet</h1>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Title */}
           <Input
@@ -349,7 +343,6 @@ export default function CreateActivityPage() {
             </Button>
           </div>
         </form>
-      </main>
     </div>
   );
 }

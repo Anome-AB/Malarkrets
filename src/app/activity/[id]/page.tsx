@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
+import { getUserShellData } from "@/lib/queries/user-shell-data";
 import { db } from "@/lib/db";
 import {
   activities,
@@ -14,6 +15,7 @@ import {
 } from "@/db/schema";
 import { eq, and, count, sql } from "drizzle-orm";
 import { CourageSection } from "@/components/activity/courage-section";
+import { AppShell } from "@/components/layout/app-shell";
 import { ActivityDetailClient } from "./activity-detail-client";
 
 interface WhatToExpect {
@@ -165,19 +167,52 @@ export default async function ActivityDetailPage({
       ? `${activity.feedbackPositive} av ${activity.feedbackTotal} tyckte det var bra!`
       : null;
 
-  return (
-    <div className="min-h-screen bg-[#f8f7f4]">
-      {/* Header */}
-      <header className="bg-[#3d6b5e] text-white">
-        <div className="max-w-3xl mx-auto px-6 py-4 flex items-center gap-4">
+  // Fetch shell data for authenticated users
+  const shellData = currentUserId
+    ? await getUserShellData(currentUserId)
+    : null;
+
+  const pageContent = (
+    <div className={currentUserId ? "" : "min-h-screen bg-[#f8f7f4]"}>
+      {/* Header - only show for unauthenticated (AppShell provides topnav) */}
+      {!currentUserId && (
+        <header className="bg-[#3d6b5e] text-white">
+          <div className="max-w-3xl mx-auto px-6 py-4 flex items-center gap-4">
+            <Link
+              href="/"
+              className="text-white/80 hover:text-white transition-colors"
+              aria-label="Tillbaka"
+            >
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </Link>
+            <h1 className="text-lg font-semibold truncate">
+              {activity.title}
+            </h1>
+          </div>
+        </header>
+      )}
+
+      <div className="max-w-3xl mx-auto px-6 py-8 space-y-8">
+        {/* Back link for authenticated users */}
+        {currentUserId && (
           <Link
             href="/"
-            className="text-white/80 hover:text-white transition-colors"
-            aria-label="Tillbaka"
+            className="inline-flex items-center gap-2 text-sm text-[#666666] hover:text-[#2d2d2d] transition-colors"
           >
             <svg
-              width="24"
-              height="24"
+              width="16"
+              height="16"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -187,14 +222,10 @@ export default async function ActivityDetailPage({
             >
               <polyline points="15 18 9 12 15 6" />
             </svg>
+            Tillbaka
           </Link>
-          <h1 className="text-lg font-semibold truncate">
-            {activity.title}
-          </h1>
-        </div>
-      </header>
+        )}
 
-      <main className="max-w-3xl mx-auto px-6 py-8 space-y-8">
         {/* Image */}
         {activity.imageMediumUrl && (
           <img
@@ -266,6 +297,32 @@ export default async function ActivityDetailPage({
         {/* Courage section */}
         {wte && <CourageSection whatToExpect={wte} />}
 
+        {/* Participation status */}
+        {!currentUserId && (
+          <div className="bg-white border border-[#dddddd] rounded-lg px-4 py-3">
+            <Link
+              href="/auth/login"
+              className="text-[#3d6b5e] font-semibold hover:underline"
+            >
+              Logga in for att delta
+            </Link>
+          </div>
+        )}
+        {currentUserId && isParticipant && (
+          <div className="flex items-center gap-3">
+            <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#e8f0ec] text-[#3d6b5e] font-semibold text-sm">
+              Du ar anmald &#10003;
+            </span>
+          </div>
+        )}
+        {currentUserId && isCreator && !isParticipant && (
+          <div className="bg-white border border-[#dddddd] rounded-lg px-4 py-3">
+            <span className="text-sm text-[#666666]">
+              Du skapade den har aktiviteten
+            </span>
+          </div>
+        )}
+
         {/* Stats */}
         <div className="flex flex-wrap gap-4 text-sm">
           <div className="bg-white border border-[#dddddd] rounded-lg px-4 py-3">
@@ -295,7 +352,22 @@ export default async function ActivityDetailPage({
           currentUserId={currentUserId}
           comments={activity.comments}
         />
-      </main>
+      </div>
     </div>
   );
+
+  if (currentUserId && shellData) {
+    return (
+      <AppShell
+        interests={shellData.interests}
+        activeFilter={null}
+        unreadCount={shellData.unreadCount}
+        userInitials={shellData.initials}
+      >
+        {pageContent}
+      </AppShell>
+    );
+  }
+
+  return pageContent;
 }

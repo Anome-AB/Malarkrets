@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { CommentList } from "@/components/activity/comment-list";
 import { useToast } from "@/components/ui/toast";
-import { joinActivity } from "@/actions/activities";
+import { joinActivity, leaveActivity } from "@/actions/activities";
 import { createComment, deleteComment } from "@/actions/comments";
 
 interface Comment {
@@ -38,6 +38,21 @@ export function ActivityDetailClient({
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [joining, setJoining] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+
+  function handleLeave() {
+    setLeaving(true);
+    startTransition(async () => {
+      const result = await leaveActivity(activityId);
+      setLeaving(false);
+      if (result.success) {
+        toast("Du har avanmalt dig", "success");
+        router.refresh();
+      } else {
+        toast(result.error ?? "Nagot gick fel", "error");
+      }
+    });
+  }
 
   function handleJoin() {
     setJoining(true);
@@ -87,6 +102,17 @@ export function ActivityDetailClient({
         >
           Logga in för att delta
         </Link>
+      )}
+
+      {isAuthenticated && isParticipant && (
+        <Button
+          variant="secondary"
+          size="sm"
+          loading={leaving}
+          onClick={handleLeave}
+        >
+          Avanmal
+        </Button>
       )}
 
       {isAuthenticated && !isParticipant && !isCreator && (

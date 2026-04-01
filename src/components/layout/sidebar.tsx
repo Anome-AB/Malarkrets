@@ -93,6 +93,18 @@ export function Sidebar({ interests, activeFilter }: SidebarProps) {
             Intressen
           </h3>
           <ul className="space-y-1">
+            <li>
+              <Link
+                href="/"
+                className={`block px-3 py-1.5 text-sm rounded-md transition-colors ${
+                  activeFilter === null
+                    ? "bg-[#e8f0ec] text-[#3d6b5e] font-semibold"
+                    : "text-[#666666] hover:bg-[#f8f7f4] hover:text-[#2d2d2d]"
+                }`}
+              >
+                Alla
+              </Link>
+            </li>
             {interests.map((interest) => {
               const isActive = activeFilter === interest.slug;
               return (

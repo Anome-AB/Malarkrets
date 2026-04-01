@@ -1,14 +1,22 @@
 "use server";
 
 import { requireAuth } from "@/lib/auth";
+import { signOut } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { users, userInterests } from "@/db/schema";
+import {
+  users,
+  userInterests,
+  userBlocks,
+  notifications,
+  analyticsEvents,
+} from "@/db/schema";
 import {
   updateProfileSchema,
   updateInterestsSchema,
 } from "@/lib/validations/profile";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 export async function updateProfile(formData: FormData) {
   try {
@@ -84,6 +92,43 @@ export async function updateInterests(formData: FormData) {
     return {
       success: false,
       error: "Något gick fel vid uppdatering av intressen",
+    };
+  }
+}
+
+export async function deleteAccount() {
+  try {
+    const user = await requireAuth();
+    const userId = user.id!;
+
+    // Anonymize user profile
+    await db
+      .update(users)
+      .set({
+        displayName: "Borttagen anvandare",
+        birthDate: null,
+        gender: null,
+        location: null,
+        avatarUrl: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId));
+
+    // Delete related data
+    await db.delete(userInterests).where(eq(userInterests.userId, userId));
+    await db.delete(userBlocks).where(eq(userBlocks.blockerId, userId));
+    await db.delete(notifications).where(eq(notifications.userId, userId));
+    await db
+      .delete(analyticsEvents)
+      .where(eq(analyticsEvents.userId, userId));
+
+    // Sign out and redirect
+    await signOut({ redirectTo: "/" });
+  } catch (error) {
+    console.error("deleteAccount error:", error);
+    return {
+      success: false,
+      error: "Nagot gick fel vid radering av konto",
     };
   }
 }
