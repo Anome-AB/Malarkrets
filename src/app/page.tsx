@@ -155,7 +155,9 @@ async function AuthenticatedFeed({
   });
 
   if (!userProfile) {
-    return null;
+    // User was deleted or reseeded — stale session. Show landing page.
+    const { redirect } = await import("next/navigation");
+    redirect("/api/auth/signout");
   }
 
   // Calculate age
