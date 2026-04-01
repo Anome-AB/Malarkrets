@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ActivityCard } from "@/components/activity/activity-card";
+import { ActivityPanel } from "@/components/activity/activity-panel";
 import { Tag } from "@/components/ui/tag";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,18 @@ interface ActivityFeedProps {
   userId?: string;
 }
 
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    setIsDesktop(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+  return isDesktop;
+}
+
 export function ActivityFeed({
   initialActivities,
   userInterests,
@@ -50,8 +63,10 @@ export function ActivityFeed({
   userId,
 }: ActivityFeedProps) {
   const router = useRouter();
+  const isDesktop = useIsDesktop();
   const [searchText, setSearchText] = useState("");
   const [loadingMore, setLoadingMore] = useState(false);
+  const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
 
   const filteredActivities = useMemo(() => {
     if (!searchText.trim()) return initialActivities;
@@ -65,8 +80,16 @@ export function ActivityFeed({
   }, [initialActivities, searchText]);
 
   function handleCardClick(id: string) {
-    router.push(`/activity/${id}`);
+    if (isDesktop) {
+      setSelectedActivityId(id);
+    } else {
+      router.push(`/activity/${id}`);
+    }
   }
+
+  const handlePanelClose = useCallback(() => {
+    setSelectedActivityId(null);
+  }, []);
 
   function handleFilterClick(slug: string) {
     if (activeFilter === slug) {
@@ -172,6 +195,15 @@ export function ActivityFeed({
             </div>
           )}
         </>
+      )}
+
+      {/* Sliding panel (desktop only) */}
+      {selectedActivityId && (
+        <ActivityPanel
+          activityId={selectedActivityId}
+          open={!!selectedActivityId}
+          onClose={handlePanelClose}
+        />
       )}
     </div>
   );

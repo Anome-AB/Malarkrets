@@ -6,8 +6,11 @@ import {
   activities,
   activityTags,
   activityParticipants,
+  activityComments,
+  activityFeedback,
   notifications,
   analyticsEvents,
+  interestTags,
   users,
   userBlocks,
 } from "@/db/schema";
@@ -597,4 +600,95 @@ export async function leaveActivity(activityId: string) {
     console.error("leaveActivity error:", error);
     return { success: false, error: "Något gick fel vid avregistrering" };
   }
+}
+
+export async function getActivityDetail(activityId: string) {
+  const user = await requireAuth();
+
+  const activity = await db.query.activities.findFirst({
+    where: eq(activities.id, activityId),
+  });
+
+  if (!activity) return null;
+
+  const creator = activity.creatorId
+    ? await db.query.users.findFirst({
+        where: eq(users.id, activity.creatorId),
+      })
+    : null;
+
+  const tags = await db
+    .select({ id: interestTags.id, name: interestTags.name, slug: interestTags.slug })
+    .from(activityTags)
+    .innerJoin(interestTags, eq(interestTags.id, activityTags.tagId))
+    .where(eq(activityTags.activityId, activityId));
+
+  const [{ count: participantCount }] = await db
+    .select({ count: count() })
+    .from(activityParticipants)
+    .where(eq(activityParticipants.activityId, activityId));
+
+  const comments = await db
+    .select({
+      id: activityComments.id,
+      userId: activityComments.userId,
+      authorName: users.displayName,
+      content: activityComments.content,
+      createdAt: activityComments.createdAt,
+    })
+    .from(activityComments)
+    .leftJoin(users, eq(users.id, activityComments.userId))
+    .where(eq(activityComments.activityId, activityId))
+    .orderBy(activityComments.createdAt);
+
+  const feedbackRows = await db
+    .select({ rating: activityFeedback.rating, count: count() })
+    .from(activityFeedback)
+    .where(eq(activityFeedback.activityId, activityId))
+    .groupBy(activityFeedback.rating);
+
+  let feedbackTotal = 0;
+  let feedbackPositive = 0;
+  for (const row of feedbackRows) {
+    feedbackTotal += row.count;
+    if (row.rating === "positive") feedbackPositive = row.count;
+  }
+
+  const participation = await db.query.activityParticipants.findFirst({
+    where: and(
+      eq(activityParticipants.activityId, activityId),
+      eq(activityParticipants.userId, user.id!),
+    ),
+  });
+
+  const wte = activity.whatToExpect as Record<string, unknown> | null;
+
+  return {
+    id: activity.id,
+    title: activity.title,
+    description: activity.description,
+    location: activity.location,
+    startTime: activity.startTime,
+    endTime: activity.endTime,
+    maxParticipants: activity.maxParticipants,
+    cancelledAt: activity.cancelledAt,
+    imageMediumUrl: activity.imageMediumUrl,
+    whatToExpect: wte,
+    creatorId: activity.creatorId,
+    creatorName: creator?.displayName ?? "Anonym",
+    tags,
+    participantCount,
+    comments: comments.map((c) => ({
+      id: c.id,
+      userId: c.userId,
+      authorName: c.authorName ?? "Anonym",
+      content: c.content,
+      createdAt: c.createdAt!,
+    })),
+    feedbackTotal,
+    feedbackPositive,
+    isParticipant: !!participation,
+    isCreator: activity.creatorId === user.id,
+    currentUserId: user.id!,
+  };
 }
