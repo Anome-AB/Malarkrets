@@ -2,11 +2,16 @@
 
 ## Nästa session — Prioritet 1
 
-### Design-genomgång av aktivitetsdetaljsidan
-**Vad:** Kör `/design-consultation` + `/design-review` på aktivitetsdetaljsidan.
-**Varför:** Layoutbalansen mellan vänster/högerkolumn, whitespace, och visuell hierarki behöver finslipas. Korten är på plats men kompositionen känns inte färdig.
-**Scope:** Aktivitetsdetalj (desktop + mobil), profilsida, skapa/redigera-formulär.
-**Insats:** M (CC: ~30 min)
+### Design-genomgång av aktivitetsdetaljsidan — KLAR
+**Fixat av:** /design-consultation + /design-review 2026-04-01
+- Typografi: Satoshi (display) + Instrument Sans (body), Inter borttagen
+- Koppar-accent #c4956a, info-färg #4a7c94 tillagda
+- Spacing fixad till ren 4px-grid
+- Solo-badge borttagen från feedkort (noise-reduktion)
+- Landing hero tightened med extra subtitle
+- Deltagare-text ändrad från grön till grå (inte länk-förvirring)
+- Formulär-labels använder nu Satoshi
+- Aktivitetsdetaljens sidebar nu sticky på desktop
 
 ### Hierarkiska intressetaggar (Stor feature)
 **Vad:** Träd-struktur för intressen med kategorier och undertaggar.
