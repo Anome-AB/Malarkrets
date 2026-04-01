@@ -392,20 +392,19 @@ export async function joinActivity(
       }
     }
 
-    // Check max participants with FOR UPDATE locking
-    if (activity.maxParticipants !== null) {
-      const [{ count: currentCount }] = await db
-        .select({ count: count() })
+    // Check max participants
+    if (activity.maxParticipants !== null && status === "attending") {
+      const [{ currentCount }] = await db
+        .select({ currentCount: count() })
         .from(activityParticipants)
         .where(
           and(
             eq(activityParticipants.activityId, activityId),
             eq(activityParticipants.status, "attending"),
           ),
-        )
-        .for("update");
+        );
 
-      if (status === "attending" && currentCount >= activity.maxParticipants) {
+      if (currentCount >= activity.maxParticipants) {
         return { success: false, error: "Aktiviteten är full" };
       }
     }
@@ -474,7 +473,8 @@ export async function joinActivity(
     return { success: true, blockedWarning };
   } catch (error) {
     console.error("joinActivity error:", error);
-    return { success: false, error: "Något gick fel vid anslutning till aktivitet" };
+    const msg = error instanceof Error ? error.message : String(error);
+    return { success: false, error: `Fel: ${msg}` };
   }
 }
 
