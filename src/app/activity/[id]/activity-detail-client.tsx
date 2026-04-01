@@ -24,6 +24,7 @@ interface ActivityDetailClientProps {
   isCreator: boolean;
   currentUserId: string | null;
   comments: Comment[];
+  isCancelled?: boolean;
 }
 
 export function ActivityDetailClient({
@@ -33,6 +34,7 @@ export function ActivityDetailClient({
   isCreator,
   currentUserId,
   comments,
+  isCancelled,
 }: ActivityDetailClientProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -94,40 +96,44 @@ export function ActivityDetailClient({
 
   return (
     <div className="space-y-8">
-      {/* Join / Auth buttons */}
-      {!isAuthenticated && (
-        <Link
-          href="/auth/login"
-          className="inline-flex items-center justify-center px-6 py-3 bg-[#3d6b5e] text-white font-semibold rounded-lg hover:bg-[#345c51] transition-colors"
-        >
-          Logga in för att delta
-        </Link>
+      {/* Join / Auth buttons — hidden for cancelled activities */}
+      {!isCancelled && (
+        <>
+          {!isAuthenticated && (
+            <Link
+              href="/auth/login"
+              className="inline-flex items-center justify-center px-6 py-3 bg-[#3d6b5e] text-white font-semibold rounded-lg hover:bg-[#345c51] transition-colors"
+            >
+              Logga in för att delta
+            </Link>
+          )}
+
+          {isAuthenticated && isParticipant && (
+            <Button
+              variant="secondary"
+              size="sm"
+              loading={leaving}
+              onClick={handleLeave}
+            >
+              Avanmäl
+            </Button>
+          )}
+
+          {isAuthenticated && !isParticipant && !isCreator && (
+            <Button
+              variant="primary"
+              size="lg"
+              loading={joining}
+              onClick={handleJoin}
+            >
+              Jag vill vara med!
+            </Button>
+          )}
+        </>
       )}
 
-      {isAuthenticated && isParticipant && (
-        <Button
-          variant="secondary"
-          size="sm"
-          loading={leaving}
-          onClick={handleLeave}
-        >
-          Avanmäl
-        </Button>
-      )}
-
-      {isAuthenticated && !isParticipant && !isCreator && (
-        <Button
-          variant="primary"
-          size="lg"
-          loading={joining}
-          onClick={handleJoin}
-        >
-          Jag vill vara med!
-        </Button>
-      )}
-
-      {/* Comments */}
-      {isAuthenticated && (
+      {/* Comments — hidden for cancelled activities */}
+      {isAuthenticated && !isCancelled && (
         <CommentList
           comments={comments}
           activityId={activityId}

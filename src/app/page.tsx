@@ -10,7 +10,7 @@ import {
   userInterests,
   users,
 } from "@/db/schema";
-import { eq, gt, count, desc, sql } from "drizzle-orm";
+import { eq, gt, and, isNull, count, desc, sql } from "drizzle-orm";
 import { getMatchedActivities } from "@/lib/queries/activity-feed";
 import { getNotificationCount } from "@/lib/queries/notifications";
 import { AppShell } from "@/components/layout/app-shell";
@@ -34,7 +34,7 @@ async function getPopularActivities() {
       activityParticipants,
       eq(activityParticipants.activityId, activities.id),
     )
-    .where(gt(activities.startTime, now))
+    .where(and(gt(activities.startTime, now), isNull(activities.cancelledAt)))
     .groupBy(activities.id)
     .orderBy(desc(count(activityParticipants.userId)))
     .limit(3);

@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tag } from "@/components/ui/tag";
 import { useToast } from "@/components/ui/toast";
-import { updateActivity } from "@/actions/activities";
+import { updateActivity, cancelOrDeleteActivity } from "@/actions/activities";
+import { CancelActivityModal } from "@/components/activity/cancel-activity-modal";
 import Link from "next/link";
 
 interface InterestTag {
@@ -50,6 +51,9 @@ export default function EditActivityPage() {
   const [selectedTags, setSelectedTags] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [participantCount, setParticipantCount] = useState(0);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
 
   const {
     register,
@@ -81,6 +85,7 @@ export default function EditActivityPage() {
 
         setUserInterests(intData.interests ?? []);
         setSelectedTags(activity.tags ?? []);
+        setParticipantCount(activity.participantCount ?? 0);
 
         const wte = activity.whatToExpect ?? {};
 
@@ -106,6 +111,25 @@ export default function EditActivityPage() {
     }
     fetchData();
   }, [activityId, reset]);
+
+  async function handleCancel(reason: string) {
+    setCancelLoading(true);
+    const result = await cancelOrDeleteActivity(activityId, reason);
+    setCancelLoading(false);
+
+    if (result.success) {
+      setShowCancelModal(false);
+      if ((result as any).deleted) {
+        toast("Aktiviteten har raderats", "success");
+        router.push("/my-activities");
+      } else {
+        toast("Aktiviteten har ställts in", "success");
+        router.push(`/activity/${activityId}`);
+      }
+    } else {
+      toast(result.error ?? "Något gick fel", "error");
+    }
+  }
 
   function toggleTag(tagId: number) {
     setSelectedTags((prev) =>
@@ -271,6 +295,33 @@ export default function EditActivityPage() {
           </Button>
         </div>
       </form>
+
+      {/* Danger zone */}
+      <div className="bg-red-50 rounded-[10px] p-6 mt-8">
+        <h2 className="text-base font-semibold text-[#2d2d2d] mb-2">
+          Farligt område
+        </h2>
+        <p className="text-sm text-[#666666] mb-4">
+          {participantCount > 0
+            ? "Ställ in aktiviteten. Alla anmälda deltagare kommer meddelas."
+            : "Radera aktiviteten permanent."}
+        </p>
+        <Button
+          variant="danger"
+          size="sm"
+          onClick={() => setShowCancelModal(true)}
+        >
+          Ställ in aktivitet
+        </Button>
+      </div>
+
+      <CancelActivityModal
+        open={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onConfirm={handleCancel}
+        participantCount={participantCount}
+        loading={cancelLoading}
+      />
     </div>
   );
 }

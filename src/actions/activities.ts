@@ -341,6 +341,83 @@ export async function deleteActivity(activityId: string) {
   }
 }
 
+export async function cancelOrDeleteActivity(
+  activityId: string,
+  reason?: string,
+) {
+  try {
+    const user = await requireAuth();
+
+    const activity = await db.query.activities.findFirst({
+      where: eq(activities.id, activityId),
+    });
+
+    if (!activity || activity.creatorId !== user.id!) {
+      return {
+        success: false,
+        error: "Du kan bara ställa in dina egna aktiviteter",
+      };
+    }
+
+    // Count participants (excluding creator)
+    const participantRows = await db
+      .select({ userId: activityParticipants.userId })
+      .from(activityParticipants)
+      .where(eq(activityParticipants.activityId, activityId));
+
+    const participants = participantRows.filter(
+      (p) => p.userId !== user.id!,
+    );
+
+    if (participants.length === 0) {
+      // No participants: delete completely
+      await db.delete(activities).where(eq(activities.id, activityId));
+
+      revalidatePath("/");
+      return { success: true, deleted: true };
+    }
+
+    // Has participants: require reason
+    if (!reason || reason.trim().length === 0) {
+      return {
+        success: false,
+        error: "Du måste ange en anledning när det finns anmälda deltagare",
+      };
+    }
+
+    // Mark as cancelled
+    await db
+      .update(activities)
+      .set({
+        cancelledAt: new Date(),
+        cancelledReason: reason.trim(),
+        updatedAt: new Date(),
+      })
+      .where(eq(activities.id, activityId));
+
+    // Notify ALL participants (including creator-participants)
+    if (participantRows.length > 0) {
+      await db.insert(notifications).values(
+        participantRows.map((p) => ({
+          userId: p.userId,
+          type: "activity_cancelled" as const,
+          activityId,
+          params: {
+            activityTitle: activity.title,
+            reason: reason.trim(),
+          },
+        })),
+      );
+    }
+
+    revalidatePath("/");
+    return { success: true, cancelled: true };
+  } catch (error) {
+    console.error("cancelOrDeleteActivity error:", error);
+    return { success: false, error: "Något gick fel" };
+  }
+}
+
 export async function joinActivity(
   activityId: string,
   status: "interested" | "attending",
@@ -354,6 +431,10 @@ export async function joinActivity(
 
     if (!activity) {
       return { success: false, error: "Aktiviteten hittades inte" };
+    }
+
+    if (activity.cancelledAt) {
+      return { success: false, error: "Aktiviteten är inställd" };
     }
 
     const joiner = await db.query.users.findFirst({

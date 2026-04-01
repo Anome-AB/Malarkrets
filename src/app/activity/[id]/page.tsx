@@ -204,6 +204,20 @@ export default async function ActivityDetailPage({
       )}
 
       <div className="px-6 py-8">
+        {/* Cancelled banner */}
+        {activity.cancelledAt && (
+          <div className="bg-red-50 border border-red-200 rounded-[10px] p-4 mb-6">
+            <p className="text-sm font-semibold text-red-700">
+              Denna aktivitet är inställd
+            </p>
+            {activity.cancelledReason && (
+              <p className="text-sm text-red-600 mt-1">
+                {activity.cancelledReason}
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Back link for authenticated users */}
         {currentUserId && (
           <Link
@@ -298,6 +312,7 @@ export default async function ActivityDetailPage({
                 isCreator={isCreator}
                 currentUserId={currentUserId}
                 comments={activity.comments}
+                isCancelled={!!activity.cancelledAt}
               />
             </div>
           </div>

@@ -42,6 +42,7 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "participant_joined",
   "participant_left",
   "activity_deleted",
+  "activity_cancelled",
 ]);
 
 export const reportStatusEnum = pgEnum("report_status", [
@@ -146,6 +147,8 @@ export const activities = pgTable(
     municipalityId: varchar("municipality_id", { length: 100 }).default(
       "vasteras",
     ),
+    cancelledAt: timestamp("cancelled_at"),
+    cancelledReason: text("cancelled_reason"),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
   },

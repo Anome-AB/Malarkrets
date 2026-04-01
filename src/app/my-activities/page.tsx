@@ -29,6 +29,8 @@ async function getCreatedActivities(userId: string) {
       imageThumbUrl: activities.imageThumbUrl,
       maxParticipants: activities.maxParticipants,
       whatToExpect: activities.whatToExpect,
+      cancelledAt: activities.cancelledAt,
+      cancelledReason: activities.cancelledReason,
     })
     .from(activities)
     .where(eq(activities.creatorId, userId))
@@ -102,6 +104,8 @@ async function getCreatedActivities(userId: string) {
     } | null,
     tags: tagsByActivity.get(a.id) ?? [],
     participantCount: countByActivity.get(a.id) ?? 0,
+    cancelledAt: a.cancelledAt,
+    cancelledReason: a.cancelledReason,
   }));
 }
 
@@ -116,6 +120,8 @@ async function getParticipatingActivities(userId: string) {
       imageThumbUrl: activities.imageThumbUrl,
       maxParticipants: activities.maxParticipants,
       whatToExpect: activities.whatToExpect,
+      cancelledAt: activities.cancelledAt,
+      cancelledReason: activities.cancelledReason,
       status: activityParticipants.status,
     })
     .from(activityParticipants)
@@ -191,6 +197,8 @@ async function getParticipatingActivities(userId: string) {
     } | null,
     tags: tagsByActivity.get(a.id) ?? [],
     participantCount: countByActivity.get(a.id) ?? 0,
+    cancelledAt: a.cancelledAt,
+    cancelledReason: a.cancelledReason,
     status: a.status as "interested" | "attending",
   }));
 }

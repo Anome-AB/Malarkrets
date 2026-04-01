@@ -1,7 +1,12 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { activities, activityTags, interestTags } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import {
+  activities,
+  activityTags,
+  activityParticipants,
+  interestTags,
+} from "@/db/schema";
+import { eq, count } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -38,6 +43,12 @@ export async function GET(
     .innerJoin(interestTags, eq(interestTags.id, activityTags.tagId))
     .where(eq(activityTags.activityId, id));
 
+  // Get participant count (excluding creator)
+  const [{ count: participantCount }] = await db
+    .select({ count: count() })
+    .from(activityParticipants)
+    .where(eq(activityParticipants.activityId, id));
+
   const whatToExpect = activity.whatToExpect as Record<string, unknown> | null;
 
   return NextResponse.json({
@@ -53,6 +64,7 @@ export async function GET(
       minAge: activity.minAge,
       whatToExpect,
       tags: tags.map((t) => t.id),
+      participantCount,
     },
   });
 }
