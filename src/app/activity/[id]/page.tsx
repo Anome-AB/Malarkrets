@@ -323,7 +323,7 @@ export default async function ActivityDetailPage({
           </div>
 
           {/* Right column: sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-6 lg:sticky lg:top-24 lg:self-start">
             {/* Card: Participation status + actions */}
             <Card title="Delta" className="space-y-4">
               {/* Participation status */}
