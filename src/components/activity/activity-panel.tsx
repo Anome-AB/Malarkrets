@@ -36,6 +36,7 @@ interface ActivityDetail {
   feedbackTotal: number;
   feedbackPositive: number;
   isParticipant: boolean;
+  participationStatus: "interested" | "attending" | null;
   isCreator: boolean;
   currentUserId: string;
 }
@@ -99,11 +100,11 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
 
   if (!open) return null;
 
-  async function handleJoin() {
+  async function handleJoin(status: "attending" | "interested") {
     startTransition(async () => {
-      const result = await joinActivity(activityId, "attending");
+      const result = await joinActivity(activityId, status);
       if (result.success) {
-        toast("Du är anmäld!", "success");
+        toast(status === "attending" ? "Du är anmäld!" : "Du är markerad som intresserad!", "success");
         if (result.blockedWarning) toast(result.blockedWarning, "warning");
         const updated = await getActivityDetail(activityId);
         setDetail(updated as ActivityDetail | null);
@@ -275,7 +276,7 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
                   )}
                 </div>
 
-                {detail.isParticipant && (
+                {detail.participationStatus === "attending" && (
                   <div className="flex items-center gap-3">
                     <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#e8f0ec] text-[#3d6b5e] font-semibold text-sm">
                       Du är anmäld &#10003;
@@ -286,10 +287,29 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
                   </div>
                 )}
 
+                {detail.participationStatus === "interested" && (
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#fff3cd] text-[#856404] font-semibold text-sm">
+                      Intresserad
+                    </span>
+                    <Button variant="primary" size="sm" loading={isPending} onClick={() => handleJoin("attending")}>
+                      Anmäl mig
+                    </Button>
+                    <Button variant="secondary" size="sm" loading={isPending} onClick={handleLeave}>
+                      Ta bort
+                    </Button>
+                  </div>
+                )}
+
                 {!detail.isParticipant && !detail.isCreator && !detail.cancelledAt && (
-                  <Button variant="primary" loading={isPending} onClick={handleJoin} className="w-full">
-                    Jag vill vara med!
-                  </Button>
+                  <div className="space-y-2">
+                    <Button variant="primary" loading={isPending} onClick={() => handleJoin("attending")} className="w-full">
+                      Jag vill vara med!
+                    </Button>
+                    <Button variant="secondary" loading={isPending} onClick={() => handleJoin("interested")} className="w-full">
+                      Intresserad
+                    </Button>
+                  </div>
                 )}
 
                 {detail.isCreator && (

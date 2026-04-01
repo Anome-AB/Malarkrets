@@ -21,6 +21,7 @@ interface ActivityDetailClientProps {
   activityId: string;
   isAuthenticated: boolean;
   isParticipant: boolean;
+  participationStatus: "interested" | "attending" | null;
   isCreator: boolean;
   currentUserId: string | null;
   comments: Comment[];
@@ -31,6 +32,7 @@ export function ActivityDetailClient({
   activityId,
   isAuthenticated,
   isParticipant,
+  participationStatus,
   isCreator,
   currentUserId,
   comments,
@@ -48,7 +50,7 @@ export function ActivityDetailClient({
       const result = await leaveActivity(activityId);
       setLeaving(false);
       if (result.success) {
-        toast("Du har avanmalt dig", "success");
+        toast("Du har avanmält dig", "success");
         router.refresh();
       } else {
         toast(result.error ?? "Något gick fel", "error");
@@ -56,13 +58,16 @@ export function ActivityDetailClient({
     });
   }
 
-  function handleJoin() {
+  function handleJoin(status: "attending" | "interested") {
     setJoining(true);
     startTransition(async () => {
-      const result = await joinActivity(activityId, "attending");
+      const result = await joinActivity(activityId, status);
       setJoining(false);
       if (result.success) {
-        toast("Du har anmält dig!", "success");
+        toast(
+          status === "attending" ? "Du har anmält dig!" : "Du är markerad som intresserad!",
+          "success",
+        );
         if (result.blockedWarning) {
           toast(result.blockedWarning, "warning");
         }
@@ -108,7 +113,7 @@ export function ActivityDetailClient({
             </Link>
           )}
 
-          {isAuthenticated && isParticipant && (
+          {isAuthenticated && participationStatus === "attending" && (
             <Button
               variant="secondary"
               size="sm"
@@ -119,15 +124,39 @@ export function ActivityDetailClient({
             </Button>
           )}
 
+          {isAuthenticated && participationStatus === "interested" && (
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#fff3cd] text-[#856404] font-semibold text-sm">
+                Intresserad
+              </span>
+              <Button variant="primary" size="sm" loading={joining} onClick={() => handleJoin("attending")}>
+                Anmäl mig
+              </Button>
+              <Button variant="secondary" size="sm" loading={leaving} onClick={handleLeave}>
+                Ta bort
+              </Button>
+            </div>
+          )}
+
           {isAuthenticated && !isParticipant && !isCreator && (
-            <Button
-              variant="primary"
-              size="lg"
-              loading={joining}
-              onClick={handleJoin}
-            >
-              Jag vill vara med!
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                variant="primary"
+                size="lg"
+                loading={joining}
+                onClick={() => handleJoin("attending")}
+              >
+                Jag vill vara med!
+              </Button>
+              <Button
+                variant="secondary"
+                size="lg"
+                loading={joining}
+                onClick={() => handleJoin("interested")}
+              >
+                Intresserad
+              </Button>
+            </div>
           )}
         </>
       )}

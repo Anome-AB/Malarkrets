@@ -688,6 +688,7 @@ export async function getActivityDetail(activityId: string) {
     feedbackTotal,
     feedbackPositive,
     isParticipant: !!participation,
+    participationStatus: (participation?.status as "interested" | "attending" | undefined) ?? null,
     isCreator: activity.creatorId === user.id,
     currentUserId: user.id!,
   };

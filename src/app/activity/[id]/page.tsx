@@ -150,6 +150,7 @@ export default async function ActivityDetailPage({
   // Check if current user is a participant
   let isParticipant = false;
   let isCreator = false;
+  let participationStatus: "interested" | "attending" | null = null;
   if (currentUserId) {
     isCreator = activity.creatorId === currentUserId;
     const participation = await db.query.activityParticipants.findFirst({
@@ -159,6 +160,7 @@ export default async function ActivityDetailPage({
       ),
     });
     isParticipant = !!participation;
+    participationStatus = (participation?.status as "interested" | "attending" | undefined) ?? null;
   }
 
   const wte = activity.whatToExpect as WhatToExpect | null;
@@ -314,6 +316,7 @@ export default async function ActivityDetailPage({
                 activityId={id}
                 isAuthenticated={!!currentUserId}
                 isParticipant={isParticipant}
+                participationStatus={participationStatus}
                 isCreator={isCreator}
                 currentUserId={currentUserId}
                 comments={activity.comments}
@@ -337,10 +340,17 @@ export default async function ActivityDetailPage({
                   </Link>
                 </div>
               )}
-              {currentUserId && isParticipant && (
+              {currentUserId && participationStatus === "attending" && (
                 <div className="flex items-center gap-3">
                   <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#e8f0ec] text-[#3d6b5e] font-semibold text-sm">
                     Du är anmäld &#10003;
+                  </span>
+                </div>
+              )}
+              {currentUserId && participationStatus === "interested" && (
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#fff3cd] text-[#856404] font-semibold text-sm">
+                    Intresserad
                   </span>
                 </div>
               )}
