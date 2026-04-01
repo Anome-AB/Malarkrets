@@ -309,7 +309,7 @@ export default async function ActivityDetailPage({
             )}
 
             {/* Card: Comments & actions */}
-            <Card title="Kommentarer">
+            <Card>
               <ActivityDetailClient
                 activityId={id}
                 isAuthenticated={!!currentUserId}
