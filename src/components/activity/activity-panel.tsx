@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CourageSection } from "@/components/activity/courage-section";
@@ -48,7 +47,6 @@ interface ActivityPanelProps {
 }
 
 export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps) {
-  const router = useRouter();
   const { toast } = useToast();
   const panelRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
@@ -100,15 +98,18 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
 
   if (!open) return null;
 
+  async function refreshPanel() {
+    const updated = await getActivityDetail(activityId);
+    setDetail(updated as ActivityDetail | null);
+  }
+
   async function handleJoin(status: "attending" | "interested") {
     startTransition(async () => {
       const result = await joinActivity(activityId, status);
       if (result.success) {
         toast(status === "attending" ? "Du är anmäld!" : "Du är markerad som intresserad!", "success");
         if (result.blockedWarning) toast(result.blockedWarning, "warning");
-        const updated = await getActivityDetail(activityId);
-        setDetail(updated as ActivityDetail | null);
-        router.refresh();
+        await refreshPanel();
       } else {
         toast(result.error ?? "Något gick fel", "error");
       }
@@ -120,9 +121,7 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
       const result = await leaveActivity(activityId);
       if (result.success) {
         toast("Du har avanmält dig", "success");
-        const updated = await getActivityDetail(activityId);
-        setDetail(updated as ActivityDetail | null);
-        router.refresh();
+        await refreshPanel();
       } else {
         toast(result.error ?? "Något gick fel", "error");
       }
@@ -135,8 +134,7 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
     formData.set("content", content);
     const result = await createComment(formData);
     if (result.success) {
-      const updated = await getActivityDetail(activityId);
-      setDetail(updated as ActivityDetail | null);
+      await refreshPanel();
     } else {
       toast(result.error ?? "Kunde inte skicka kommentar", "error");
     }
@@ -145,8 +143,7 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
   async function handleCommentDelete(commentId: string) {
     const result = await deleteComment(commentId);
     if (result.success) {
-      const updated = await getActivityDetail(activityId);
-      setDetail(updated as ActivityDetail | null);
+      await refreshPanel();
     }
   }
 
