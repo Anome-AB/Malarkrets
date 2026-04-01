@@ -118,126 +118,106 @@ export default function CreateActivityPage() {
   return (
     <div className="max-w-3xl px-6 py-8">
       <h1 className="text-xl font-semibold text-[#2d2d2d] mb-6">Skapa ny aktivitet</h1>
-      <div className="bg-white border border-[#dddddd] rounded-[10px] p-6">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Title */}
-          <Input
-            label="Titel"
-            placeholder="Vad ska ni göra?"
-            {...register("title", {
-              required: "Titel krävs",
-              minLength: { value: 3, message: "Minst 3 tecken" },
-              maxLength: { value: 200, message: "Max 200 tecken" },
-            })}
-            error={errors.title?.message}
-          />
-
-          {/* Description */}
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="description"
-              className="text-sm font-medium text-[#2d2d2d]"
-            >
-              Beskrivning
-            </label>
-            <textarea
-              id="description"
-              rows={4}
-              placeholder="Berätta mer om aktiviteten..."
-              className="w-full px-3 py-2 min-h-[44px] rounded-[8px] border border-[#dddddd] text-[#2d2d2d] bg-white placeholder:text-[#999999] focus:outline-none focus:ring-1 focus:border-[#3d6b5e] focus:ring-[#3d6b5e] resize-y"
-              {...register("description", {
-                required: "Beskrivning krävs",
-                minLength: { value: 10, message: "Minst 10 tecken" },
-                maxLength: { value: 5000, message: "Max 5000 tecken" },
+          {/* Card: Grundläggande information */}
+          <div className="bg-white border border-[#dddddd] rounded-[10px] p-6 space-y-4">
+            <h2 className="text-base font-semibold text-[#2d2d2d]">Grundläggande information</h2>
+            <Input
+              label="Titel"
+              placeholder="Vad ska ni göra?"
+              {...register("title", {
+                required: "Titel krävs",
+                minLength: { value: 3, message: "Minst 3 tecken" },
+                maxLength: { value: 200, message: "Max 200 tecken" },
               })}
+              error={errors.title?.message}
             />
-            {errors.description && (
-              <p className="text-sm text-[#dc3545]">
-                {errors.description.message}
-              </p>
-            )}
+            <div className="flex flex-col gap-1">
+              <label htmlFor="description" className="text-sm font-medium text-[#2d2d2d]">Beskrivning</label>
+              <textarea
+                id="description"
+                rows={4}
+                placeholder="Berätta mer om aktiviteten..."
+                className="w-full px-3 py-2 min-h-[44px] rounded-[8px] border border-[#dddddd] text-[#2d2d2d] bg-white placeholder:text-[#999999] focus:outline-none focus:ring-1 focus:border-[#3d6b5e] focus:ring-[#3d6b5e] resize-y"
+                {...register("description", {
+                  required: "Beskrivning krävs",
+                  minLength: { value: 10, message: "Minst 10 tecken" },
+                  maxLength: { value: 5000, message: "Max 5000 tecken" },
+                })}
+              />
+              {errors.description && (
+                <p className="text-sm text-[#dc3545]">{errors.description.message}</p>
+              )}
+            </div>
+            <Input
+              label="Plats"
+              placeholder="Var ska det hållas?"
+              {...register("location", {
+                required: "Plats krävs",
+                minLength: { value: 2, message: "Minst 2 tecken" },
+                maxLength: { value: 500, message: "Max 500 tecken" },
+              })}
+              error={errors.location?.message}
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input
+                label="Starttid"
+                type="datetime-local"
+                {...register("startTime", { required: "Starttid krävs" })}
+                error={errors.startTime?.message}
+              />
+              <Input
+                label="Sluttid (valfritt)"
+                type="datetime-local"
+                {...register("endTime")}
+              />
+            </div>
           </div>
 
-          {/* Location */}
-          <Input
-            label="Plats"
-            placeholder="Var ska det hållas?"
-            {...register("location", {
-              required: "Plats krävs",
-              minLength: { value: 2, message: "Minst 2 tecken" },
-              maxLength: { value: 500, message: "Max 500 tecken" },
-            })}
-            error={errors.location?.message}
-          />
-
-          {/* Start time */}
-          <Input
-            label="Starttid"
-            type="datetime-local"
-            {...register("startTime", {
-              required: "Starttid krävs",
-            })}
-            error={errors.startTime?.message}
-          />
-
-          {/* End time (optional) */}
-          <Input
-            label="Sluttid (valfritt)"
-            type="datetime-local"
-            {...register("endTime")}
-          />
-
-          {/* Max participants */}
-          <Input
-            label="Max antal deltagare (valfritt)"
-            type="number"
-            min={2}
-            max={500}
-            placeholder="Lämna tomt för obegränsat"
-            {...register("maxParticipants")}
-          />
-
-          {/* Gender restriction */}
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="genderRestriction"
-              className="text-sm font-medium text-[#2d2d2d]"
-            >
-              Könsbegränsning
-            </label>
-            <select
-              id="genderRestriction"
-              className="w-full px-3 py-2 min-h-[44px] rounded-[8px] border border-[#dddddd] text-[#2d2d2d] bg-white focus:outline-none focus:ring-1 focus:border-[#3d6b5e] focus:ring-[#3d6b5e]"
-              {...register("genderRestriction")}
-            >
-              <option value="alla">Alla</option>
-              <option value="kvinnor">Kvinnor</option>
-              <option value="man">Män</option>
-            </select>
+          {/* Card: Begränsningar */}
+          <div className="bg-white border border-[#dddddd] rounded-[10px] p-6 space-y-4">
+            <h2 className="text-base font-semibold text-[#2d2d2d]">Begränsningar</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Input
+                label="Max deltagare (valfritt)"
+                type="number"
+                min={2}
+                max={500}
+                placeholder="Obegränsat"
+                {...register("maxParticipants")}
+              />
+              <div className="flex flex-col gap-1">
+                <label htmlFor="genderRestriction" className="text-sm font-medium text-[#2d2d2d]">Könsbegränsning</label>
+                <select
+                  id="genderRestriction"
+                  className="w-full px-3 py-2 min-h-[44px] rounded-[8px] border border-[#dddddd] text-[#2d2d2d] bg-white focus:outline-none focus:ring-1 focus:border-[#3d6b5e] focus:ring-[#3d6b5e]"
+                  {...register("genderRestriction")}
+                >
+                  <option value="alla">Alla</option>
+                  <option value="kvinnor">Kvinnor</option>
+                  <option value="man">Män</option>
+                </select>
+              </div>
+              <Input
+                label="Lägsta ålder (valfritt)"
+                type="number"
+                min={0}
+                max={120}
+                placeholder="Ingen"
+                {...register("minAge")}
+              />
+            </div>
           </div>
 
-          {/* Min age (optional) */}
-          <Input
-            label="Lägsta ålder (valfritt)"
-            type="number"
-            min={0}
-            max={120}
-            {...register("minAge")}
-          />
-
-          {/* Interest tags */}
-          <div>
-            <label className="text-sm font-medium text-[#2d2d2d] block mb-2">
-              Intressetaggar
-            </label>
+          {/* Card: Intressetaggar */}
+          <div className="bg-white border border-[#dddddd] rounded-[10px] p-6">
+            <h2 className="text-base font-semibold text-[#2d2d2d] mb-3">Intressetaggar</h2>
             {loadingTags ? (
               <p className="text-sm text-[#666666]">Laddar taggar...</p>
             ) : userInterests.length === 0 ? (
               <p className="text-sm text-[#666666]">
                 Du har inga intressen valda.{" "}
-                <a href="/onboarding" className="text-[#3d6b5e] underline">
-                  Välj intressen
-                </a>
+                <a href="/onboarding" className="text-[#3d6b5e] underline">Välj intressen</a>
               </p>
             ) : (
               <div className="flex flex-wrap gap-2">
@@ -252,17 +232,13 @@ export default function CreateActivityPage() {
               </div>
             )}
             {selectedTags.length === 0 && (
-              <p className="text-xs text-[#999999] mt-1">
-                Välj minst en tagg
-              </p>
+              <p className="text-xs text-[#999999] mt-2">Välj minst en tagg</p>
             )}
           </div>
 
-          {/* What to expect */}
-          <fieldset className="border border-[#dddddd] rounded-lg p-4 space-y-4">
-            <legend className="text-sm font-semibold text-[#2d2d2d] px-2">
-              Vad kan deltagare förvänta sig?
-            </legend>
+          {/* Card: Vad kan deltagare förvänta sig? */}
+          <div className="bg-white border border-[#dddddd] rounded-[10px] p-6 space-y-4">
+            <h2 className="text-base font-semibold text-[#2d2d2d]">Vad kan deltagare förvänta sig?</h2>
 
             <label className="flex items-center gap-3 cursor-pointer">
               <input
@@ -270,18 +246,11 @@ export default function CreateActivityPage() {
                 className="w-5 h-5 rounded border-[#dddddd] text-[#3d6b5e] focus:ring-[#3d6b5e]"
                 {...register("okAlone")}
               />
-              <span className="text-sm text-[#2d2d2d]">
-                Okej att komma ensam
-              </span>
+              <span className="text-sm text-[#2d2d2d]">Okej att komma ensam</span>
             </label>
 
             <div className="flex flex-col gap-1">
-              <label
-                htmlFor="experienceLevel"
-                className="text-sm font-medium text-[#2d2d2d]"
-              >
-                Erfarenhetsnivå
-              </label>
+              <label htmlFor="experienceLevel" className="text-sm font-medium text-[#2d2d2d]">Erfarenhetsnivå</label>
               <select
                 id="experienceLevel"
                 className="w-full px-3 py-2 min-h-[44px] rounded-[8px] border border-[#dddddd] text-[#2d2d2d] bg-white focus:outline-none focus:ring-1 focus:border-[#3d6b5e] focus:ring-[#3d6b5e]"
@@ -295,56 +264,35 @@ export default function CreateActivityPage() {
             </div>
 
             <div className="flex flex-col gap-1">
-              <label
-                htmlFor="whoComes"
-                className="text-sm font-medium text-[#2d2d2d]"
-              >
-                Vilka brukar komma? (valfritt)
-              </label>
+              <label htmlFor="whoComes" className="text-sm font-medium text-[#2d2d2d]">Vilka brukar komma? (valfritt)</label>
               <textarea
                 id="whoComes"
                 rows={2}
                 placeholder="T.ex. 'Blandad ålder, mest nybörjare'"
                 className="w-full px-3 py-2 rounded-[8px] border border-[#dddddd] text-[#2d2d2d] bg-white placeholder:text-[#999999] focus:outline-none focus:ring-1 focus:border-[#3d6b5e] focus:ring-[#3d6b5e] resize-y"
-                {...register("whoComes", {
-                  maxLength: { value: 500, message: "Max 500 tecken" },
-                })}
+                {...register("whoComes", { maxLength: { value: 500, message: "Max 500 tecken" } })}
               />
             </div>
 
             <div className="flex flex-col gap-1">
-              <label
-                htmlFor="latePolicy"
-                className="text-sm font-medium text-[#2d2d2d]"
-              >
-                Om jag är sen? (valfritt)
-              </label>
+              <label htmlFor="latePolicy" className="text-sm font-medium text-[#2d2d2d]">Om jag är sen? (valfritt)</label>
               <textarea
                 id="latePolicy"
                 rows={2}
                 placeholder="T.ex. 'Kom när du kan, vi börjar kl 18'"
                 className="w-full px-3 py-2 rounded-[8px] border border-[#dddddd] text-[#2d2d2d] bg-white placeholder:text-[#999999] focus:outline-none focus:ring-1 focus:border-[#3d6b5e] focus:ring-[#3d6b5e] resize-y"
-                {...register("latePolicy", {
-                  maxLength: { value: 200, message: "Max 200 tecken" },
-                })}
+                {...register("latePolicy", { maxLength: { value: 200, message: "Max 200 tecken" } })}
               />
             </div>
-          </fieldset>
+          </div>
 
           {/* Submit */}
-          <div className="pt-4">
-            <Button
-              type="submit"
-              variant="primary"
-              size="lg"
-              loading={isPending}
-              className="w-full"
-            >
+          <div className="pt-2">
+            <Button type="submit" variant="primary" size="lg" loading={isPending} className="w-full">
               Skapa aktivitet
             </Button>
           </div>
         </form>
-      </div>
     </div>
   );
 }
