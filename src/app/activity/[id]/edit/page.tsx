@@ -157,7 +157,7 @@ export default function EditActivityPage() {
 
   if (loading) {
     return (
-      <div className="max-w-2xl mx-auto px-6 py-8">
+      <div className="max-w-3xl px-6 py-8">
         <p className="text-[#666666]">Laddar aktivitet...</p>
       </div>
     );
@@ -165,7 +165,7 @@ export default function EditActivityPage() {
 
   if (loadError) {
     return (
-      <div className="max-w-2xl mx-auto px-6 py-8">
+      <div className="max-w-3xl px-6 py-8">
         <p className="text-[#dc3545] mb-4">{loadError}</p>
         <Link
           href={`/activity/${activityId}`}
@@ -178,7 +178,7 @@ export default function EditActivityPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-8">
+    <div className="max-w-3xl px-6 py-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-semibold text-[#2d2d2d]">Redigera aktivitet</h1>
         <Link
@@ -189,7 +189,7 @@ export default function EditActivityPage() {
         </Link>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="bg-white border border-[#dddddd] rounded-[10px] p-6 space-y-6">
         {/* Title */}
         <Input
           label="Titel"
