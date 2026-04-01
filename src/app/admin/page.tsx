@@ -44,7 +44,7 @@ export default async function AdminPage() {
     .orderBy(interestTags.name);
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-8">
+    <div className="px-6 py-8">
       <h1 className="text-2xl font-bold text-[#2d2d2d] mb-8">Adminpanel</h1>
 
       <AdminClient

@@ -72,7 +72,7 @@ export default async function ProfilePage() {
       userInitials={shellData.initials}
       isAdmin={shellData.isAdmin}
     >
-      <div className="max-w-2xl mx-auto px-6 py-8">
+      <div className="px-6 py-8">
         <h1 className="text-xl font-semibold text-[#2d2d2d] mb-6">Min profil</h1>
         <ProfileClient
           profile={{

@@ -120,9 +120,9 @@ export function ProfileClient({
   }
 
   return (
-    <div className="space-y-10">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Personal info */}
-      <section>
+      <section className="bg-white border border-[#dddddd] rounded-[10px] p-6">
         <h2 className="text-lg font-semibold text-[#2d2d2d] mb-4">
           Personlig information
         </h2>
@@ -192,7 +192,7 @@ export function ProfileClient({
       </section>
 
       {/* Interests */}
-      <section>
+      <section className="bg-white border border-[#dddddd] rounded-[10px] p-6">
         <h2 className="text-lg font-semibold text-[#2d2d2d] mb-2">
           Mina intressen
         </h2>
@@ -222,7 +222,7 @@ export function ProfileClient({
       </section>
 
       {/* Blocked users */}
-      <section>
+      <section className="bg-white border border-[#dddddd] rounded-[10px] p-6">
         <h2 className="text-lg font-semibold text-[#2d2d2d] mb-4">
           Blockerade användare
         </h2>
@@ -254,7 +254,7 @@ export function ProfileClient({
       </section>
 
       {/* Danger zone */}
-      <section className="mt-8 bg-red-50 rounded-lg p-6">
+      <section className="bg-red-50 border border-red-200 rounded-[10px] p-6">
         <h2 className="text-lg font-semibold text-[#dc3545] mb-2">
           Farligt område
         </h2>

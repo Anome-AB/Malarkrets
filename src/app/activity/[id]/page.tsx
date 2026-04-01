@@ -203,167 +203,169 @@ export default async function ActivityDetailPage({
         </header>
       )}
 
-      <div className="max-w-3xl mx-auto px-6 py-8 space-y-8">
+      <div className="px-6 py-8">
         {/* Back link for authenticated users */}
         {currentUserId && (
           <Link
             href="/"
             className="inline-flex items-center gap-1 text-sm font-medium text-[#3d6b5e] hover:underline mb-6"
           >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 18 9 12 15 6" />
             </svg>
             Tillbaka
           </Link>
         )}
 
-        {/* Image */}
-        {activity.imageMediumUrl && (
-          <img
-            src={activity.imageMediumUrl}
-            alt=""
-            className="w-full h-64 object-cover rounded-lg"
-          />
-        )}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left column: main content, spans 2 cols on desktop */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Image */}
+            {activity.imageMediumUrl && (
+              <img
+                src={activity.imageMediumUrl}
+                alt=""
+                className="w-full h-64 object-cover rounded-lg"
+              />
+            )}
 
-        {/* Title & meta */}
-        <div>
-          <h2 className="text-2xl font-bold text-[#2d2d2d]">
-            {activity.title}
-          </h2>
+            {/* Card: Activity info */}
+            <div className="bg-white border border-[#dddddd] rounded-[10px] p-6">
+              <h2 className="text-2xl font-bold text-[#2d2d2d]">
+                {activity.title}
+              </h2>
 
-          <div className="mt-3 space-y-1 text-sm text-[#666666]">
-            <p>
-              {new Date(activity.startTime).toLocaleDateString("sv-SE", {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-              {activity.endTime && (
-                <>
-                  {" "}
-                  &ndash;{" "}
-                  {new Date(activity.endTime).toLocaleTimeString("sv-SE", {
+              <div className="mt-3 space-y-1 text-sm text-[#666666]">
+                <p>
+                  {new Date(activity.startTime).toLocaleDateString("sv-SE", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
-                </>
+                  {activity.endTime && (
+                    <>
+                      {" "}
+                      &ndash;{" "}
+                      {new Date(activity.endTime).toLocaleTimeString("sv-SE", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </>
+                  )}
+                </p>
+                <p>{activity.location}</p>
+                {activity.creator && (
+                  <p>
+                    Skapad av{" "}
+                    <span className="font-medium text-[#2d2d2d]">
+                      {activity.creator.displayName ?? "Anonym"}
+                    </span>
+                  </p>
+                )}
+              </div>
+
+              {/* Tags */}
+              {activity.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {activity.tags.map((tag) => (
+                    <span
+                      key={tag.id}
+                      className="text-xs px-3 py-1 rounded-full bg-[#e8f0ec] text-[#3d6b5e] font-medium"
+                    >
+                      {tag.name}
+                    </span>
+                  ))}
+                </div>
               )}
-            </p>
-            <p>{activity.location}</p>
-            {activity.creator && (
-              <p>
-                Skapad av{" "}
-                <span className="font-medium text-[#2d2d2d]">
-                  {activity.creator.displayName ?? "Anonym"}
-                </span>
+
+              {/* Description */}
+              <p className="mt-4 text-[#2d2d2d] whitespace-pre-wrap leading-relaxed">
+                {activity.description}
               </p>
-            )}
-          </div>
-        </div>
-
-        {/* Tags */}
-        {activity.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {activity.tags.map((tag) => (
-              <span
-                key={tag.id}
-                className="text-xs px-3 py-1 rounded-full bg-[#e8f0ec] text-[#3d6b5e] font-medium"
-              >
-                {tag.name}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Description */}
-        <div>
-          <p className="text-[#2d2d2d] whitespace-pre-wrap leading-relaxed">
-            {activity.description}
-          </p>
-        </div>
-
-        {/* Courage section */}
-        {wte && <CourageSection whatToExpect={wte} />}
-
-        {/* Participation status */}
-        {!currentUserId && (
-          <div className="bg-white border border-[#dddddd] rounded-lg px-4 py-3">
-            <Link
-              href="/auth/login"
-              className="text-[#3d6b5e] font-semibold hover:underline"
-            >
-              Logga in för att delta
-            </Link>
-          </div>
-        )}
-        {currentUserId && isParticipant && (
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#e8f0ec] text-[#3d6b5e] font-semibold text-sm">
-              Du är anmäld &#10003;
-            </span>
-          </div>
-        )}
-        {currentUserId && isCreator && !isParticipant && (
-          <div className="bg-white border border-[#dddddd] rounded-lg px-4 py-3">
-            <span className="text-sm text-[#666666]">
-              Du skapade den här aktiviteten
-            </span>
-          </div>
-        )}
-        {currentUserId && isCreator && (
-          <Link
-            href={`/activity/${id}/edit`}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-[#3d6b5e] border border-[#3d6b5e] rounded-lg hover:bg-[#e8f0ec] transition-colors"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-            </svg>
-            Redigera
-          </Link>
-        )}
-
-        {/* Stats */}
-        <div className="flex flex-wrap gap-4 text-sm">
-          <div className="bg-white border border-[#dddddd] rounded-lg px-4 py-3">
-            <span className="text-[#666666]">Deltagare: </span>
-            <span className="font-semibold text-[#2d2d2d]">
-              {activity.participantCount}
-              {activity.maxParticipants
-                ? ` / ${activity.maxParticipants}`
-                : ""}
-            </span>
-          </div>
-          {feedbackText && (
-            <div className="bg-white border border-[#dddddd] rounded-lg px-4 py-3">
-              <span className="text-[#3d6b5e] font-medium">
-                {feedbackText}
-              </span>
             </div>
-          )}
-        </div>
 
-        {/* Actions & comments */}
-        <ActivityDetailClient
-          activityId={id}
-          isAuthenticated={!!currentUserId}
-          isParticipant={isParticipant}
-          isCreator={isCreator}
-          currentUserId={currentUserId}
-          comments={activity.comments}
-        />
+            {/* Card: Courage section */}
+            {wte && <CourageSection whatToExpect={wte} />}
+
+            {/* Card: Comments & actions */}
+            <div className="bg-white border border-[#dddddd] rounded-[10px] p-6">
+              <ActivityDetailClient
+                activityId={id}
+                isAuthenticated={!!currentUserId}
+                isParticipant={isParticipant}
+                isCreator={isCreator}
+                currentUserId={currentUserId}
+                comments={activity.comments}
+              />
+            </div>
+          </div>
+
+          {/* Right column: sidebar */}
+          <div className="space-y-6">
+            {/* Card: Participation status + actions */}
+            <div className="bg-white border border-[#dddddd] rounded-[10px] p-6 space-y-4">
+              {/* Participation status */}
+              {!currentUserId && (
+                <div>
+                  <Link
+                    href="/auth/login"
+                    className="text-[#3d6b5e] font-semibold hover:underline"
+                  >
+                    Logga in för att delta
+                  </Link>
+                </div>
+              )}
+              {currentUserId && isParticipant && (
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#e8f0ec] text-[#3d6b5e] font-semibold text-sm">
+                    Du är anmäld &#10003;
+                  </span>
+                </div>
+              )}
+              {currentUserId && isCreator && !isParticipant && (
+                <div>
+                  <span className="text-sm text-[#666666]">
+                    Du skapade den här aktiviteten
+                  </span>
+                </div>
+              )}
+              {currentUserId && isCreator && (
+                <Link
+                  href={`/activity/${id}/edit`}
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-[#3d6b5e] border border-[#3d6b5e] rounded-lg hover:bg-[#e8f0ec] transition-colors"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                  Redigera
+                </Link>
+              )}
+
+              {/* Participant count */}
+              <div className="text-sm">
+                <span className="text-[#666666]">Deltagare: </span>
+                <span className="font-semibold text-[#2d2d2d]">
+                  {activity.participantCount}
+                  {activity.maxParticipants
+                    ? ` / ${activity.maxParticipants}`
+                    : ""}
+                </span>
+              </div>
+
+              {/* Feedback stats */}
+              {feedbackText && (
+                <div className="text-sm">
+                  <span className="text-[#3d6b5e] font-medium">
+                    {feedbackText}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
