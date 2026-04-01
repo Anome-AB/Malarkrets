@@ -1,6 +1,12 @@
 # TODOS — Mälarkrets
 
-## Next Session Priority
+## Nästa session — Prioritet 1
+
+### Design-genomgång av aktivitetsdetaljsidan
+**Vad:** Kör `/design-consultation` + `/design-review` på aktivitetsdetaljsidan.
+**Varför:** Layoutbalansen mellan vänster/högerkolumn, whitespace, och visuell hierarki behöver finslipas. Korten är på plats men kompositionen känns inte färdig.
+**Scope:** Aktivitetsdetalj (desktop + mobil), profilsida, skapa/redigera-formulär.
+**Insats:** M (CC: ~30 min)
 
 ### Hierarkiska intressetaggar (Stor feature)
 **Vad:** Träd-struktur för intressen med kategorier och undertaggar.
@@ -8,12 +14,14 @@
 **Schema-ändring:**
 - `interest_tags` behöver: `parent_id` (FK self-referencing, nullable), `depth` (integer)
 - Toppnivå: Friluftsliv, Sport, Kreativt, Spel & Hobby, Motion & Hälsa, Socialt, Kultur
-- Undervivå: Vandring → Stadsvandring, Fjällvandring. Jakt → Pilbågsjakt, Storviltsjakt, etc.
+- Undernivå: Vandring → Stadsvandring, Fjällvandring. Jakt → Pilbågsjakt, Storviltsjakt, etc.
 **UI-ändring:**
 - Sidebar: kollapsibla kategorier istället för platt lista
 - Onboarding: välja kategori → expandera undertaggar
 - Feed-matchning: välja en kategori matchar alla dess undertaggar
 **Insats:** M-L (schema-migration, seed-omskrivning, 3-4 UI-komponenter)
+
+## Nästa session — Prioritet 2
 
 ### Sliding panel / overlay för aktivitetsdetalj (Desktop UX)
 **Vad:** Aktivitetsdetalj öppnas som en glidande panel från höger på desktop, istället för full-page navigation.
@@ -41,16 +49,12 @@
 **Varför:** "Visa vandring OCH fotografi" är ett naturligt användningsmönster.
 **Insats:** S (query stödjer redan tagFilter, behöver bara multi-select UI)
 
-## Observability / Operations
+## Backlog
 
-### Backup-strategi för PostgreSQL
-**Vad:** Ingen backup konfigurerad.
-**Insats:** S (pg_dump cron)
+### Observability / Operations
+- Backup-strategi för PostgreSQL (pg_dump cron) — S
+- Health check endpoint `/api/health` — XS
+- Strukturerad loggning (pino eller winston) — S
 
-### Health check endpoint
-**Vad:** `/api/health` som kollar DB-anslutning.
-**Insats:** XS
-
-### Loggning
-**Vad:** Ingen strukturerad loggning förutom console.error.
-**Insats:** S (pino eller winston)
+### Docker
+- Docker Desktop på Windows har en bugg med inference manager socket. Factory reset löste inte problemet. Behöver felsökas eller skippa Docker och köra med direkt-installerad PostgreSQL (nuvarande setup).
