@@ -64,7 +64,7 @@ export function Sidebar({ interests, activeFilter, isAdmin = false }: SidebarPro
   const pathname = usePathname();
 
   return (
-    <aside className="w-[200px] bg-white border-r border-[#dddddd] hidden lg:block h-full overflow-y-auto flex flex-col">
+    <aside className="w-[200px] bg-white border-r border-[#dddddd] hidden lg:flex flex-col h-full overflow-y-auto">
       <nav className="py-4">
         <ul className="space-y-1">
           {navItems.map((item) => {

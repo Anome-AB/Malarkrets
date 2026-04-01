@@ -30,7 +30,7 @@ export function AppShell({
     <div className="min-h-screen bg-[#f8f7f4] flex flex-col">
       <TopNav unreadCount={unreadCount} userInitials={userInitials} />
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex" style={{ height: "calc(100vh - 60px)" }}>
         <Sidebar interests={interests} activeFilter={activeFilter} isAdmin={isAdmin} />
 
         <main className="flex-1 overflow-y-auto pb-[56px] lg:pb-0">
