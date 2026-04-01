@@ -10,6 +10,9 @@ Key rules:
 - Use `<ConfirmDialog>` for confirmations. Never `window.confirm()`.
 - Detail pages use responsive grid layouts that fill available space. Never `max-w-* mx-auto` on detail pages.
 - Form pages use `max-w-3xl` with Card sections inside the form.
+- Typography: Satoshi for headings (font-display), Instrument Sans for body text. Never use Inter as primary.
+- Spacing follows 4px grid: xs(4) sm(8) md(16) lg(24) xl(32) 2xl(48) 3xl(64). Never use 12px spacing.
+- Accent color `#c4956a` (copper) for badges and decorative highlights only. Use sparingly.
 
 ## Skill routing
 

@@ -1,12 +1,6 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import { ToastProvider } from "@/components/ui/toast";
 import "./globals.css";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
 
 export const metadata: Metadata = {
   title: "Mälarkrets",
@@ -19,8 +13,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="sv" className={`${inter.variable} antialiased`}>
-      <body className={`${inter.className} bg-[#f8f7f4] text-[#2d2d2d] min-h-screen`}>
+    <html lang="sv" className="antialiased">
+      <head>
+        <link rel="preconnect" href="https://api.fontshare.com" crossOrigin="anonymous" />
+        <link href="https://api.fontshare.com/v2/css?f[]=satoshi@700,900&f[]=instrument-sans@400,500,600&display=swap" rel="stylesheet" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400&display=swap" rel="stylesheet" />
+      </head>
+      <body className="bg-[#f8f7f4] text-[#2d2d2d] min-h-screen">
         <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
