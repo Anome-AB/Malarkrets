@@ -119,12 +119,6 @@ export function ActivityCard({ activity, isCreator = false, onClick }: ActivityC
         </div>
       )}
 
-      {wte?.okAlone && (
-        <p className="text-sm text-[#3d6b5e] italic mt-2">
-          Okej att komma ensam? Absolut!
-        </p>
-      )}
-
       <div className="mt-3 pt-3 border-t border-[#dddddd]">
         <ParticipantDots
           count={activity.participantCount}
