@@ -626,7 +626,10 @@ export async function getActivityDetail(activityId: string) {
   const [{ count: participantCount }] = await db
     .select({ count: count() })
     .from(activityParticipants)
-    .where(eq(activityParticipants.activityId, activityId));
+    .where(and(
+      eq(activityParticipants.activityId, activityId),
+      eq(activityParticipants.status, "attending"),
+    ));
 
   const comments = await db
     .select({

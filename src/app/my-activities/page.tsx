@@ -11,7 +11,7 @@ import {
   activityParticipants,
   interestTags,
 } from "@/db/schema";
-import { eq, desc, asc, count, sql } from "drizzle-orm";
+import { eq, and, desc, asc, count, sql } from "drizzle-orm";
 import { MyActivitiesClient } from "./my-activities-client";
 
 export const metadata: Metadata = {
@@ -57,7 +57,7 @@ async function getCreatedActivities(userId: string) {
       )})`,
     );
 
-  // Participant counts
+  // Participant counts (only attending)
   const participantRows = await db
     .select({
       activityId: activityParticipants.activityId,
@@ -65,10 +65,13 @@ async function getCreatedActivities(userId: string) {
     })
     .from(activityParticipants)
     .where(
-      sql`${activityParticipants.activityId} IN (${sql.join(
-        ids.map((id) => sql`${id}`),
-        sql`, `,
-      )})`,
+      and(
+        sql`${activityParticipants.activityId} IN (${sql.join(
+          ids.map((id) => sql`${id}`),
+          sql`, `,
+        )})`,
+        eq(activityParticipants.status, "attending"),
+      ),
     )
     .groupBy(activityParticipants.activityId);
 
@@ -150,7 +153,7 @@ async function getParticipatingActivities(userId: string) {
       )})`,
     );
 
-  // Participant counts
+  // Participant counts (only attending)
   const participantRows = await db
     .select({
       activityId: activityParticipants.activityId,
@@ -158,10 +161,13 @@ async function getParticipatingActivities(userId: string) {
     })
     .from(activityParticipants)
     .where(
-      sql`${activityParticipants.activityId} IN (${sql.join(
-        ids.map((id) => sql`${id}`),
-        sql`, `,
-      )})`,
+      and(
+        sql`${activityParticipants.activityId} IN (${sql.join(
+          ids.map((id) => sql`${id}`),
+          sql`, `,
+        )})`,
+        eq(activityParticipants.status, "attending"),
+      ),
     )
     .groupBy(activityParticipants.activityId);
 

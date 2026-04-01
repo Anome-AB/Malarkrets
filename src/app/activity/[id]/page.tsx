@@ -51,11 +51,14 @@ async function getActivity(id: string) {
     .innerJoin(interestTags, eq(interestTags.id, activityTags.tagId))
     .where(eq(activityTags.activityId, id));
 
-  // Get participant count
+  // Get participant count (only attending)
   const [{ count: participantCount }] = await db
     .select({ count: count() })
     .from(activityParticipants)
-    .where(eq(activityParticipants.activityId, id));
+    .where(and(
+      eq(activityParticipants.activityId, id),
+      eq(activityParticipants.status, "attending"),
+    ));
 
   // Get comments with author info
   const comments = await db

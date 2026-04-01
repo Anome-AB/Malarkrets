@@ -28,6 +28,7 @@ interface ActivityCardProps {
     imageThumbUrl: string | null;
   };
   isCreator?: boolean;
+  userStatus?: "interested" | "attending" | null;
   onClick?: (id: string) => void;
 }
 
@@ -68,7 +69,7 @@ function ParticipantDots({
   );
 }
 
-export function ActivityCard({ activity, isCreator = false, onClick }: ActivityCardProps) {
+export function ActivityCard({ activity, isCreator = false, userStatus, onClick }: ActivityCardProps) {
   const wte = activity.whatToExpect;
 
   return (
@@ -92,10 +93,24 @@ export function ActivityCard({ activity, isCreator = false, onClick }: ActivityC
         />
       )}
 
-      {isCreator && (
-        <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-[#d4edda] text-[#155724] mb-1">
-          Du arrangerar
-        </span>
+      {(isCreator || userStatus) && (
+        <div className="flex gap-1.5 mb-1">
+          {isCreator && (
+            <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-[#d4edda] text-[#155724]">
+              Du arrangerar
+            </span>
+          )}
+          {userStatus === "attending" && !isCreator && (
+            <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-[#d4edda] text-[#155724]">
+              Deltar
+            </span>
+          )}
+          {userStatus === "interested" && !isCreator && (
+            <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-[#fff3cd] text-[#856404]">
+              Intresserad
+            </span>
+          )}
+        </div>
       )}
 
       <h3 className="text-base font-semibold text-[#2d2d2d]">

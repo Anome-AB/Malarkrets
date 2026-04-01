@@ -27,6 +27,7 @@ interface ActivityItem {
   tags: Array<{ id: number; name: string; slug: string }>;
   participantCount: number;
   creatorId: string | null;
+  userStatus?: "interested" | "attending" | null;
 }
 
 interface Interest {
@@ -178,6 +179,7 @@ export function ActivityFeed({
                   imageThumbUrl: activity.imageThumbUrl,
                 }}
                 isCreator={!!userId && activity.creatorId === userId}
+                userStatus={activity.userStatus}
                 onClick={handleCardClick}
               />
             ))}

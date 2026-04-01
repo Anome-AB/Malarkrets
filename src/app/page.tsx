@@ -32,7 +32,10 @@ async function getPopularActivities() {
     .from(activities)
     .leftJoin(
       activityParticipants,
-      eq(activityParticipants.activityId, activities.id),
+      and(
+        eq(activityParticipants.activityId, activities.id),
+        eq(activityParticipants.status, "attending"),
+      ),
     )
     .where(and(gt(activities.startTime, now), isNull(activities.cancelledAt)))
     .groupBy(activities.id)
@@ -218,6 +221,7 @@ async function AuthenticatedFeed({
     tags: Array<{ id: number; name: string; slug: string }>;
     participantCount: number;
     creatorId: string | null;
+    userStatus: "interested" | "attending" | null;
   }> = [];
 
   if (activityIds.length > 0) {
@@ -233,15 +237,35 @@ async function AuthenticatedFeed({
       .innerJoin(interestTags, eq(interestTags.id, activityTags.tagId))
       .where(sql`${activityTags.activityId} IN (${sql.join(activityIds.map((id) => sql`${id}`), sql`, `)})`);
 
-    // Get participant counts
+    // Get participant counts (only attending, not interested)
     const participantRows = await db
       .select({
         activityId: activityParticipants.activityId,
         count: count(),
       })
       .from(activityParticipants)
-      .where(sql`${activityParticipants.activityId} IN (${sql.join(activityIds.map((id) => sql`${id}`), sql`, `)})`)
+      .where(and(
+        sql`${activityParticipants.activityId} IN (${sql.join(activityIds.map((id) => sql`${id}`), sql`, `)})`,
+        eq(activityParticipants.status, "attending"),
+      ))
       .groupBy(activityParticipants.activityId);
+
+    // Get current user's participation status per activity
+    const userParticipationRows = await db
+      .select({
+        activityId: activityParticipants.activityId,
+        status: activityParticipants.status,
+      })
+      .from(activityParticipants)
+      .where(and(
+        sql`${activityParticipants.activityId} IN (${sql.join(activityIds.map((id) => sql`${id}`), sql`, `)})`,
+        eq(activityParticipants.userId, userId),
+      ));
+
+    const userStatusByActivity = new Map<string, string>();
+    for (const row of userParticipationRows) {
+      userStatusByActivity.set(row.activityId, row.status);
+    }
 
     const tagsByActivity = new Map<string, Array<{ id: number; name: string; slug: string }>>();
     for (const row of tagRows) {
@@ -267,6 +291,7 @@ async function AuthenticatedFeed({
       tags: tagsByActivity.get(a.id) ?? [],
       participantCount: countByActivity.get(a.id) ?? 0,
       creatorId: a.creatorId,
+      userStatus: (userStatusByActivity.get(a.id) as "interested" | "attending" | undefined) ?? null,
     }));
   }
 
