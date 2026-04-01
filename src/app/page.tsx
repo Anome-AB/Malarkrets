@@ -50,10 +50,13 @@ function LandingPage({
   return (
     <div className="min-h-screen bg-[#f8f7f4]">
       <header className="bg-[#3d6b5e] text-white">
-        <div className="max-w-5xl mx-auto px-6 py-16 text-center">
-          <h1 className="text-4xl font-bold mb-3">Mälarkrets</h1>
-          <p className="text-xl text-white/80 mb-8">
+        <div className="max-w-5xl mx-auto px-6 py-12 text-center">
+          <h1 className="text-4xl font-bold mb-2">Mälarkrets</h1>
+          <p className="text-lg text-white/80 mb-2">
             Hitta ditt sammanhang
+          </p>
+          <p className="text-sm text-white/60 mb-8">
+            Aktiviteter, träffar och upplevelser i Västerås
           </p>
           <div className="flex gap-4 justify-center">
             <Link
@@ -111,7 +114,7 @@ function LandingPage({
                   })}{" "}
                   &middot; {activity.location}
                 </p>
-                <p className="text-xs text-[#3d6b5e] mt-2 font-medium">
+                <p className="text-xs text-[#666666] mt-2">
                   {activity.participantCount} deltagare
                 </p>
               </Link>
