@@ -302,10 +302,14 @@ export default async function ActivityDetailPage({
             </Card>
 
             {/* Card: Courage section */}
-            {wte && <CourageSection whatToExpect={wte} />}
+            {wte && (
+              <Card>
+                <CourageSection whatToExpect={wte} />
+              </Card>
+            )}
 
             {/* Card: Comments & actions */}
-            <Card>
+            <Card title="Kommentarer">
               <ActivityDetailClient
                 activityId={id}
                 isAuthenticated={!!currentUserId}
@@ -321,7 +325,7 @@ export default async function ActivityDetailPage({
           {/* Right column: sidebar */}
           <div className="space-y-6">
             {/* Card: Participation status + actions */}
-            <Card className="space-y-4">
+            <Card title="Delta" className="space-y-4">
               {/* Participation status */}
               {!currentUserId && (
                 <div>
