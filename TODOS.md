@@ -62,4 +62,8 @@
 - Strukturerad loggning (pino eller winston) — S
 
 ### Docker
-- Docker Desktop på Windows har en bugg med inference manager socket. Factory reset löste inte problemet. Behöver felsökas eller skippa Docker och köra med direkt-installerad PostgreSQL (nuvarande setup).
+- ~~Docker Desktop på Windows har en bugg med inference manager socket.~~ LÖST: Docker Desktop v28.4.0 fungerar (verifierat 2026-04-14).
+
+### Release Pipeline (tillagt av /plan-eng-review 2026-04-14)
+- **Semver image-tagging:** Lägg till stöd för git tags (v1.0.0) som triggar GitHub Actions att tagga Docker-imagen med versionsnummer. Krävs för rollback på VPS. Insats: S. Beror på: pipeline finns.
+- **VPS-deploy i pipeline:** Lägg till SSH-deploy-steg i release.yml som kör docker compose pull + up på extern server. 15 rader YAML + 3 GitHub Secrets (VPS_HOST, VPS_USER, VPS_SSH_KEY). Insats: S. Beror på: pipeline + VPS finns.
