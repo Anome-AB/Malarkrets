@@ -64,6 +64,17 @@
 ### Docker
 - ~~Docker Desktop på Windows har en bugg med inference manager socket.~~ LÖST: Docker Desktop v28.4.0 fungerar (verifierat 2026-04-14).
 
+### För Fredrik — GitHub-kontoägare (blockerande)
+- **Lägg till GitHub Secret `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`** i repot ohman74/Malarkrets.
+  - Via CLI: `gh secret set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY --repo ohman74/Malarkrets`
+  - Eller webben: Settings → Secrets and variables → Actions → New repository secret.
+  - Pipelinen (release.yml) och Dockerfile är redan förberedda att ta emot nyckeln som build-arg och baka in den i klient-bundeln. Utan detta secret kommer kartor i den byggda imagen att rendera utan nyckel (gråa/"for development purposes only").
+- **Restriktera nyckeln i Google Cloud Console** innan den används:
+  - HTTP referrers: produktionsdomän + `http://localhost:3000/*`.
+  - API restrictions: endast Maps JavaScript API + Maps Static API.
+  - Sätt dygns-/månadskvot så stulen nyckel inte kan debiteras oändligt.
+- Om ni har fler hemligheter (SMTP, VPS SSH-nyckel osv) — lägg dem som secrets samtidigt, säg till så uppdaterar vi pipelinen.
+
 ### Release Pipeline (tillagt av /plan-eng-review 2026-04-14)
 - **Semver image-tagging:** Lägg till stöd för git tags (v1.0.0) som triggar GitHub Actions att tagga Docker-imagen med versionsnummer. Krävs för rollback på VPS. Insats: S. Beror på: pipeline finns.
 - **VPS-deploy i pipeline:** Lägg till SSH-deploy-steg i release.yml som kör docker compose pull + up på extern server. 15 rader YAML + 3 GitHub Secrets (VPS_HOST, VPS_USER, VPS_SSH_KEY). Insats: S. Beror på: pipeline + VPS finns.
