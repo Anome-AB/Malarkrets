@@ -58,7 +58,7 @@
 
 ### Observability / Operations
 - Backup-strategi för PostgreSQL (pg_dump cron) — S
-- Health check endpoint `/api/health` — XS
+- ~~Health check endpoint `/api/health`~~ KLAR (b69a227, 2026-04-14)
 - Strukturerad loggning (pino eller winston) — S
 
 ### Docker

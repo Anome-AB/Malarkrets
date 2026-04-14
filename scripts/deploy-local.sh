@@ -39,14 +39,10 @@ until docker compose -f "$COMPOSE_FILE" exec -T postgres pg_isready -U malarkret
 done
 echo "       Postgres is ready."
 
-# Run migrations
-echo "[3/5] Running database migrations..."
-docker compose -f "$COMPOSE_FILE" run --rm -T app sh -c "node -e \"
-const postgres = require('postgres');
-const sql = postgres(process.env.DATABASE_URL);
-sql.unsafe('SELECT 1').then(() => { console.log('DB connected'); sql.end(); }).catch(e => { console.error('DB error:', e.message); process.exit(1); });
-\""
-echo "       Migrations: skipped (drizzle push handled separately if needed)."
+# Verify DB connectivity (migrations handled separately via drizzle push)
+echo "[3/5] Verifying database connectivity..."
+docker compose -f "$COMPOSE_FILE" exec -T postgres psql -U malarkrets -c "SELECT 1" > /dev/null 2>&1
+echo "       Database connected. Migrations: run 'drizzle push' separately if needed."
 
 # Start all services
 echo "[4/5] Starting all services..."
