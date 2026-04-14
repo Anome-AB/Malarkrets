@@ -37,16 +37,31 @@ function futureDate(daysFromNow: number, hour: number, minute: number): Date {
   return d;
 }
 
-// ─── Interest tags ──────────────────────────────────────────────────────────
+// ─── Interest tags (flat list) ─────────────────────────────────────────────
 
-const tagsByCategory: Record<string, string[]> = {
-  "Utomhus": ["Vandring", "Löpning", "Cykling", "Fågelskådning", "Trädgård", "Fiske", "Paddling", "Klättring"],
-  "Kreativt": ["Fotografi", "Målning", "Keramik", "Stickning", "Matlagning", "Bakning", "Musik", "Skrivande"],
-  "Spel & hobby": ["Brädspel", "Rollspel", "Schack", "E-sport", "Modellbygge"],
-  "Motion & hälsa": ["Yoga", "Simning", "Dans", "Kampsport", "Styrketräning"],
-  "Socialt": ["Bokcirkel", "Filmkväll", "Vinprovning", "Språkcafé", "Kodning", "Frivilligarbete"],
-  "Kultur": ["Teater", "Konst", "Historia", "Musik (lyssning)"],
-};
+const allTagNames = [
+  // Utomhus & natur
+  "Vandring", "Fågelskådning", "Trädgård", "Fiske", "Paddling", "Camping", "Geocaching", "Paddleboard", "Ridning", "Promenad",
+  // Motion & sport
+  "Löpning", "Cykling", "Simning", "Yoga", "Dans", "Kampsport", "Styrketräning", "Klättring",
+  "Padel", "Tennis", "Golf", "Bowling", "Skridskoåkning", "Pilates", "Meditation",
+  "Fotboll", "Innebandy", "Hockey", "Bandy", "Basket", "Handboll", "Volleyboll",
+  "Badminton", "Bordtennis", "Frisbee", "Skateboard", "Parkour", "Crossfit",
+  "Längdskidor", "Snowboard", "Slalom",
+  // Kreativt
+  "Fotografi", "Målning", "Keramik", "Stickning", "Matlagning", "Bakning", "Musik", "Skrivande", "Snickeri",
+  // Motor
+  "Bilträffar", "Motorcykel", "Mekande", "Cruising", "Motorsport", "EPA & A-traktor",
+  // Spel & hobby
+  "Brädspel", "Rollspel", "Schack", "E-sport", "Modellbygge",
+  // Socialt
+  "Bokcirkel", "Film", "Vinprovning", "Språkcafé", "Sportevent", "Frivilligarbete",
+  "Fika", "Picknick", "Grillning", "Quiz", "Karaoke", "Ölprovning", "Restaurangbesök",
+  // Kultur & underhållning
+  "Teater", "Konst", "Historia", "Stand-up",
+  // Tech
+  "Kodning",
+];
 
 // ─── Seed logic ─────────────────────────────────────────────────────────────
 
@@ -64,16 +79,9 @@ async function seed() {
 
   // ── 1. Interest tags ────────────────────────────────────────────────────
 
-  const allTagRows: { name: string; slug: string; category: string }[] = [];
-  for (const [category, names] of Object.entries(tagsByCategory)) {
-    for (const name of names) {
-      allTagRows.push({ name, slug: slugify(name), category });
-    }
-  }
-
   const insertedTags = await db
     .insert(schema.interestTags)
-    .values(allTagRows)
+    .values(allTagNames.map((name) => ({ name, slug: slugify(name) })))
     .returning();
 
   const tagMap = new Map(insertedTags.map((t) => [t.name, t.id]));
@@ -143,7 +151,7 @@ async function seed() {
   console.log(`  Inserted ${insertedTestUsers.length} test users.`);
 
   // Assign random interests to test users
-  const allTagNames = insertedTags.map((t) => t.name);
+  const tagNames = insertedTags.map((t) => t.name);
   function pickRandom<T>(arr: T[], n: number): T[] {
     const shuffled = [...arr].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, n);
@@ -151,7 +159,7 @@ async function seed() {
 
   const testInterestRows: { userId: string; tagId: number }[] = [];
   for (const testUser of insertedTestUsers) {
-    const randomTags = pickRandom(allTagNames, 3 + Math.floor(Math.random() * 3)); // 3-5
+    const randomTags = pickRandom(tagNames, 3 + Math.floor(Math.random() * 3)); // 3-5
     for (const tagName of randomTags) {
       const tagId = tagMap.get(tagName);
       if (tagId) testInterestRows.push({ userId: testUser.id, tagId });
@@ -169,7 +177,7 @@ async function seed() {
 
   const userInterestAssignments: Record<string, string[]> = {
     [anna]: ["Vandring", "Fågelskådning", "Stickning", "Fotografi", "Yoga", "Bokcirkel"],
-    [erik]: ["Brädspel", "Kodning", "E-sport", "Filmkväll", "Cykling", "Löpning", "Rollspel"],
+    [erik]: ["Brädspel", "Kodning", "E-sport", "Film", "Cykling", "Löpning", "Rollspel"],
     [sara]: ["Matlagning", "Keramik", "Dans", "Fotografi", "Yoga", "Bakning"],
     [omar]: ["Fotografi", "Vandring", "Löpning", "Historia", "Kodning", "Styrketräning", "Schack"],
     [lisa]: ["Yoga", "Simning", "Bokcirkel", "Vinprovning", "Teater", "Musik (lyssning)", "Trädgård"],
@@ -196,8 +204,8 @@ async function seed() {
       description: "En härlig kvällspromenad längs Mälarens strandlinje. Vi går i lugnt tempo och njuter av naturen och solnedgången. Alla nivåer välkomna!",
       location: "Östra hamnen, Västerås",
       creatorId: anna,
-      startTime: futureDate(3, 18, 0),
-      endTime: futureDate(3, 19, 30),
+      startTime: futureDate(1, 18, 0),
+      endTime: futureDate(1, 19, 30),
       maxParticipants: 12,
       genderRestriction: "alla" as const,
       minAge: null,
@@ -209,8 +217,8 @@ async function seed() {
       description: "Drop-in brädspelskväll! Vi har med oss klassiker och nya spel. Perfekt för nybörjare och veteraner. Fika finns att köpa.",
       location: "Stadsbiblioteket, Västerås",
       creatorId: erik,
-      startTime: futureDate(4, 17, 30),
-      endTime: futureDate(4, 21, 0),
+      startTime: futureDate(2, 17, 30),
+      endTime: futureDate(2, 21, 0),
       maxParticipants: 8,
       genderRestriction: "alla" as const,
       minAge: null,
@@ -222,8 +230,8 @@ async function seed() {
       description: "Lär dig laga autentisk indisk mat från grunden. Vi gör tikka masala, naan och raita. Alla ingredienser ingår.",
       location: "Folkets Hus, Västerås",
       creatorId: sara,
-      startTime: futureDate(8, 14, 0),
-      endTime: futureDate(8, 17, 0),
+      startTime: futureDate(4, 14, 0),
+      endTime: futureDate(4, 17, 0),
       maxParticipants: 10,
       genderRestriction: "alla" as const,
       minAge: null,
@@ -235,8 +243,8 @@ async function seed() {
       description: "Vi utforskar Västerås gamla stadskärna med kameran. Tips om komposition och ljus under promenaden. Alla kameror/mobiler välkomna.",
       location: "Svartån/Kyrkbacken, Västerås",
       creatorId: omar,
-      startTime: futureDate(6, 10, 0),
-      endTime: futureDate(6, 12, 30),
+      startTime: futureDate(3, 10, 0),
+      endTime: futureDate(3, 12, 30),
       maxParticipants: 15,
       genderRestriction: "alla" as const,
       minAge: null,
@@ -248,8 +256,8 @@ async function seed() {
       description: "Lugn morgonyoga utomhus i Vasaparken. Jag guidar genom grundläggande positioner. Ta med egen matta och vattenflaska.",
       location: "Vasaparken, Västerås",
       creatorId: lisa,
-      startTime: futureDate(2, 7, 30),
-      endTime: futureDate(2, 8, 30),
+      startTime: futureDate(0, 7, 30),
+      endTime: futureDate(0, 8, 30),
       maxParticipants: 20,
       genderRestriction: "alla" as const,
       minAge: null,
@@ -261,8 +269,8 @@ async function seed() {
       description: "Tidig morgonvandring vid Asköviken naturreservat. Vi spanar efter vårfåglar och diskuterar artbestämning. Kikare finns att låna.",
       location: "Asköviken naturreservat, Västerås",
       creatorId: anna,
-      startTime: futureDate(9, 8, 0),
-      endTime: futureDate(9, 11, 0),
+      startTime: futureDate(5, 8, 0),
+      endTime: futureDate(5, 11, 0),
       maxParticipants: 8,
       genderRestriction: "alla" as const,
       minAge: null,
@@ -274,8 +282,8 @@ async function seed() {
       description: "Vi läser och diskuterar en ny svensk deckare varje månad. Denna gång: valfri titel av Camilla Läckberg. Mysig stämning med fika.",
       location: "Café August, Västerås",
       creatorId: lisa,
-      startTime: futureDate(5, 19, 0),
-      endTime: futureDate(5, 21, 0),
+      startTime: futureDate(6, 19, 0),
+      endTime: futureDate(6, 21, 0),
       maxParticipants: 8,
       genderRestriction: "alla" as const,
       minAge: null,
@@ -287,8 +295,8 @@ async function seed() {
       description: "Lär dig programmera från scratch! Vi börjar med Python och bygger enkla projekt tillsammans. Egen laptop krävs.",
       location: "Stadsbiblioteket, Västerås",
       creatorId: erik,
-      startTime: futureDate(7, 18, 0),
-      endTime: futureDate(7, 20, 30),
+      startTime: futureDate(8, 18, 0),
+      endTime: futureDate(8, 20, 30),
       maxParticipants: 12,
       genderRestriction: "alla" as const,
       minAge: null,
@@ -300,8 +308,8 @@ async function seed() {
       description: "Prova på keramik och dreja din egen skål. Material ingår. Begränsat antal platser — passa på!",
       location: "Kulturhuset, Västerås",
       creatorId: sara,
-      startTime: futureDate(10, 13, 0),
-      endTime: futureDate(10, 16, 0),
+      startTime: futureDate(9, 13, 0),
+      endTime: futureDate(9, 16, 0),
       maxParticipants: 6,
       genderRestriction: "kvinnor" as const,
       minAge: 18,
@@ -313,8 +321,8 @@ async function seed() {
       description: "Gemensam löprunda på ca 5 km i lagom tempo. Vi springer längs Mälaren och tillbaka. Alla hastigheter välkomna!",
       location: "Lögarängen, Västerås",
       creatorId: omar,
-      startTime: futureDate(3, 6, 30),
-      endTime: futureDate(3, 7, 30),
+      startTime: futureDate(1, 6, 30),
+      endTime: futureDate(1, 7, 30),
       maxParticipants: 20,
       genderRestriction: "alla" as const,
       minAge: null,
@@ -326,8 +334,8 @@ async function seed() {
       description: "Smaka sex utvalda italienska viner med tilltugg. Vi pratar druvor, regioner och matpairing. Avslappnad stämning.",
       location: "Restaurang Bia, Västerås",
       creatorId: lisa,
-      startTime: futureDate(11, 19, 0),
-      endTime: futureDate(11, 21, 30),
+      startTime: futureDate(10, 19, 0),
+      endTime: futureDate(10, 21, 30),
       maxParticipants: 12,
       genderRestriction: "alla" as const,
       minAge: 25,
@@ -339,8 +347,8 @@ async function seed() {
       description: "Ta med ditt stickprojekt och häng med oss i caféet. Nybörjare får gärna hjälp att komma igång. Garn och stickor finns att köpa på plats.",
       location: "Ica Maxi Erikslund, Västerås",
       creatorId: anna,
-      startTime: futureDate(2, 14, 0),
-      endTime: futureDate(2, 16, 0),
+      startTime: futureDate(0, 14, 0),
+      endTime: futureDate(0, 16, 0),
       maxParticipants: 10,
       genderRestriction: "alla" as const,
       minAge: null,
@@ -352,8 +360,8 @@ async function seed() {
       description: "Guidad promenad genom Västerås historia — från vikingatid till modern industri. Vi besöker domkyrkan, Anundshög-utställningen och mer.",
       location: "Domkyrkan, Västerås",
       creatorId: omar,
-      startTime: futureDate(13, 11, 0),
-      endTime: futureDate(13, 13, 0),
+      startTime: futureDate(12, 11, 0),
+      endTime: futureDate(12, 13, 0),
       maxParticipants: 15,
       genderRestriction: "alla" as const,
       minAge: null,
@@ -365,12 +373,12 @@ async function seed() {
       description: "Vi ser två Studio Ghibli-filmer på storbild! Popcorn och snacks ingår. Rösta på vilka filmer vi ser i kommentarerna.",
       location: "Folkets Hus, Västerås",
       creatorId: erik,
-      startTime: futureDate(8, 17, 0),
-      endTime: futureDate(8, 22, 0),
+      startTime: futureDate(13, 17, 0),
+      endTime: futureDate(13, 22, 0),
       maxParticipants: 8,
       genderRestriction: "alla" as const,
       minAge: null,
-      tags: ["Filmkväll"],
+      tags: ["Film"],
       whatToExpect: { okAlone: true, experienceLevel: "alla", whoComes: "Animefans och filmälskare", latePolicy: "Kom gärna 15 min innan för bästa plats" },
     },
     {
@@ -378,8 +386,8 @@ async function seed() {
       description: "Gemensamt morgonpass i 50-metersbassängen. Vi simmar i eget tempo men peppar varandra. Alla nivåer välkomna.",
       location: "Lögarängsbadet, Västerås",
       creatorId: lisa,
-      startTime: futureDate(4, 7, 0),
-      endTime: futureDate(4, 8, 0),
+      startTime: futureDate(14, 7, 0),
+      endTime: futureDate(14, 8, 0),
       maxParticipants: 15,
       genderRestriction: "alla" as const,
       minAge: null,
@@ -391,8 +399,8 @@ async function seed() {
       description: "Öva svenska eller engelska i avslappnad miljö. Vi byter språk varannan halvtimme. Fika ingår!",
       location: "Café Stationen, Västerås",
       creatorId: sara,
-      startTime: futureDate(5, 16, 0),
-      endTime: futureDate(5, 18, 0),
+      startTime: futureDate(15, 16, 0),
+      endTime: futureDate(15, 18, 0),
       maxParticipants: 16,
       genderRestriction: "alla" as const,
       minAge: null,
@@ -404,8 +412,8 @@ async function seed() {
       description: "Funktionell styrketräning i Djäknebergets utegym. Jag leder ett 45-minuterspass med kroppsviktsövningar. Inga redskap behövs.",
       location: "Djäkneberget, Västerås",
       creatorId: omar,
-      startTime: futureDate(7, 7, 0),
-      endTime: futureDate(7, 7, 45),
+      startTime: futureDate(17, 7, 0),
+      endTime: futureDate(17, 7, 45),
       maxParticipants: 15,
       genderRestriction: "alla" as const,
       minAge: null,

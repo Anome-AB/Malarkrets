@@ -19,7 +19,6 @@ export default async function EditActivityLayout({
   return (
     <AppShell
       interests={shellData.interests}
-      activeFilter={null}
       unreadCount={shellData.unreadCount}
       userInitials={shellData.initials}
       isAdmin={shellData.isAdmin}

@@ -12,7 +12,8 @@ interface Interest {
 interface AppShellProps {
   children: ReactNode;
   interests: Interest[];
-  activeFilter: string | null;
+  activeFilters?: string[];
+  showAll?: boolean;
   unreadCount: number;
   userInitials: string;
   isAdmin?: boolean;
@@ -21,17 +22,18 @@ interface AppShellProps {
 export function AppShell({
   children,
   interests,
-  activeFilter,
+  activeFilters = [],
+  showAll = false,
   unreadCount,
   userInitials,
   isAdmin = false,
 }: AppShellProps) {
   return (
-    <div className="min-h-screen bg-[#f8f7f4] flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       <TopNav unreadCount={unreadCount} userInitials={userInitials} />
 
       <div className="flex" style={{ height: "calc(100vh - 60px)" }}>
-        <Sidebar interests={interests} activeFilter={activeFilter} isAdmin={isAdmin} />
+        <Sidebar interests={interests} activeFilters={activeFilters} showAll={showAll} isAdmin={isAdmin} />
 
         <main className="flex-1 overflow-y-auto pb-[56px] lg:pb-0">
           {children}

@@ -24,10 +24,10 @@ type ToastContextValue = {
 const ToastContext = createContext<ToastContextValue | null>(null);
 
 const variantStyles: Record<ToastVariant, string> = {
-  success: "bg-[#3d6b5e] text-white",
-  error: "bg-[#dc3545] text-white",
-  info: "bg-[#4a7c94] text-white",
-  warning: "bg-[#e07a3a] text-white",
+  success: "bg-primary text-white",
+  error: "bg-error text-white",
+  info: "bg-info text-white",
+  warning: "bg-warning text-white",
 };
 
 const DISMISS_MS = 5000;
@@ -51,7 +51,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
         flex items-center gap-2
         px-4 py-3
         rounded-[10px]
-        shadow-lg
+        shadow-xl ring-1 ring-black/10
         text-sm font-medium
         transition-transform duration-300 ease-out
         ${variantStyles[toast.variant]}
@@ -85,7 +85,7 @@ function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
-      <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm">
+      <div className="fixed top-[76px] right-4 z-50 flex flex-col gap-2 max-w-sm">
         {toasts.map((t) => (
           <ToastItem key={t.id} toast={t} onDismiss={dismiss} />
         ))}

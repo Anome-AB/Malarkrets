@@ -4,6 +4,7 @@ import {
   activityTags,
   userInterests,
   userBlocks,
+  users,
 } from "@/db/schema";
 import {
   sql,
@@ -12,6 +13,7 @@ import {
   gt,
   or,
   isNull,
+  inArray,
   count,
   desc,
   asc,
@@ -30,7 +32,8 @@ export async function getMatchedActivities(
   viewerGender: string | null,
   viewerAge: number | null,
   cursor?: string,
-  tagFilter?: number,
+  tagFilter?: number[],
+  showAll?: boolean,
 ) {
   const now = new Date();
   const viewerRestriction = genderToRestriction(viewerGender);
@@ -61,23 +64,51 @@ export async function getMatchedActivities(
     "relevance",
   );
 
-  let query = db
-    .select({
-      id: activities.id,
-      title: activities.title,
-      description: activities.description,
-      location: activities.location,
-      startTime: activities.startTime,
-      endTime: activities.endTime,
-      imageThumbUrl: activities.imageThumbUrl,
-      maxParticipants: activities.maxParticipants,
-      genderRestriction: activities.genderRestriction,
-      minAge: activities.minAge,
-      whatToExpect: activities.whatToExpect,
-      creatorId: activities.creatorId,
-      createdAt: activities.createdAt,
-      relevance: relevanceCount,
-    })
+  const selectFields = {
+    id: activities.id,
+    title: activities.title,
+    description: activities.description,
+    location: activities.location,
+    startTime: activities.startTime,
+    endTime: activities.endTime,
+    imageThumbUrl: activities.imageThumbUrl,
+    maxParticipants: activities.maxParticipants,
+    genderRestriction: activities.genderRestriction,
+    minAge: activities.minAge,
+    whatToExpect: activities.whatToExpect,
+    creatorId: activities.creatorId,
+    createdAt: activities.createdAt,
+    relevance: relevanceCount,
+  };
+
+  const baseConditions = [
+    isNull(activities.cancelledAt),
+    gt(activities.startTime, now),
+    sql`NOT EXISTS (${blockedByCreator})`,
+    sql`NOT EXISTS (${blockedByViewer})`,
+    // Hide activities from banned creators
+    sql`NOT EXISTS (SELECT 1 FROM ${users} WHERE ${users.id} = ${activities.creatorId} AND ${users.isBanned} = true)`,
+    ...(cursor ? [gt(activities.id, cursor)] : []),
+  ];
+
+  // When showAll (admin mode), skip interest matching and gender/age restrictions
+  if (showAll) {
+    const tagFilterConditions = tagFilter
+      ? [inArray(activityTags.tagId, tagFilter)]
+      : [];
+
+    return db
+      .select(selectFields)
+      .from(activities)
+      .innerJoin(activityTags, eq(activityTags.activityId, activities.id))
+      .where(and(...baseConditions, ...tagFilterConditions))
+      .groupBy(activities.id)
+      .orderBy(asc(activities.startTime))
+      .limit(20);
+  }
+
+  return db
+    .select(selectFields)
     .from(activities)
     .innerJoin(activityTags, eq(activityTags.activityId, activities.id))
     .innerJoin(
@@ -89,14 +120,7 @@ export async function getMatchedActivities(
     )
     .where(
       and(
-        // Exclude cancelled activities
-        isNull(activities.cancelledAt),
-        // Exclude past activities
-        gt(activities.startTime, now),
-        // Exclude if creator blocked viewer
-        sql`NOT EXISTS (${blockedByCreator})`,
-        // Exclude if viewer blocked creator
-        sql`NOT EXISTS (${blockedByViewer})`,
+        ...baseConditions,
         // Gender restriction filter
         viewerRestriction
           ? or(
@@ -109,18 +133,12 @@ export async function getMatchedActivities(
           ? or(isNull(activities.minAge), sql`${activities.minAge} <= ${viewerAge}`)
           : isNull(activities.minAge),
         // Specific tag filter
-        ...(tagFilter !== undefined
-          ? [eq(activityTags.tagId, tagFilter)]
-          : []),
-        // Cursor-based pagination
-        ...(cursor
-          ? [gt(activities.id, cursor)]
+        ...(tagFilter
+          ? [inArray(activityTags.tagId, tagFilter)]
           : []),
       ),
     )
     .groupBy(activities.id)
     .orderBy(desc(relevanceCount), asc(activities.startTime))
     .limit(20);
-
-  return query;
 }

@@ -12,8 +12,8 @@ export default async function VerifyPage({
     return (
       <div className="w-full max-w-md rounded-[10px] bg-white p-8 shadow">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-[#3d6b5e]">Mälarkrets</h1>
-          <p className="mt-4 text-sm text-[#dc3545]">
+          <h1 className="text-2xl font-bold text-primary">Mälarkrets</h1>
+          <p className="mt-4 text-sm text-error">
             Ogiltig eller utgången verifieringslänk.
           </p>
         </div>
@@ -27,8 +27,8 @@ export default async function VerifyPage({
     return (
       <div className="w-full max-w-md rounded-[10px] bg-white p-8 shadow">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-[#3d6b5e]">Mälarkrets</h1>
-          <p className="mt-4 text-sm text-[#dc3545]">
+          <h1 className="text-2xl font-bold text-primary">Mälarkrets</h1>
+          <p className="mt-4 text-sm text-error">
             Ogiltig eller utgången verifieringslänk.
           </p>
         </div>
@@ -39,13 +39,13 @@ export default async function VerifyPage({
   return (
     <div className="w-full max-w-md rounded-[10px] bg-white p-8 shadow">
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-[#3d6b5e]">Mälarkrets</h1>
-        <p className="mt-4 text-sm text-[#2d2d2d]">
+        <h1 className="text-2xl font-bold text-primary">Mälarkrets</h1>
+        <p className="mt-4 text-sm text-heading">
           Din e-post är verifierad! Du kan nu logga in.
         </p>
         <Link
           href="/auth/login"
-          className="mt-4 inline-block text-sm font-medium text-[#3d6b5e] hover:underline"
+          className="mt-4 inline-block text-sm font-medium text-primary hover:underline"
         >
           Logga in
         </Link>

@@ -48,6 +48,8 @@ export async function createActivity(formData: FormData) {
       title: formData.get("title"),
       description: formData.get("description"),
       location: formData.get("location"),
+      latitude: formData.get("latitude") ? Number(formData.get("latitude")) : undefined,
+      longitude: formData.get("longitude") ? Number(formData.get("longitude")) : undefined,
       startTime: formData.get("startTime"),
       endTime: formData.get("endTime") || undefined,
       maxParticipants: formData.get("maxParticipants")
@@ -119,7 +121,7 @@ export async function createActivity(formData: FormData) {
       }
     }
 
-    const { tags, whatToExpect, startTime, endTime, genderRestriction, ...rest } = data;
+    const { tags, whatToExpect, startTime, endTime, genderRestriction, latitude, longitude, ...rest } = data;
 
     const [newActivity] = await db
       .insert(activities)
@@ -127,6 +129,8 @@ export async function createActivity(formData: FormData) {
         title: rest.title,
         description: rest.description,
         location: rest.location,
+        latitude: latitude ?? null,
+        longitude: longitude ?? null,
         maxParticipants: rest.maxParticipants,
         minAge: rest.minAge,
         creatorId: user.id!,
@@ -145,6 +149,13 @@ export async function createActivity(formData: FormData) {
         })),
       );
     }
+
+    // Creator is automatically a participant (attending)
+    await db.insert(activityParticipants).values({
+      activityId: newActivity.id,
+      userId: user.id!,
+      status: "attending",
+    });
 
     await db.insert(analyticsEvents).values({
       userId: user.id!,
@@ -171,6 +182,8 @@ export async function updateActivity(formData: FormData) {
       title: formData.get("title") || undefined,
       description: formData.get("description") || undefined,
       location: formData.get("location") || undefined,
+      latitude: formData.get("latitude") ? Number(formData.get("latitude")) : undefined,
+      longitude: formData.get("longitude") ? Number(formData.get("longitude")) : undefined,
       startTime: formData.get("startTime") || undefined,
       endTime: formData.get("endTime") || undefined,
       maxParticipants: formData.get("maxParticipants")
@@ -254,12 +267,14 @@ export async function updateActivity(formData: FormData) {
       }
     }
 
-    const { id, tags, whatToExpect, startTime, endTime, ...updateData } = data;
+    const { id, tags, whatToExpect, startTime, endTime, latitude, longitude, ...updateData } = data;
 
     await db
       .update(activities)
       .set({
         ...updateData,
+        ...(latitude !== undefined && { latitude }),
+        ...(longitude !== undefined && { longitude }),
         ...(whatToExpect !== undefined && { whatToExpect }),
         ...(startTime !== undefined && { startTime: new Date(startTime) }),
         ...(endTime !== undefined && { endTime: new Date(endTime) }),
@@ -570,6 +585,14 @@ export async function leaveActivity(activityId: string) {
       where: eq(activities.id, activityId),
     });
 
+    // Creators can't leave their own activity (they must cancel/delete it)
+    if (activity?.creatorId === user.id!) {
+      return {
+        success: false,
+        error: "Som arrangör kan du inte avanmäla dig. Ställ in aktiviteten istället.",
+      };
+    }
+
     await db
       .delete(activityParticipants)
       .where(
@@ -671,6 +694,8 @@ export async function getActivityDetail(activityId: string) {
     title: activity.title,
     description: activity.description,
     location: activity.location,
+    latitude: activity.latitude,
+    longitude: activity.longitude,
     startTime: activity.startTime,
     endTime: activity.endTime,
     maxParticipants: activity.maxParticipants,

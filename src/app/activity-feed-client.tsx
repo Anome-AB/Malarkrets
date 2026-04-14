@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { ActivityCard } from "@/components/activity/activity-card";
 import { ActivityPanel } from "@/components/activity/activity-panel";
 import { Tag } from "@/components/ui/tag";
@@ -39,7 +40,7 @@ interface Interest {
 interface ActivityFeedProps {
   initialActivities: ActivityItem[];
   userInterests: Interest[];
-  activeFilter: string | null;
+  activeFilters: string[];
   nextCursor: string | null;
   userId?: string;
 }
@@ -59,7 +60,7 @@ function useIsDesktop() {
 export function ActivityFeed({
   initialActivities,
   userInterests,
-  activeFilter,
+  activeFilters,
   nextCursor,
   userId,
 }: ActivityFeedProps) {
@@ -68,6 +69,7 @@ export function ActivityFeed({
   const [searchText, setSearchText] = useState("");
   const [loadingMore, setLoadingMore] = useState(false);
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
+  const [filtersExpanded, setFiltersExpanded] = useState(activeFilters.length > 0);
 
   const filteredActivities = useMemo(() => {
     if (!searchText.trim()) return initialActivities;
@@ -93,10 +95,14 @@ export function ActivityFeed({
   }, []);
 
   function handleFilterClick(slug: string) {
-    if (activeFilter === slug) {
-      router.push("/");
+    const isActive = activeFilters.includes(slug);
+    const nextFilters = isActive
+      ? activeFilters.filter((s) => s !== slug)
+      : [...activeFilters, slug];
+    if (nextFilters.length > 0) {
+      router.push(`/?intresse=${nextFilters.join(",")}`);
     } else {
-      router.push(`/?intresse=${slug}`);
+      router.push("/");
     }
   }
 
@@ -104,31 +110,73 @@ export function ActivityFeed({
     if (!nextCursor) return;
     setLoadingMore(true);
     const params = new URLSearchParams();
-    if (activeFilter) params.set("intresse", activeFilter);
+    if (activeFilters.length > 0) params.set("intresse", activeFilters.join(","));
     params.set("cursor", nextCursor);
     router.push(`/?${params.toString()}`);
   }
 
   return (
     <div className="p-4 lg:p-6">
-      <h1 className="text-xl font-semibold text-[#2d2d2d] mb-4">Aktiviteter i Västerås</h1>
+      <h1 className="text-2xl font-bold text-heading mb-4">Aktiviteter i Västerås</h1>
 
-      {/* Interest tag filter bar (mobile only, sidebar handles desktop) */}
-      <div className="flex flex-wrap gap-2 mb-4 lg:hidden">
-        {userInterests.map((interest) => (
-          <Tag
-            key={interest.id}
-            label={interest.name}
-            active={activeFilter === interest.slug}
-            onClick={() => handleFilterClick(interest.slug)}
-          />
-        ))}
+      {/* Interest filter bar (mobile only, sidebar handles desktop) */}
+      <div className="mb-4 lg:hidden">
+        <button
+          type="button"
+          onClick={() => setFiltersExpanded(!filtersExpanded)}
+          className="flex items-center gap-2 text-sm font-medium text-heading py-2"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+          </svg>
+          Filtrera
+          {activeFilters.length > 0 && (
+            <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-white text-xs font-semibold">
+              {activeFilters.length}
+            </span>
+          )}
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={`transition-transform ${filtersExpanded ? "rotate-180" : ""}`}
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+        {filtersExpanded && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {userInterests.map((interest) => (
+              <Tag
+                key={interest.id}
+                label={interest.name}
+                active={activeFilters.includes(interest.slug)}
+                onClick={() => handleFilterClick(interest.slug)}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Search */}
-      <div className="mb-6 max-w-md relative">
+      {/* Search + Create */}
+      <div className="flex gap-3 items-center mb-6">
+      <div className="flex-1 max-w-md relative">
         <svg
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-[#999999] pointer-events-none"
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-dimmed pointer-events-none"
           width="18"
           height="18"
           viewBox="0 0 24 24"
@@ -149,14 +197,18 @@ export function ActivityFeed({
           className="pl-10"
         />
       </div>
+        <Link href="/activity/new">
+          <Button size="sm">Skapa aktivitet</Button>
+        </Link>
+      </div>
 
       {/* Activity grid */}
       {filteredActivities.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-[#666666] text-lg">
+          <p className="text-secondary text-lg">
             Inga aktiviteter hittades.
           </p>
-          <p className="text-[#999999] text-sm mt-1">
+          <p className="text-dimmed text-sm mt-1">
             Prova att ändra filter eller sök efter något annat.
           </p>
         </div>

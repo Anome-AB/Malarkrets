@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -24,7 +24,6 @@ interface TagItem {
   id: number;
   name: string;
   slug: string;
-  category: string | null;
 }
 
 interface BlockedUser {
@@ -59,6 +58,13 @@ export function ProfileClient({
   // Interest state
   const [selectedTags, setSelectedTags] = useState<number[]>(currentInterestIds);
   const [savingInterests, setSavingInterests] = useState(false);
+  const [tagSearch, setTagSearch] = useState("");
+
+  const filteredTags = useMemo(() => {
+    if (!tagSearch.trim()) return allTags;
+    const q = tagSearch.toLowerCase();
+    return allTags.filter((t) => t.name.toLowerCase().includes(q));
+  }, [allTags, tagSearch]);
 
   // Blocked users state
   const [blockedUsers, setBlockedUsers] = useState(initialBlocked);
@@ -133,17 +139,17 @@ export function ProfileClient({
           />
 
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-[#2d2d2d]">
+            <label className="text-sm font-medium text-heading">
               E-post
             </label>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-[#2d2d2d]">{profile.email}</span>
+              <span className="text-sm text-heading">{profile.email}</span>
               {profile.emailVerified ? (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-[#e8f0ec] text-[#3d6b5e] font-medium">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-primary-light text-primary font-medium">
                   Verifierad
                 </span>
               ) : (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-[#fef3cd] text-[#856404] font-medium">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-alert-bg text-alert-text font-medium">
                   Ej verifierad
                 </span>
               )}
@@ -160,7 +166,7 @@ export function ProfileClient({
           <div className="flex flex-col gap-1">
             <label
               htmlFor="gender"
-              className="text-sm font-medium text-[#2d2d2d]"
+              className="text-sm font-medium text-heading"
             >
               Kön
             </label>
@@ -168,7 +174,7 @@ export function ProfileClient({
               id="gender"
               value={gender}
               onChange={(e) => setGender(e.target.value)}
-              className="w-full px-3 py-2 min-h-[44px] rounded-[8px] border border-[#dddddd] text-[#2d2d2d] bg-white focus:outline-none focus:ring-1 focus:border-[#3d6b5e] focus:ring-[#3d6b5e]"
+              className="w-full px-3 py-2 min-h-[44px] rounded-[8px] border border-border text-heading bg-white focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary"
             >
               <option value="ej_angett">Ej angivet</option>
               <option value="kvinna">Kvinna</option>
@@ -183,19 +189,28 @@ export function ProfileClient({
             placeholder="T.ex. Västerås"
           />
 
-          <Button type="submit" loading={isPending}>
-            Spara ändringar
-          </Button>
+          <div className="flex justify-end">
+            <Button type="submit" loading={isPending}>
+              Spara ändringar
+            </Button>
+          </div>
         </form>
       </Card>
 
       {/* Interests */}
       <Card title="Mina intressen">
-        <p className="text-sm text-[#666666] mb-4">
+        <p className="text-sm text-secondary mb-3">
           Välj minst 3 intressen. Dessa styr vilka aktiviteter du ser.
         </p>
+        <input
+          type="search"
+          value={tagSearch}
+          onChange={(e) => setTagSearch(e.target.value)}
+          placeholder="Sök intressen..."
+          className="w-full px-3 py-2 mb-3 rounded-[8px] border border-border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary text-sm"
+        />
         <div className="flex flex-wrap gap-2 mb-4">
-          {allTags.map((tag) => (
+          {filteredTags.map((tag) => (
             <Tag
               key={tag.id}
               label={tag.name}
@@ -203,23 +218,30 @@ export function ProfileClient({
               onClick={() => toggleTag(tag.id)}
             />
           ))}
+          {filteredTags.length === 0 && tagSearch.trim() && (
+            <p className="text-xs text-dimmed">
+              Inga intressen matchar "{tagSearch}"
+            </p>
+          )}
         </div>
-        <p className="text-xs text-[#999999] mb-3">
+        <p className="text-xs text-dimmed mb-3">
           {selectedTags.length} av minst 3 valda
         </p>
-        <Button
-          onClick={handleSaveInterests}
-          loading={savingInterests}
-          disabled={selectedTags.length < 3}
-        >
-          Spara intressen
-        </Button>
+        <div className="flex justify-end">
+          <Button
+            onClick={handleSaveInterests}
+            loading={savingInterests}
+            disabled={selectedTags.length < 3}
+          >
+            Spara intressen
+          </Button>
+        </div>
       </Card>
 
       {/* Blocked users */}
       <Card title="Blockerade användare">
         {blockedUsers.length === 0 ? (
-          <p className="text-sm text-[#666666]">
+          <p className="text-sm text-secondary">
             Du har inte blockerat någon.
           </p>
         ) : (
@@ -227,9 +249,9 @@ export function ProfileClient({
             {blockedUsers.map((user) => (
               <li
                 key={user.id}
-                className="flex items-center justify-between bg-white border border-[#dddddd] rounded-lg p-3"
+                className="flex items-center justify-between bg-white border border-border rounded-lg p-3"
               >
-                <span className="text-sm text-[#2d2d2d]">
+                <span className="text-sm text-heading">
                   {user.displayName}
                 </span>
                 <Button
@@ -247,7 +269,7 @@ export function ProfileClient({
 
       {/* Danger zone */}
       <Card variant="danger" title="Farligt område">
-        <p className="text-sm text-[#666666] mb-6">
+        <p className="text-sm text-secondary mb-6">
           Att radera ditt konto går inte att ångra. All data tas bort permanent.
         </p>
         <Button

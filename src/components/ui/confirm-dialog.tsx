@@ -28,8 +28,8 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   return (
     <Modal open={open} onClose={onCancel} title={title}>
-      <p className="text-sm text-[#666666] mb-6">{message}</p>
-      <div className="flex gap-3 justify-end">
+      <p className="text-sm text-secondary mb-6">{message}</p>
+      <div className="grid grid-cols-2 gap-3">
         <Button
           variant="secondary"
           size="sm"

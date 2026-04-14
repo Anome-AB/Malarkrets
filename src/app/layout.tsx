@@ -21,7 +21,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400&display=swap" rel="stylesheet" />
       </head>
-      <body className="bg-[#f8f7f4] text-[#2d2d2d] min-h-screen">
+      <body className="bg-background text-heading min-h-screen">
         <ToastProvider>{children}</ToastProvider>
       </body>
     </html>

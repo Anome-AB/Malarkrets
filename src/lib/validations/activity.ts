@@ -4,6 +4,8 @@ export const createActivitySchema = z.object({
   title: z.string().min(3).max(200),
   description: z.string().min(10).max(5000),
   location: z.string().min(2).max(500),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
   startTime: z.string().min(1, "Starttid krävs"),
   endTime: z.string().optional(),
   maxParticipants: z.number().int().min(2).max(500).optional(),

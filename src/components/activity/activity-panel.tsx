@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CourageSection } from "@/components/activity/courage-section";
 import { CommentList } from "@/components/activity/comment-list";
 import { useToast } from "@/components/ui/toast";
@@ -15,6 +16,8 @@ interface ActivityDetail {
   title: string;
   description: string;
   location: string;
+  latitude: number | null;
+  longitude: number | null;
   startTime: Date | string;
   endTime: Date | string | null;
   maxParticipants: number | null;
@@ -53,6 +56,7 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
   const [detail, setDetail] = useState<ActivityDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [visible, setVisible] = useState(false);
 
   // Fetch data when panel opens
@@ -107,7 +111,7 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
     startTransition(async () => {
       const result = await joinActivity(activityId, status);
       if (result.success) {
-        toast(status === "attending" ? "Du är anmäld!" : "Du är markerad som intresserad!", "success");
+        toast(status === "attending" ? "Du kommer!" : "Du har anmält ditt intresse!", "success");
         if (result.blockedWarning) toast(result.blockedWarning, "warning");
         await refreshPanel();
       } else {
@@ -116,16 +120,30 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
     });
   }
 
-  async function handleLeave() {
+  async function doLeave() {
+    const wasInterested = detail?.participationStatus === "interested";
     startTransition(async () => {
       const result = await leaveActivity(activityId);
       if (result.success) {
-        toast("Du har avanmält dig", "success");
+        toast(
+          wasInterested
+            ? "Du är inte längre anmäld som intresserad"
+            : "Du har avanmält dig",
+          "success",
+        );
         await refreshPanel();
       } else {
         toast(result.error ?? "Något gick fel", "error");
       }
     });
+  }
+
+  function handleLeave() {
+    if (detail?.participationStatus === "attending") {
+      setShowLeaveConfirm(true);
+    } else {
+      doLeave();
+    }
   }
 
   async function handleCommentSubmit(_actId: string, content: string) {
@@ -171,10 +189,10 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
         className={`relative bg-white w-full max-w-[480px] h-full overflow-y-auto shadow-xl focus:outline-none transition-transform duration-250 ease-out ${visible ? "translate-x-0" : "translate-x-full"}`}
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-white border-b border-[#dddddd] px-6 py-4 flex items-center justify-between">
+        <div className="sticky top-0 z-10 bg-white border-b border-border px-6 py-4 flex items-center justify-between">
           <button
             onClick={onClose}
-            className="p-1 rounded-[8px] text-[#999999] hover:text-[#2d2d2d] hover:bg-[#e8f0ec] transition-colors"
+            className="p-1 rounded-[8px] text-dimmed hover:text-heading hover:bg-primary-light transition-colors"
             aria-label="Stäng"
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -183,7 +201,7 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
           </button>
           <Link
             href={`/activity/${activityId}`}
-            className="text-xs text-[#3d6b5e] hover:underline"
+            className="text-xs text-primary hover:underline"
           >
             Öppna fullständig sida
           </Link>
@@ -193,15 +211,15 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
         <div className="p-6 space-y-6">
           {loading && (
             <div className="space-y-4">
-              <div className="h-8 bg-[#e8e8e8] rounded animate-pulse" />
-              <div className="h-4 bg-[#e8e8e8] rounded animate-pulse w-2/3" />
-              <div className="h-4 bg-[#e8e8e8] rounded animate-pulse w-1/2" />
-              <div className="h-32 bg-[#e8e8e8] rounded animate-pulse mt-6" />
+              <div className="h-8 bg-border rounded animate-pulse" />
+              <div className="h-4 bg-border rounded animate-pulse w-2/3" />
+              <div className="h-4 bg-border rounded animate-pulse w-1/2" />
+              <div className="h-32 bg-border rounded animate-pulse mt-6" />
             </div>
           )}
 
           {!loading && !detail && (
-            <p className="text-[#666666] text-center py-8">Aktiviteten hittades inte.</p>
+            <p className="text-secondary text-center py-8">Aktiviteten hittades inte.</p>
           )}
 
           {!loading && detail && (
@@ -217,8 +235,8 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
 
               {/* Title + metadata */}
               <div>
-                <h2 className="text-2xl font-bold text-[#2d2d2d]">{detail.title}</h2>
-                <div className="mt-2 space-y-1 text-sm text-[#666666]">
+                <h2 className="text-2xl font-bold text-heading">{detail.title}</h2>
+                <div className="mt-2 space-y-1 text-sm text-secondary">
                   <p>
                     {new Date(detail.startTime).toLocaleDateString("sv-SE", {
                       weekday: "long",
@@ -240,16 +258,32 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
                   <p>{detail.location}</p>
                   <p>
                     Skapad av{" "}
-                    <span className="font-medium text-[#2d2d2d]">{detail.creatorName}</span>
+                    <span className="font-medium text-heading">{detail.creatorName}</span>
                   </p>
                 </div>
+
+                {detail.latitude && detail.longitude && (
+                  <div className="mt-3 rounded-[8px] overflow-hidden border border-border">
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${detail.latitude},${detail.longitude}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <img
+                        src={`https://maps.googleapis.com/maps/api/staticmap?center=${detail.latitude},${detail.longitude}&zoom=15&size=600x200&scale=2&markers=color:0x3d6b5e%7C${detail.latitude},${detail.longitude}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`}
+                        alt={`Karta: ${detail.location}`}
+                        className="w-full h-[150px] object-cover"
+                      />
+                    </a>
+                  </div>
+                )}
 
                 {detail.tags.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-3">
                     {detail.tags.map((tag) => (
                       <span
                         key={tag.id}
-                        className="text-xs px-3 py-1 rounded-full bg-[#e8f0ec] text-[#3d6b5e] font-medium"
+                        className="text-xs px-3 py-1 rounded-full bg-primary-light text-primary font-medium"
                       >
                         {tag.name}
                       </span>
@@ -261,39 +295,39 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
               {/* Participation */}
               <Card className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-[#666666]">
+                  <span className="text-sm text-secondary">
                     Deltagare:{" "}
-                    <span className="font-semibold text-[#2d2d2d]">
+                    <span className="font-semibold text-heading">
                       {detail.participantCount}
                       {detail.maxParticipants ? ` / ${detail.maxParticipants}` : ""}
                     </span>
                   </span>
                   {feedbackText && (
-                    <span className="text-sm text-[#3d6b5e] font-medium">{feedbackText}</span>
+                    <span className="text-sm text-primary font-medium">{feedbackText}</span>
                   )}
                 </div>
 
                 {detail.participationStatus === "attending" && (
                   <div className="flex items-center gap-3">
-                    <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#e8f0ec] text-[#3d6b5e] font-semibold text-sm">
-                      Du är anmäld &#10003;
+                    <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary-light text-primary font-semibold text-sm">
+                      Kommer &#10003;
                     </span>
                     <Button variant="secondary" size="sm" loading={isPending} onClick={handleLeave}>
-                      Avanmäl
+                      Kan inte komma
                     </Button>
                   </div>
                 )}
 
                 {detail.participationStatus === "interested" && (
                   <div className="flex items-center gap-3 flex-wrap">
-                    <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#fff3cd] text-[#856404] font-semibold text-sm">
+                    <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-alert-bg text-alert-text font-semibold text-sm">
                       Intresserad
                     </span>
                     <Button variant="primary" size="sm" loading={isPending} onClick={() => handleJoin("attending")}>
-                      Anmäl mig
+                      Kommer
                     </Button>
                     <Button variant="secondary" size="sm" loading={isPending} onClick={handleLeave}>
-                      Ta bort
+                      Ångra
                     </Button>
                   </div>
                 )}
@@ -301,7 +335,7 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
                 {!detail.isParticipant && !detail.isCreator && !detail.cancelledAt && (
                   <div className="space-y-2">
                     <Button variant="primary" loading={isPending} onClick={() => handleJoin("attending")} className="w-full">
-                      Jag vill vara med!
+                      Kommer
                     </Button>
                     <Button variant="secondary" loading={isPending} onClick={() => handleJoin("interested")} className="w-full">
                       Intresserad
@@ -312,7 +346,7 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
                 {detail.isCreator && (
                   <Link
                     href={`/activity/${activityId}/edit`}
-                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-[#3d6b5e] border border-[#3d6b5e] rounded-[8px] hover:bg-[#e8f0ec] transition-colors"
+                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-primary border border-primary rounded-[8px] hover:bg-primary-light transition-colors"
                   >
                     Redigera
                   </Link>
@@ -320,7 +354,7 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
               </Card>
 
               {/* Description */}
-              <p className="text-[#2d2d2d] whitespace-pre-wrap leading-relaxed">
+              <p className="text-heading whitespace-pre-wrap leading-relaxed">
                 {detail.description}
               </p>
 
@@ -343,6 +377,21 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={showLeaveConfirm}
+        onCancel={() => setShowLeaveConfirm(false)}
+        onConfirm={() => {
+          setShowLeaveConfirm(false);
+          doLeave();
+        }}
+        title="Kan du inte komma?"
+        message="Är du säker på att du vill avanmäla dig från aktiviteten?"
+        confirmLabel="Ja"
+        cancelLabel="Nej"
+        variant="danger"
+        loading={isPending}
+      />
     </div>
   );
 }

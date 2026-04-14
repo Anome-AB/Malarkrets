@@ -56,7 +56,7 @@ export function BottomNav({ unreadCount = 0 }: BottomNavProps) {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 h-[56px] bg-white border-t border-[#dddddd] flex justify-around items-center block lg:hidden z-50">
+    <nav className="fixed bottom-0 left-0 right-0 h-[56px] bg-white border-t border-border flex justify-around items-center block lg:hidden z-50">
       {tabs.map((tab) => {
         const isActive = pathname === tab.href;
         return (
@@ -64,12 +64,12 @@ export function BottomNav({ unreadCount = 0 }: BottomNavProps) {
             key={tab.href}
             href={tab.href}
             className={`flex flex-col items-center gap-0.5 text-[10px] relative ${
-              isActive ? "text-[#3d6b5e]" : "text-[#999999]"
+              isActive ? "text-primary" : "text-dimmed"
             }`}
           >
             {tab.icon}
             {tab.badge && unreadCount > 0 && (
-              <span className="absolute -top-1 right-0 translate-x-1/2 bg-[#e07a3a] text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+              <span className="absolute -top-1 right-0 translate-x-1/2 bg-warning text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
                 {unreadCount > 99 ? "99+" : unreadCount}
               </span>
             )}

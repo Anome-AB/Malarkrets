@@ -8,7 +8,7 @@ import {
   activities,
 } from "@/db/schema";
 import { createCommentSchema } from "@/lib/validations/comment";
-import { eq, and, count, sql, or } from "drizzle-orm";
+import { eq, and, count, gte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 export async function createComment(formData: FormData) {
@@ -27,7 +27,7 @@ export async function createComment(formData: FormData) {
 
     const data = parsed.data;
 
-    // Verify user is participant (interested or attending)
+    // Verify user is participant (creator is also automatically a participant)
     const participation = await db.query.activityParticipants.findFirst({
       where: and(
         eq(activityParticipants.activityId, data.activityId),
@@ -51,7 +51,7 @@ export async function createComment(formData: FormData) {
       .where(
         and(
           eq(activityComments.userId, user.id!),
-          sql`${activityComments.createdAt} >= ${today}`,
+          gte(activityComments.createdAt, today),
         ),
       );
 
@@ -73,7 +73,8 @@ export async function createComment(formData: FormData) {
     return { success: true };
   } catch (error) {
     console.error("createComment error:", error);
-    return { success: false, error: "Något gick fel vid skapande av kommentar" };
+    const msg = error instanceof Error ? error.message : "Okänt fel";
+    return { success: false, error: `Något gick fel: ${msg}` };
   }
 }
 

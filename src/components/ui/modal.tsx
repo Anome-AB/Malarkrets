@@ -84,7 +84,7 @@ function Modal({ open, onClose, title, children }: ModalProps) {
         <div className="flex items-center justify-between mb-4">
           <h2
             id={titleId}
-            className="text-lg font-semibold text-[#2d2d2d]"
+            className="text-lg font-semibold text-heading"
           >
             {title}
           </h2>
@@ -92,10 +92,10 @@ function Modal({ open, onClose, title, children }: ModalProps) {
             onClick={onClose}
             className="
               p-1 rounded-[8px]
-              text-[#999999] hover:text-[#2d2d2d]
-              hover:bg-[#e8f0ec]
+              text-dimmed hover:text-heading
+              hover:bg-primary-light
               transition-colors duration-150
-              focus:outline-none focus:ring-2 focus:ring-[#3d6b5e]
+              focus:outline-none focus:ring-2 focus:ring-primary
             "
             aria-label="Close"
           >

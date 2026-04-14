@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 
+import { signOut } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users } from "@/db/schema";
 import { registerSchema } from "@/lib/validations/auth";
@@ -41,6 +42,23 @@ export async function register(formData: FormData) {
   });
 
   return { success: true };
+}
+
+export async function logOut() {
+  await signOut({ redirectTo: "/" });
+}
+
+export async function checkBanStatus(email: string) {
+  const user = await db.query.users.findFirst({
+    where: eq(users.email, email),
+    columns: { isBanned: true, banReason: true },
+  });
+
+  if (!user || !user.isBanned) {
+    return { banned: false };
+  }
+
+  return { banned: true, reason: user.banReason ?? undefined };
 }
 
 export async function verifyEmail(token: string) {

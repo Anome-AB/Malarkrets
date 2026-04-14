@@ -57,11 +57,11 @@ function ParticipantDots({
         {Array.from({ length: dots }).map((_, i) => (
           <div
             key={i}
-            className="w-2.5 h-2.5 rounded-full bg-[#3d6b5e] border border-white"
+            className="w-2.5 h-2.5 rounded-full bg-primary border border-white"
           />
         ))}
       </div>
-      <span className="text-xs text-[#666666]">
+      <span className="text-xs text-secondary">
         {count}
         {max != null ? ` / ${max}` : ""} deltagare
       </span>
@@ -83,7 +83,7 @@ export function ActivityCard({ activity, isCreator = false, userStatus, onClick 
           onClick?.(activity.id);
         }
       }}
-      className="bg-white border border-[#dddddd] rounded-[10px] p-4 hover:shadow-md hover:border-[#3d6b5e] transition cursor-pointer"
+      className="bg-white border border-border rounded-[10px] p-4 hover:shadow-md hover:border-primary transition cursor-pointer"
     >
       {activity.imageThumbUrl && (
         <img
@@ -94,30 +94,30 @@ export function ActivityCard({ activity, isCreator = false, userStatus, onClick 
       )}
 
       {(isCreator || userStatus) && (
-        <div className="flex gap-1.5 mb-1">
+        <div className="flex justify-end gap-1.5 mb-1">
           {isCreator && (
-            <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-[#d4edda] text-[#155724]">
-              Du arrangerar
+            <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-success-bg text-success-text">
+              Arrangerar
             </span>
           )}
           {userStatus === "attending" && !isCreator && (
-            <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-[#d4edda] text-[#155724]">
-              Deltar
+            <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-success-bg text-success-text">
+              Kommer
             </span>
           )}
           {userStatus === "interested" && !isCreator && (
-            <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-[#fff3cd] text-[#856404]">
+            <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-alert-bg text-alert-text">
               Intresserad
             </span>
           )}
         </div>
       )}
 
-      <h3 className="text-base font-semibold text-[#2d2d2d]">
+      <h3 className="text-base font-semibold text-heading">
         {activity.title}
       </h3>
 
-      <p className="text-sm text-[#666666] mt-1">
+      <p className="text-sm text-secondary mt-1">
         {formatDate(activity.startTime)} &middot; {activity.location}
       </p>
 
@@ -126,7 +126,7 @@ export function ActivityCard({ activity, isCreator = false, userStatus, onClick 
           {activity.tags.map((tag) => (
             <span
               key={tag.id}
-              className="text-xs px-2 py-0.5 rounded-full bg-[#e8f0ec] text-[#3d6b5e]"
+              className="text-xs px-2 py-0.5 rounded-full bg-primary-light text-primary"
             >
               {tag.name}
             </span>
@@ -134,7 +134,7 @@ export function ActivityCard({ activity, isCreator = false, userStatus, onClick 
         </div>
       )}
 
-      <div className="mt-3 pt-3 border-t border-[#dddddd]">
+      <div className="mt-3 pt-3 border-t border-border">
         <ParticipantDots
           count={activity.participantCount}
           max={activity.maxParticipants}

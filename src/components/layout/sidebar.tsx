@@ -1,7 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { logOut } from "@/actions/auth";
 
 interface Interest {
   id: number;
@@ -11,7 +14,8 @@ interface Interest {
 
 interface SidebarProps {
   interests: Interest[];
-  activeFilter: string | null;
+  activeFilters?: string[];
+  showAll?: boolean;
   isAdmin?: boolean;
 }
 
@@ -60,11 +64,13 @@ const navItems = [
   },
 ];
 
-export function Sidebar({ interests, activeFilter, isAdmin = false }: SidebarProps) {
+export function Sidebar({ interests, activeFilters = [], showAll = false, isAdmin = false }: SidebarProps) {
   const pathname = usePathname();
+  const [showLogout, setShowLogout] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   return (
-    <aside className="w-[200px] bg-white border-r border-[#dddddd] hidden lg:flex flex-col h-full overflow-y-auto">
+    <aside className="w-[200px] bg-white border-r border-border hidden lg:flex flex-col h-full overflow-y-auto">
       <nav className="py-4">
         <ul className="space-y-1">
           {navItems.map((item) => {
@@ -75,8 +81,8 @@ export function Sidebar({ interests, activeFilter, isAdmin = false }: SidebarPro
                   href={item.href}
                   className={`flex items-center gap-3 px-4 py-3 text-sm transition-colors ${
                     isActive
-                      ? "bg-[#e8f0ec] text-[#3d6b5e] font-semibold"
-                      : "text-[#2d2d2d] hover:bg-[#f8f7f4]"
+                      ? "bg-primary-light text-primary font-semibold"
+                      : "text-heading hover:bg-background"
                   }`}
                 >
                   {item.icon}
@@ -91,8 +97,8 @@ export function Sidebar({ interests, activeFilter, isAdmin = false }: SidebarPro
                 href="/admin"
                 className={`flex items-center gap-3 px-4 py-3 text-sm transition-colors ${
                   pathname === "/admin"
-                    ? "bg-[#e8f0ec] text-[#3d6b5e] font-semibold"
-                    : "text-[#2d2d2d] hover:bg-[#f8f7f4]"
+                    ? "bg-primary-light text-primary font-semibold"
+                    : "text-heading hover:bg-background"
                 }`}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -107,51 +113,67 @@ export function Sidebar({ interests, activeFilter, isAdmin = false }: SidebarPro
       </nav>
 
       {interests.length > 0 && (
-        <div className="px-4 py-3 border-t border-[#dddddd]">
-          <h3 className="text-xs font-semibold text-[#666666] uppercase tracking-wider mb-2">
+        <div className="px-4 py-3 border-t border-border">
+          <h3 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2">
             Intressen
           </h3>
-          <ul className="space-y-1">
-            <li>
+          <div className="space-y-1 mb-3">
+            {isAdmin && (
               <Link
-                href="/"
-                className={`flex items-center min-h-[44px] px-3 py-2 text-xs rounded-md transition-colors ${
-                  activeFilter === null
-                    ? "bg-[#e8f0ec] text-[#3d6b5e] font-bold"
-                    : "text-[#666666] hover:bg-[#f8f7f4] hover:text-[#2d2d2d]"
+                href="/?alla=1"
+                className={`block px-3 py-1.5 text-xs rounded-md transition-colors ${
+                  showAll
+                    ? "bg-primary-light text-primary font-bold"
+                    : "text-secondary hover:bg-background hover:text-heading"
                 }`}
               >
-                Alla
+                Visa alla
               </Link>
-            </li>
+            )}
+            <Link
+              href="/"
+              className={`block px-3 py-1.5 text-xs rounded-md transition-colors ${
+                activeFilters.length === 0 && !showAll
+                  ? "bg-primary-light text-primary font-bold"
+                  : "text-secondary hover:bg-background hover:text-heading"
+              }`}
+            >
+              Mina intressen
+            </Link>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
             {interests.map((interest) => {
-              const isActive = activeFilter === interest.slug;
+              const isActive = activeFilters.includes(interest.slug);
+              // Toggle: add or remove this slug from the filter list
+              const nextFilters = isActive
+                ? activeFilters.filter((s) => s !== interest.slug)
+                : [...activeFilters, interest.slug];
+              const href = nextFilters.length > 0
+                ? `/?intresse=${nextFilters.join(",")}`
+                : "/";
               return (
-                <li key={interest.id}>
-                  <Link
-                    href={`/?intresse=${interest.slug}`}
-                    className={`flex items-center min-h-[44px] px-3 py-2 text-xs rounded-md transition-colors ${
-                      isActive
-                        ? "bg-[#e8f0ec] text-[#3d6b5e] font-semibold"
-                        : "text-[#666666] hover:bg-[#f8f7f4] hover:text-[#2d2d2d]"
-                    }`}
-                  >
-                    {interest.name}
-                  </Link>
-                </li>
+                <Link
+                  key={interest.id}
+                  href={href}
+                  className={`inline-block px-2 py-1 text-[11px] rounded-full transition-colors ${
+                    isActive
+                      ? "bg-primary text-white font-medium"
+                      : "bg-muted text-secondary hover:bg-primary-light hover:text-primary"
+                  }`}
+                >
+                  {interest.name}
+                </Link>
               );
             })}
-          </ul>
+          </div>
         </div>
       )}
 
       {/* Logga ut */}
-      <div className="mt-auto px-4 py-2 border-t border-[#dddddd]">
+      <div className="mt-auto px-4 py-2 border-t border-border">
         <button
-          onClick={() => {
-            window.location.href = "/api/auth/signout";
-          }}
-          className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#666666] hover:bg-[#f8f7f4] hover:text-[#dc3545] transition-colors rounded-md w-full"
+          onClick={() => setShowLogout(true)}
+          className="flex items-center gap-3 px-4 py-2.5 text-sm text-secondary hover:bg-background hover:text-error transition-colors rounded-md w-full"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -161,6 +183,21 @@ export function Sidebar({ interests, activeFilter, isAdmin = false }: SidebarPro
           Logga ut
         </button>
       </div>
+
+      <ConfirmDialog
+        open={showLogout}
+        onCancel={() => setShowLogout(false)}
+        onConfirm={async () => {
+          setLoggingOut(true);
+          await logOut();
+        }}
+        title="Logga ut"
+        message="Är du säker på att du vill logga ut?"
+        confirmLabel="Logga ut"
+        cancelLabel="Avbryt"
+        variant="danger"
+        loading={loggingOut}
+      />
     </aside>
   );
 }

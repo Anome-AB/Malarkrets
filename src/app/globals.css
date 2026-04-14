@@ -1,40 +1,53 @@
 @import "tailwindcss";
 
-:root {
-  --font-display: "Satoshi", sans-serif;
-  --font-sans: "Instrument Sans", sans-serif;
-  --font-mono: "Geist Mono", monospace;
-
+@theme inline {
+  /* Primary */
   --color-primary: #3d6b5e;
   --color-primary-light: #e8f0ec;
   --color-primary-hover: #345c51;
-  --color-bg: #f8f7f4;
+
+  /* Surfaces */
+  --color-background: #f8f7f4;
   --color-surface: #ffffff;
-  --color-text: #2d2d2d;
-  --color-text-secondary: #666666;
-  --color-text-dimmed: #999999;
-  --color-accent: #c4956a;
-  --color-accent-light: #f5ede4;
-  --color-warning: #e07a3a;
+  --color-muted: #f0f0ee;
+
+  /* Text */
+  --color-heading: #2d2d2d;
+  --color-body: #2d2d2d;
+  --color-secondary: #666666;
+  --color-dimmed: #999999;
+
+  /* Borders */
+  --color-border: #dddddd;
+  --color-border-light: #eeeeee;
+
+  /* Semantic */
   --color-error: #dc3545;
+  --color-error-hover: #c82333;
+  --color-error-dark: #a71d2a;
+  --color-warning: #e07a3a;
   --color-success: #3d6b5e;
   --color-info: #4a7c94;
   --color-info-light: #e6eff3;
-  --color-border: #dddddd;
+  --color-accent: #c4956a;
+  --color-accent-light: #f5ede4;
+
+  /* Alerts */
+  --color-alert-bg: #fff3cd;
+  --color-alert-text: #856404;
+  --color-success-bg: #d4edda;
+  --color-success-text: #155724;
   --color-courage-bg: #faf8f2;
   --color-courage-border: #e5dcc8;
-}
 
-@theme inline {
-  --color-background: var(--color-bg);
-  --color-foreground: var(--color-text);
+  /* Fonts */
   --font-sans: "Instrument Sans", sans-serif;
   --font-mono: "Geist Mono", monospace;
 }
 
 body {
-  background: var(--color-bg);
-  color: var(--color-text);
+  background: var(--color-background);
+  color: var(--color-heading);
   font-family: "Instrument Sans", sans-serif;
 }
 

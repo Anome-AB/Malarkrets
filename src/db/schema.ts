@@ -10,6 +10,7 @@ import {
   serial,
   varchar,
   jsonb,
+  doublePrecision,
   primaryKey,
   uniqueIndex,
   index,
@@ -78,6 +79,10 @@ export const users = pgTable("users", {
   avatarUrl: text("avatar_url"),
   location: text(),
   isAdmin: boolean("is_admin").default(false).notNull(),
+  isBanned: boolean("is_banned").default(false).notNull(),
+  bannedAt: timestamp("banned_at"),
+  banReason: text("ban_reason"),
+  bannedBy: uuid("banned_by"),
   municipalityId: varchar("municipality_id", { length: 100 }).default(
     "vasteras",
   ),
@@ -89,7 +94,6 @@ export const interestTags = pgTable("interest_tags", {
   id: serial().primaryKey(),
   name: text().notNull(),
   slug: text().notNull().unique(),
-  category: text(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -133,6 +137,8 @@ export const activities = pgTable(
     title: text().notNull(),
     description: text().notNull(),
     location: text().notNull(),
+    latitude: doublePrecision(),
+    longitude: doublePrecision(),
     startTime: timestamp("start_time").notNull(),
     endTime: timestamp("end_time"),
     imageThumbUrl: text("image_thumb_url"),

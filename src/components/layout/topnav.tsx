@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { logOut } from "@/actions/auth";
 
 interface TopNavProps {
   unreadCount: number;
@@ -10,6 +12,8 @@ interface TopNavProps {
 
 export function TopNav({ unreadCount, userInitials }: TopNavProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showLogout, setShowLogout] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close menu on click outside
@@ -25,19 +29,12 @@ export function TopNav({ unreadCount, userInitials }: TopNavProps) {
   }, [menuOpen]);
 
   return (
-    <nav className="bg-[#3d6b5e] text-white h-[60px] flex justify-between items-center px-6">
+    <nav className="bg-primary text-white h-[60px] flex justify-between items-center px-6">
       <Link href="/" className="text-xl font-semibold">
         Mälarkrets
       </Link>
 
       <div className="flex items-center gap-4">
-        <Link
-          href="/activity/new"
-          className="text-sm hover:underline hidden sm:inline py-2 px-3"
-        >
-          Skapa aktivitet
-        </Link>
-
         <Link href="#" className="relative w-11 h-11 flex items-center justify-center">
           <svg
             width="24"
@@ -53,7 +50,7 @@ export function TopNav({ unreadCount, userInitials }: TopNavProps) {
             <path d="M13.73 21a2 2 0 0 1-3.46 0" />
           </svg>
           {unreadCount > 0 && (
-            <span className="absolute top-0 right-0 bg-[#e07a3a] text-white text-[10px] font-bold rounded-full w-[18px] h-[18px] flex items-center justify-center">
+            <span className="absolute top-0 right-0 bg-warning text-white text-[10px] font-bold rounded-full w-[18px] h-[18px] flex items-center justify-center">
               {unreadCount > 99 ? "99+" : unreadCount}
             </span>
           )}
@@ -71,21 +68,21 @@ export function TopNav({ unreadCount, userInitials }: TopNavProps) {
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-[#dddddd] py-1 z-50">
+            <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-border py-1 z-50">
               <Link
                 href="/profile"
                 onClick={() => setMenuOpen(false)}
-                className="block px-4 py-2.5 text-sm text-[#2d2d2d] hover:bg-[#f8f7f4] transition-colors"
+                className="block px-4 py-2.5 text-sm text-heading hover:bg-background transition-colors"
               >
                 Min profil
               </Link>
-              <div className="border-t border-[#eeeeee] my-1" />
+              <div className="border-t border-border-light my-1" />
               <button
                 onClick={() => {
                   setMenuOpen(false);
-                  window.location.href = "/api/auth/signout";
+                  setShowLogout(true);
                 }}
-                className="block w-full text-left px-4 py-2.5 text-sm text-[#dc3545] hover:bg-[#f8f7f4] transition-colors"
+                className="block w-full text-left px-4 py-2.5 text-sm text-error hover:bg-background transition-colors"
               >
                 Logga ut
               </button>
@@ -93,6 +90,21 @@ export function TopNav({ unreadCount, userInitials }: TopNavProps) {
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={showLogout}
+        onCancel={() => setShowLogout(false)}
+        onConfirm={async () => {
+          setLoggingOut(true);
+          await logOut();
+        }}
+        title="Logga ut"
+        message="Är du säker på att du vill logga ut?"
+        confirmLabel="Logga ut"
+        cancelLabel="Avbryt"
+        variant="danger"
+        loading={loggingOut}
+      />
     </nav>
   );
 }

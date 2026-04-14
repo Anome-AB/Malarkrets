@@ -22,6 +22,27 @@
       "when": 1775030392892,
       "tag": "0002_fantastic_valeria_richards",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1776066989735,
+      "tag": "0003_gray_bloodstrike",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1781539200000,
+      "tag": "0004_hierarchical_interest_tags",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1781712000000,
+      "tag": "0005_flat_tags_and_geo",
+      "breakpoints": true
     }
   ]
 }

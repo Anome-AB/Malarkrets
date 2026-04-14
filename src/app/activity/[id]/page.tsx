@@ -60,6 +60,15 @@ async function getActivity(id: string) {
       eq(activityParticipants.status, "attending"),
     ));
 
+  // Get interested count
+  const [{ count: interestedCount }] = await db
+    .select({ count: count() })
+    .from(activityParticipants)
+    .where(and(
+      eq(activityParticipants.activityId, id),
+      eq(activityParticipants.status, "interested"),
+    ));
+
   // Get comments with author info
   const comments = await db
     .select({
@@ -96,6 +105,7 @@ async function getActivity(id: string) {
     creator,
     tags,
     participantCount,
+    interestedCount,
     comments: comments.map((c) => ({
       id: c.id,
       userId: c.userId,
@@ -179,10 +189,10 @@ export default async function ActivityDetailPage({
     : null;
 
   const pageContent = (
-    <div className={currentUserId ? "" : "min-h-screen bg-[#f8f7f4]"}>
+    <div className={currentUserId ? "" : "min-h-screen bg-background"}>
       {/* Header - only show for unauthenticated (AppShell provides topnav) */}
       {!currentUserId && (
-        <header className="bg-[#3d6b5e] text-white">
+        <header className="bg-primary text-white">
           <div className="max-w-3xl mx-auto px-6 py-4 flex items-center gap-4">
             <Link
               href="/"
@@ -209,7 +219,7 @@ export default async function ActivityDetailPage({
         </header>
       )}
 
-      <div className="px-6 py-8">
+      <div className="px-6 py-8 pb-[140px] lg:pb-8">
         {/* Cancelled banner */}
         {activity.cancelledAt && (
           <div className="bg-red-50 border border-red-200 rounded-[10px] p-4 mb-6">
@@ -228,7 +238,7 @@ export default async function ActivityDetailPage({
         {currentUserId && (
           <Link
             href="/"
-            className="inline-flex items-center gap-1 text-sm font-medium text-[#3d6b5e] hover:underline mb-6"
+            className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline mb-6"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 18 9 12 15 6" />
@@ -237,9 +247,7 @@ export default async function ActivityDetailPage({
           </Link>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left column: main content, spans 2 cols on desktop */}
-          <div className="lg:col-span-2 space-y-6">
+        <div className="max-w-5xl space-y-6">
             {/* Image */}
             {activity.imageMediumUrl && (
               <img
@@ -251,59 +259,164 @@ export default async function ActivityDetailPage({
 
             {/* Card: Activity info */}
             <Card>
-              <h2 className="text-2xl font-bold text-[#2d2d2d]">
-                {activity.title}
-              </h2>
-
-              <div className="mt-3 space-y-1 text-sm text-[#666666]">
-                <p>
-                  {new Date(activity.startTime).toLocaleDateString("sv-SE", {
-                    weekday: "long",
-                    day: "numeric",
-                    month: "long",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                  {activity.endTime && (
-                    <>
-                      {" "}
-                      &ndash;{" "}
-                      {new Date(activity.endTime).toLocaleTimeString("sv-SE", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </>
+              {(isCreator || (currentUserId && participationStatus)) && (
+                <div className="flex justify-end mb-2">
+                  {isCreator && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-success-bg text-success-text font-semibold text-xs">
+                      Du arrangerar
+                    </span>
                   )}
-                </p>
-                <p>{activity.location}</p>
-                {activity.creator && (
-                  <p>
-                    Skapad av{" "}
-                    <span className="font-medium text-[#2d2d2d]">
-                      {activity.creator.displayName ?? "Anonym"}
+                  {!isCreator && participationStatus === "attending" && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-light text-primary font-semibold text-xs">
+                      Kommer &#10003;
                     </span>
-                  </p>
-                )}
-              </div>
-
-              {/* Tags */}
-              {activity.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {activity.tags.map((tag) => (
-                    <span
-                      key={tag.id}
-                      className="text-xs px-3 py-1 rounded-full bg-[#e8f0ec] text-[#3d6b5e] font-medium"
-                    >
-                      {tag.name}
+                  )}
+                  {!isCreator && participationStatus === "interested" && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-alert-bg text-alert-text font-semibold text-xs">
+                      Intresserad
                     </span>
-                  ))}
+                  )}
                 </div>
               )}
 
-              {/* Description */}
-              <p className="mt-4 text-[#2d2d2d] whitespace-pre-wrap leading-relaxed">
+              {/* Top row: metadata + map side by side */}
+              <div className="flex flex-col sm:flex-row gap-6">
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-2xl font-bold text-heading">
+                    {activity.title}
+                  </h2>
+
+                  <div className="mt-3 space-y-1 text-sm text-secondary">
+                    <p>
+                      {new Date(activity.startTime).toLocaleDateString("sv-SE", {
+                        weekday: "long",
+                        day: "numeric",
+                        month: "long",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                      {activity.endTime && (
+                        <>
+                          {" "}
+                          &ndash;{" "}
+                          {new Date(activity.endTime).toLocaleTimeString("sv-SE", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </>
+                      )}
+                    </p>
+                    <p>{activity.location}</p>
+                    {activity.creator && (
+                      <p>
+                        Skapad av{" "}
+                        <span className="font-medium text-heading">
+                          {activity.creator.displayName ?? "Anonym"}
+                        </span>
+                      </p>
+                    )}
+                  </div>
+
+                  {activity.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      {activity.tags.map((tag) => (
+                        <span
+                          key={tag.id}
+                          className="text-xs px-3 py-1 rounded-full bg-primary-light text-primary font-medium"
+                        >
+                          {tag.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {activity.latitude && activity.longitude && (
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${activity.latitude},${activity.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-shrink-0 w-full sm:w-64 h-fit rounded-[8px] overflow-hidden border border-border hover:shadow-md transition-shadow"
+                  >
+                    <img
+                      src={`https://maps.googleapis.com/maps/api/staticmap?center=${activity.latitude},${activity.longitude}&zoom=15&size=400x300&scale=2&markers=color:0x3d6b5e%7C${activity.latitude},${activity.longitude}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`}
+                      alt={`Karta: ${activity.location}`}
+                      className="w-full h-[180px] object-cover block"
+                    />
+                    <div className="px-3 py-2 bg-white text-xs text-primary font-medium flex items-center gap-1">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                        <polyline points="15 3 21 3 21 9" />
+                        <line x1="10" y1="14" x2="21" y2="3" />
+                      </svg>
+                      Öppna i Google Maps
+                    </div>
+                  </a>
+                )}
+              </div>
+
+              {/* Description — full width below */}
+              <p className="mt-6 text-heading whitespace-pre-wrap leading-relaxed">
                 {activity.description}
               </p>
+
+              {/* Action bar: participation + actions */}
+              <div className="mt-6 pt-4 border-t border-border-light flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2 text-sm">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-secondary">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                  <span className="text-secondary">Deltagare:</span>
+                  <span className="font-semibold text-heading">
+                    {activity.participantCount}
+                    {activity.maxParticipants ? ` / ${activity.maxParticipants}` : ""}
+                  </span>
+                </div>
+
+                {activity.interestedCount > 0 && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-secondary">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                    <span className="text-secondary">Intresserade:</span>
+                    <span className="font-semibold text-heading">{activity.interestedCount}</span>
+                  </div>
+                )}
+
+                {feedbackText && (
+                  <div className="text-sm text-primary font-medium">
+                    {feedbackText}
+                  </div>
+                )}
+
+                <div className="flex-1" />
+
+                {!currentUserId && (
+                  <Link
+                    href="/auth/login"
+                    className="text-sm text-primary font-semibold hover:underline"
+                  >
+                    Logga in för att delta
+                  </Link>
+                )}
+                {currentUserId && isCreator && (
+                  <Link
+                    href={`/activity/${id}/edit`}
+                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-primary bg-white border border-primary rounded-[8px] hover:bg-primary-light transition-colors"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                    Redigera
+                  </Link>
+                )}
+              </div>
             </Card>
 
             {/* Card: Courage section */}
@@ -326,78 +439,6 @@ export default async function ActivityDetailPage({
                 isCancelled={!!activity.cancelledAt}
               />
             </Card>
-          </div>
-
-          {/* Right column: sidebar */}
-          <div className="space-y-6 lg:sticky lg:top-24 lg:self-start">
-            {/* Card: Participation status + actions */}
-            <Card title="Delta" className="space-y-4">
-              {/* Participation status */}
-              {!currentUserId && (
-                <div>
-                  <Link
-                    href="/auth/login"
-                    className="text-[#3d6b5e] font-semibold hover:underline"
-                  >
-                    Logga in för att delta
-                  </Link>
-                </div>
-              )}
-              {currentUserId && participationStatus === "attending" && (
-                <div className="flex items-center gap-3">
-                  <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#e8f0ec] text-[#3d6b5e] font-semibold text-sm">
-                    Du är anmäld &#10003;
-                  </span>
-                </div>
-              )}
-              {currentUserId && participationStatus === "interested" && (
-                <div className="flex items-center gap-3">
-                  <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#fff3cd] text-[#856404] font-semibold text-sm">
-                    Intresserad
-                  </span>
-                </div>
-              )}
-              {currentUserId && isCreator && !isParticipant && (
-                <div>
-                  <span className="text-sm text-[#666666]">
-                    Du skapade den här aktiviteten
-                  </span>
-                </div>
-              )}
-              {currentUserId && isCreator && (
-                <Link
-                  href={`/activity/${id}/edit`}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-[#3d6b5e] border border-[#3d6b5e] rounded-lg hover:bg-[#e8f0ec] transition-colors"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                  </svg>
-                  Redigera
-                </Link>
-              )}
-
-              {/* Participant count */}
-              <div className="text-sm">
-                <span className="text-[#666666]">Deltagare: </span>
-                <span className="font-semibold text-[#2d2d2d]">
-                  {activity.participantCount}
-                  {activity.maxParticipants
-                    ? ` / ${activity.maxParticipants}`
-                    : ""}
-                </span>
-              </div>
-
-              {/* Feedback stats */}
-              {feedbackText && (
-                <div className="text-sm">
-                  <span className="text-[#3d6b5e] font-medium">
-                    {feedbackText}
-                  </span>
-                </div>
-              )}
-            </Card>
-          </div>
         </div>
       </div>
     </div>
@@ -407,7 +448,6 @@ export default async function ActivityDetailPage({
     return (
       <AppShell
         interests={shellData.interests}
-        activeFilter={null}
         unreadCount={shellData.unreadCount}
         userInitials={shellData.initials}
         isAdmin={shellData.isAdmin}

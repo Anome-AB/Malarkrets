@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { ActivityCard } from "@/components/activity/activity-card";
 
 interface WhatToExpect {
@@ -55,25 +56,22 @@ export function MyActivitiesClient({
 
   return (
     <div className="px-6 py-8">
-      <h1 className="text-2xl font-bold text-[#2d2d2d] mb-8">
+      <h1 className="text-2xl font-bold text-heading mb-8">
         Mina aktiviteter
       </h1>
 
       {/* Section 1: Activities I created */}
       <section className="mb-10">
-        <h2 className="text-lg font-semibold text-[#2d2d2d] mb-4">
+        <h2 className="text-lg font-bold text-heading mb-4">
           Aktiviteter jag arrangerar
         </h2>
         {createdActivities.length === 0 ? (
           <Card className="text-center">
-            <p className="text-[#666666] mb-3">
+            <p className="text-secondary mb-3">
               Du har inte skapat några aktiviteter ännu.
             </p>
-            <Link
-              href="/activity/new"
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-[#3d6b5e] rounded-lg hover:bg-[#345c51] transition-colors"
-            >
-              Skapa aktivitet
+            <Link href="/activity/new">
+              <Button>Skapa aktivitet</Button>
             </Link>
           </Card>
         ) : (
@@ -92,7 +90,7 @@ export function MyActivitiesClient({
                 ) : (
                   <Link
                     href={`/activity/${activity.id}/edit`}
-                    className="absolute top-3 right-3 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#3d6b5e] bg-white border border-[#3d6b5e] rounded-lg hover:bg-[#e8f0ec] transition-colors z-10"
+                    className="absolute top-3 right-3 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-primary bg-white border border-primary rounded-lg hover:bg-primary-light transition-colors z-10"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <svg
@@ -119,19 +117,16 @@ export function MyActivitiesClient({
 
       {/* Section 2: Activities I'm participating in */}
       <section>
-        <h2 className="text-lg font-semibold text-[#2d2d2d] mb-4">
+        <h2 className="text-lg font-bold text-heading mb-4">
           Aktiviteter jag är anmäld till
         </h2>
         {participatingActivities.length === 0 ? (
           <Card className="text-center">
-            <p className="text-[#666666] mb-3">
+            <p className="text-secondary mb-3">
               Du har inte anmält dig till några aktiviteter.
             </p>
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-[#3d6b5e] rounded-lg hover:bg-[#345c51] transition-colors"
-            >
-              Utforska aktiviteter
+            <Link href="/">
+              <Button>Utforska aktiviteter</Button>
             </Link>
           </Card>
         ) : (
@@ -150,11 +145,11 @@ export function MyActivitiesClient({
                   <span
                     className={`absolute top-3 right-3 inline-block text-xs font-semibold px-2.5 py-1 rounded-full z-10 ${
                       activity.status === "attending"
-                        ? "bg-[#d4edda] text-[#155724]"
-                        : "bg-[#fff3cd] text-[#856404]"
+                        ? "bg-success-bg text-success-text"
+                        : "bg-alert-bg text-alert-text"
                     }`}
                   >
-                    {activity.status === "attending" ? "Deltar" : "Intresserad"}
+                    {activity.status === "attending" ? "Kommer" : "Intresserad"}
                   </span>
                 )}
               </div>

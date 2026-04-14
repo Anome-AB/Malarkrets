@@ -51,13 +51,13 @@ export default function RegisterPage() {
     return (
       <div className="w-full max-w-md rounded-[10px] bg-white p-8 shadow">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-[#3d6b5e]">Mälarkrets</h1>
-          <p className="mt-4 text-sm text-[#2d2d2d]">
+          <h1 className="text-2xl font-bold text-primary">Mälarkrets</h1>
+          <p className="mt-4 text-sm text-heading">
             Konto skapat! Kolla din e-post för verifiering.
           </p>
           <Link
             href="/auth/login"
-            className="mt-4 inline-block text-sm font-medium text-[#3d6b5e] hover:underline"
+            className="mt-4 inline-block text-sm font-medium text-primary hover:underline"
           >
             Gå till inloggning
           </Link>
@@ -69,8 +69,8 @@ export default function RegisterPage() {
   return (
     <div className="w-full max-w-md rounded-[10px] bg-white p-8 shadow">
       <div className="mb-8 text-center">
-        <h1 className="text-2xl font-bold text-[#3d6b5e]">Mälarkrets</h1>
-        <p className="mt-1 text-sm text-[#666666]">Skapa ett nytt konto</p>
+        <h1 className="text-2xl font-bold text-primary">Mälarkrets</h1>
+        <p className="mt-1 text-sm text-secondary">Skapa ett nytt konto</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
@@ -102,7 +102,7 @@ export default function RegisterPage() {
         />
 
         {error && (
-          <p className="text-sm text-[#dc3545]" role="alert">
+          <p className="text-sm text-error" role="alert">
             {error}
           </p>
         )}
@@ -112,11 +112,11 @@ export default function RegisterPage() {
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-[#666666]">
+      <p className="mt-6 text-center text-sm text-secondary">
         Redan medlem?{" "}
         <Link
           href="/auth/login"
-          className="font-medium text-[#3d6b5e] hover:underline"
+          className="font-medium text-primary hover:underline"
         >
           Logga in
         </Link>

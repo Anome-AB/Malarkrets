@@ -37,7 +37,11 @@ async function getPopularActivities() {
         eq(activityParticipants.status, "attending"),
       ),
     )
-    .where(and(gt(activities.startTime, now), isNull(activities.cancelledAt)))
+    .where(and(
+      gt(activities.startTime, now),
+      isNull(activities.cancelledAt),
+      sql`NOT EXISTS (SELECT 1 FROM ${users} WHERE ${users.id} = ${activities.creatorId} AND ${users.isBanned} = true)`,
+    ))
     .groupBy(activities.id)
     .orderBy(desc(count(activityParticipants.userId)))
     .limit(3);
@@ -51,8 +55,8 @@ function LandingPage({
   popularActivities: Awaited<ReturnType<typeof getPopularActivities>>;
 }) {
   return (
-    <div className="min-h-screen bg-[#f8f7f4]">
-      <header className="bg-[#3d6b5e] text-white">
+    <div className="min-h-screen bg-background">
+      <header className="bg-primary text-white">
         <div className="max-w-5xl mx-auto px-6 py-12 text-center">
           <h1 className="text-4xl font-bold mb-2">Mälarkrets</h1>
           <p className="text-lg text-white/80 mb-2">
@@ -64,7 +68,7 @@ function LandingPage({
           <div className="flex gap-4 justify-center">
             <Link
               href="/auth/login"
-              className="inline-flex items-center justify-center px-6 py-3 bg-white text-[#3d6b5e] font-semibold rounded-lg hover:bg-white/90 transition-colors"
+              className="inline-flex items-center justify-center px-6 py-3 bg-white text-primary font-semibold rounded-lg hover:bg-white/90 transition-colors"
             >
               Logga in
             </Link>
@@ -79,11 +83,11 @@ function LandingPage({
       </header>
 
       <main className="max-w-5xl mx-auto px-6 py-12">
-        <h2 className="text-2xl font-bold text-[#2d2d2d] mb-6">
+        <h2 className="text-2xl font-bold text-heading mb-6">
           Populära aktiviteter i Västerås
         </h2>
         {popularActivities.length === 0 ? (
-          <p className="text-[#666666]">
+          <p className="text-secondary">
             Inga kommande aktiviteter just nu. Bli den första att skapa en!
           </p>
         ) : (
@@ -92,7 +96,7 @@ function LandingPage({
               <Link
                 key={activity.id}
                 href={`/activity/${activity.id}`}
-                className="bg-white border border-[#dddddd] rounded-[10px] p-4 hover:shadow-md hover:border-[#3d6b5e] transition block"
+                className="bg-white border border-border rounded-[10px] p-4 hover:shadow-md hover:border-primary transition block"
               >
                 {activity.imageThumbUrl && (
                   <img
@@ -101,13 +105,13 @@ function LandingPage({
                     className="w-full h-40 object-cover rounded-lg mb-3"
                   />
                 )}
-                <h3 className="text-base font-semibold text-[#2d2d2d]">
+                <h3 className="text-base font-semibold text-heading">
                   {activity.title}
                 </h3>
-                <p className="text-sm text-[#666666] mt-1 line-clamp-2">
+                <p className="text-sm text-secondary mt-1 line-clamp-2">
                   {activity.description}
                 </p>
-                <p className="text-sm text-[#666666] mt-2">
+                <p className="text-sm text-secondary mt-2">
                   {new Date(activity.startTime).toLocaleDateString("sv-SE", {
                     weekday: "short",
                     day: "numeric",
@@ -117,7 +121,7 @@ function LandingPage({
                   })}{" "}
                   &middot; {activity.location}
                 </p>
-                <p className="text-xs text-[#666666] mt-2">
+                <p className="text-xs text-secondary mt-2">
                   {activity.participantCount} deltagare
                 </p>
               </Link>
@@ -187,13 +191,15 @@ async function AuthenticatedFeed({
     .innerJoin(interestTags, eq(interestTags.id, userInterests.tagId))
     .where(eq(userInterests.userId, userId));
 
-  // Determine active tag filter
+  // Admin "show all" mode
+  const showAll = userProfile.isAdmin && params.alla === "1";
+
+  // Determine active tag filters (comma-separated slugs)
   const interestParam = typeof params.intresse === "string" ? params.intresse : null;
-  let tagFilter: number | undefined;
-  if (interestParam) {
-    const matchedTag = userInterestsList.find((t) => t.slug === interestParam);
-    if (matchedTag) tagFilter = matchedTag.id;
-  }
+  const activeFilters = interestParam ? interestParam.split(",").filter(Boolean) : [];
+  const tagFilterIds = activeFilters
+    .map((slug) => userInterestsList.find((t) => t.slug === slug)?.id)
+    .filter((id): id is number => id !== undefined);
 
   // Cursor pagination
   const cursor = typeof params.cursor === "string" ? params.cursor : undefined;
@@ -204,7 +210,8 @@ async function AuthenticatedFeed({
     userProfile.gender,
     viewerAge,
     cursor,
-    tagFilter,
+    tagFilterIds.length > 0 ? tagFilterIds : undefined,
+    showAll,
   );
 
   // Enrich with tags and participant counts
@@ -312,7 +319,8 @@ async function AuthenticatedFeed({
   return (
     <AppShell
       interests={userInterestsList}
-      activeFilter={interestParam}
+      activeFilters={activeFilters}
+      showAll={showAll}
       unreadCount={unreadCount}
       userInitials={userInitials}
       isAdmin={userProfile.isAdmin}
@@ -320,7 +328,7 @@ async function AuthenticatedFeed({
       <ActivityFeed
         initialActivities={enrichedActivities}
         userInterests={userInterestsList}
-        activeFilter={interestParam}
+        activeFilters={activeFilters}
         nextCursor={enrichedActivities.length === 20 ? lastId : null}
         userId={userId}
       />

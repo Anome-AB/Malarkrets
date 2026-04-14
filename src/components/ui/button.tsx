@@ -4,13 +4,13 @@ import React from "react";
 
 const variantStyles = {
   primary:
-    "bg-[#3d6b5e] text-white hover:bg-[#345c51] border border-transparent",
+    "bg-primary text-white hover:bg-primary-hover border border-transparent",
   secondary:
-    "bg-transparent text-[#3d6b5e] border border-[#3d6b5e] hover:bg-[#e8f0ec]",
+    "bg-muted text-primary border border-primary hover:bg-primary-light",
   danger:
-    "bg-[#dc3545] text-white hover:bg-[#c82333] border border-transparent",
+    "bg-error text-white hover:bg-error-hover border border-transparent",
   ghost:
-    "bg-transparent text-[#2d2d2d] border border-transparent hover:bg-[#e8f0ec]",
+    "bg-background text-heading border border-border hover:bg-primary-light",
 } as const;
 
 const sizeStyles = {
@@ -72,7 +72,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           rounded-[8px]
           font-medium
           transition-colors duration-150
-          focus:outline-none focus:ring-2 focus:ring-[#3d6b5e] focus:ring-offset-2
+          focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
           disabled:opacity-50 disabled:cursor-not-allowed
           ${variantStyles[variant]}
           ${sizeStyles[size]}

@@ -16,7 +16,6 @@ export default async function OnboardingLayout({
     return (
       <AppShell
         interests={shellData.interests}
-        activeFilter={null}
         unreadCount={shellData.unreadCount}
         userInitials={shellData.initials}
         isAdmin={shellData.isAdmin}

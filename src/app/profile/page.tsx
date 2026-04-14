@@ -22,8 +22,8 @@ export default async function ProfilePage() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-[#f8f7f4] flex items-center justify-center">
-        <p className="text-[#666666]">Profilen kunde inte laddas.</p>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-secondary">Profilen kunde inte laddas.</p>
       </div>
     );
   }
@@ -45,7 +45,6 @@ export default async function ProfilePage() {
       id: interestTags.id,
       name: interestTags.name,
       slug: interestTags.slug,
-      category: interestTags.category,
     })
     .from(interestTags)
     .orderBy(interestTags.name);
@@ -67,13 +66,12 @@ export default async function ProfilePage() {
   return (
     <AppShell
       interests={shellData.interests}
-      activeFilter={null}
       unreadCount={shellData.unreadCount}
       userInitials={shellData.initials}
       isAdmin={shellData.isAdmin}
     >
       <div className="px-6 py-8">
-        <h1 className="text-xl font-semibold text-[#2d2d2d] mb-6">Min profil</h1>
+        <h1 className="text-2xl font-bold text-heading mb-6">Min profil</h1>
         <ProfileClient
           profile={{
             displayName: profile.displayName ?? "",

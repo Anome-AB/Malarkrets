@@ -58,13 +58,13 @@ export function CommentList({
     <section aria-labelledby="comments-heading">
       <h3
         id="comments-heading"
-        className="text-base font-semibold text-[#2d2d2d] mb-3"
+        className="text-base font-semibold text-heading mb-3"
       >
         Kommentarer
       </h3>
 
       {comments.length === 0 ? (
-        <p className="text-sm text-[#666666] italic">
+        <p className="text-sm text-secondary italic">
           Inga kommentarer ännu. Bli den första!
         </p>
       ) : (
@@ -75,21 +75,21 @@ export function CommentList({
             return (
               <li
                 key={comment.id}
-                className="bg-white border border-[#dddddd] rounded-lg p-3"
+                className="bg-white border border-border rounded-lg p-3"
               >
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-[#2d2d2d]">
+                    <span className="text-sm font-medium text-heading">
                       {comment.authorName}
                     </span>
-                    <span className="text-xs text-[#666666]">
+                    <span className="text-xs text-secondary">
                       {timeAgo(comment.createdAt)}
                     </span>
                   </div>
                   {canDelete && (
                     <button
                       onClick={() => onDelete?.(comment.id)}
-                      className="text-xs text-[#999999] hover:text-[#e07a3a] transition-colors"
+                      className="text-xs text-dimmed hover:text-warning transition-colors"
                       aria-label={`Ta bort kommentar av ${comment.authorName}`}
                     >
                       <svg
@@ -108,7 +108,7 @@ export function CommentList({
                     </button>
                   )}
                 </div>
-                <p className="text-sm text-[#2d2d2d]">{comment.content}</p>
+                <p className="text-sm text-heading">{comment.content}</p>
               </li>
             );
           })}
@@ -122,18 +122,18 @@ export function CommentList({
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             placeholder="Ställ en fråga till arrangören..."
-            className="flex-1 border border-[#dddddd] rounded-lg px-3 py-2 text-sm text-[#2d2d2d] placeholder:text-[#999999] focus:outline-none focus:border-[#3d6b5e]"
+            className="flex-1 border border-border rounded-lg px-3 py-2 text-sm text-heading placeholder:text-dimmed focus:outline-none focus:border-primary"
           />
           <button
             type="submit"
             disabled={!newComment.trim()}
-            className="px-4 py-2 bg-[#3d6b5e] text-white text-sm rounded-lg hover:bg-[#345c51] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Skicka
           </button>
         </form>
       ) : (
-        <p className="mt-4 text-sm text-[#666666] bg-[#f8f7f4] border border-[#dddddd] rounded-lg p-3 text-center">
+        <p className="mt-4 text-sm text-secondary bg-background border border-border rounded-lg p-3 text-center">
           Anmäl intresse för att kommentera
         </p>
       )}

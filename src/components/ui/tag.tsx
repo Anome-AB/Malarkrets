@@ -21,18 +21,18 @@ function Tag({ label, active = false, onClick, count }: TagProps) {
         border
         text-sm font-medium
         transition-colors duration-150
-        focus:outline-none focus:ring-2 focus:ring-[#3d6b5e] focus:ring-offset-2
+        focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
         ${
           active
-            ? "bg-[#3d6b5e] text-white border-[#3d6b5e]"
-            : "bg-[#e8f0ec] text-[#3d6b5e] border-[#c5d9cf] hover:bg-[#d5e5dc]"
+            ? "bg-primary text-white border-primary"
+            : "bg-primary-light text-primary border-primary-light hover:bg-primary-light"
         }
       `}
     >
       <span>{label}</span>
       {count !== undefined && (
         <span
-          className={`text-xs ${active ? "text-white/70" : "text-[#666666]"}`}
+          className={`text-xs ${active ? "text-white/70" : "text-secondary"}`}
         >
           {count}
         </span>

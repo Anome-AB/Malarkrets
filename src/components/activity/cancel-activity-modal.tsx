@@ -43,9 +43,9 @@ export function CancelActivityModal({
       <div className="space-y-4">
         {hasParticipants ? (
           <>
-            <p className="text-sm text-[#666666]">
+            <p className="text-sm text-secondary">
               Det finns{" "}
-              <span className="font-semibold text-[#2d2d2d]">
+              <span className="font-semibold text-heading">
                 {participantCount}
               </span>{" "}
               anmälda deltagare som kommer meddelas.
@@ -53,7 +53,7 @@ export function CancelActivityModal({
             <div className="flex flex-col gap-1">
               <label
                 htmlFor="cancel-reason"
-                className="text-sm font-medium text-[#2d2d2d]"
+                className="text-sm font-medium text-heading"
               >
                 Anledning (obligatorisk)
               </label>
@@ -63,12 +63,12 @@ export function CancelActivityModal({
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="Berätta varför aktiviteten ställs in..."
-                className="w-full px-3 py-2 rounded-[8px] border border-[#dddddd] text-[#2d2d2d] bg-white placeholder:text-[#999999] focus:outline-none focus:ring-1 focus:border-[#3d6b5e] focus:ring-[#3d6b5e] resize-y"
+                className="w-full px-3 py-2 rounded-[8px] border border-border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
               />
             </div>
           </>
         ) : (
-          <p className="text-sm text-[#666666]">
+          <p className="text-sm text-secondary">
             Aktiviteten har inga deltagare och kommer raderas helt.
           </p>
         )}

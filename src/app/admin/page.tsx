@@ -2,8 +2,9 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { users, interestTags } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { AdminClient } from "./admin-client";
+import { searchUsers } from "@/actions/admin";
 
 export default async function AdminPage() {
   const session = await auth();
@@ -11,7 +12,6 @@ export default async function AdminPage() {
     redirect("/auth/login");
   }
 
-  // Check admin
   const currentUser = await db.query.users.findFirst({
     where: eq(users.id, session.user.id),
   });
@@ -20,17 +20,8 @@ export default async function AdminPage() {
     redirect("/");
   }
 
-  // Get all users
-  const allUsers = await db
-    .select({
-      id: users.id,
-      email: users.email,
-      displayName: users.displayName,
-      isAdmin: users.isAdmin,
-      createdAt: users.createdAt,
-    })
-    .from(users)
-    .orderBy(desc(users.createdAt));
+  // Initial paginated users load
+  const initialUsers = await searchUsers("", 1);
 
   // Get all interest tags
   const allTags = await db
@@ -38,20 +29,15 @@ export default async function AdminPage() {
       id: interestTags.id,
       name: interestTags.name,
       slug: interestTags.slug,
-      category: interestTags.category,
     })
     .from(interestTags)
     .orderBy(interestTags.name);
 
   return (
     <div className="px-6 py-8">
-      <h1 className="text-2xl font-bold text-[#2d2d2d] mb-8">Adminpanel</h1>
-
+      <h1 className="text-2xl font-bold text-heading mb-6">Adminpanel</h1>
       <AdminClient
-        users={allUsers.map((u) => ({
-          ...u,
-          createdAt: u.createdAt?.toISOString() ?? null,
-        }))}
+        initialUsers={initialUsers}
         tags={allTags}
       />
     </div>

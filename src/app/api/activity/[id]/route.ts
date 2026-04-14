@@ -57,6 +57,8 @@ export async function GET(
       title: activity.title,
       description: activity.description,
       location: activity.location,
+      latitude: activity.latitude,
+      longitude: activity.longitude,
       startTime: activity.startTime,
       endTime: activity.endTime,
       maxParticipants: activity.maxParticipants,
