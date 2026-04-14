@@ -78,3 +78,12 @@
 ### Release Pipeline (tillagt av /plan-eng-review 2026-04-14)
 - **Semver image-tagging:** Lägg till stöd för git tags (v1.0.0) som triggar GitHub Actions att tagga Docker-imagen med versionsnummer. Krävs för rollback på VPS. Insats: S. Beror på: pipeline finns.
 - **VPS-deploy i pipeline:** Lägg till SSH-deploy-steg i release.yml som kör docker compose pull + up på extern server. 15 rader YAML + 3 GitHub Secrets (VPS_HOST, VPS_USER, VPS_SSH_KEY). Insats: S. Beror på: pipeline + VPS finns.
+
+- **Automatiska DB-migrationer vid deploy** — BLOCKERANDE FÖR VPS (tillagt av Release Engineer 2026-04-14)
+  - **Problem:** Migrationer körs manuellt med `psql < migrations/*.sql` idag. Ingen spårning (Drizzles `__drizzle_migrations`-tabell används inte), ingen idempotens, ingen rollback-plan. Fungerar i dev där data får wipas, men bryter samma dag en VPS går live.
+  - **Beslut som krävs — behöver synkas med det andra teamet** (applikations­teamet), eftersom valet påverkar hur de skriver migrations-PR:er och hur release-cykeln ser ut:
+    - **Alternativ 1: Migrations-steg i `deploy-local.sh`** (och motsvarande i kommande `deploy-vps.sh`). Enkelt, explicit, körs manuellt. Risk: någon glömmer köra det.
+    - **Alternativ 2: Init-container i docker-compose** som kör `drizzle-kit migrate` och exit:ar innan app-containern startar. Körs automatiskt vid varje `docker compose up`. Risk: en trasig migration stoppar hela stacken.
+    - **Alternativ 3: Steg i GitHub Actions efter image push** som SSH:ar in och kör migreringen. Risk: CI får DB-access.
+  - **Insats:** S (20–30 rader oavsett alternativ) men besluts­arbetet är större än koden.
+  - **Nästa steg:** Boka avstämning med applikationsteamet. Ta med: (a) hur ofta de genererar nya migrationer, (b) om de vill kunna se migrationsoutput i CI-loggen, (c) hur de ser på failed-migration-rollback. Återkom hit och implementera.
