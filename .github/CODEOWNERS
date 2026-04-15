@@ -1,0 +1,40 @@
+# CODEOWNERS — automatic review routing
+#
+# Handles:
+#   @ohman74  — Fredrik Öhman Imfall (Team GreenLion — application)
+#   @froling  — Håkan Fröling          (Team RedFox    — release & deploy)
+#
+# Last matching line wins. Keep broad rules first, specific last.
+
+# Default — repo owner
+*                       @ohman74
+
+# ───────── Team GreenLion — application code ─────────
+/src/                   @ohman74
+/public/                @ohman74
+/package.json           @ohman74
+/bun.lock               @ohman74
+/tsconfig.json          @ohman74
+/next.config.ts         @ohman74
+/drizzle.config.ts      @ohman74
+/eslint.config.mjs      @ohman74
+/postcss.config.mjs     @ohman74
+/vitest.config.ts       @ohman74
+/DESIGN.md              @ohman74
+
+# ───────── Team RedFox — release & deploy ─────────
+/.github/               @froling
+/Dockerfile             @froling
+/.dockerignore          @froling
+/docker-compose.yml     @froling
+/docker-compose.prod.yml @froling
+/scripts/               @froling
+/.env.prod.example      @froling
+/RELEASE.md             @froling
+
+# ───────── Shared — both teams must approve ─────────
+/TEAMS.md               @ohman74 @froling
+/AGENTS.md              @ohman74 @froling
+/CLAUDE.md              @ohman74 @froling
+/README.md              @ohman74 @froling
+/TODOS.md               @ohman74 @froling
