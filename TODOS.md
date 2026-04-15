@@ -106,6 +106,24 @@
 - **Semver image-tagging:** Lägg till stöd för git tags (v1.0.0) som triggar GitHub Actions att tagga Docker-imagen med versionsnummer. Krävs för rollback på VPS. Insats: S. Beror på: pipeline finns.
 - **VPS-deploy i pipeline:** Lägg till SSH-deploy-steg i release.yml som kör docker compose pull + up på extern server. 15 rader YAML + 3 GitHub Secrets (VPS_HOST, VPS_USER, VPS_SSH_KEY). Insats: S. Beror på: pipeline + VPS finns.
 
+### VPS-leverantör: Loopia (beslut 2026-04-15)
+- 2 GB RAM / 50 GB HDD, 460 kr/mån ex moms.
+- **Motivering:** Lokal i Västerås (passar produktens varumärke), GDPR-enkelt, SLA under svensk lag, svensk support/faktura.
+- **Uppgraderingsväg:** 4 GB om RAM > 80% ihållande eller CPU-bundet (Sharp-bildresize under last).
+- **Exit-plan:** docker-compose-stacken är portabel. Flytt till Hetzner/DO ≈ 1h jobb (provisionera + kopiera compose + restore pg_dump).
+- **Verifiera med Loopia innan köp:** CPU-cores (minst 1 vCPU, helst 2), bandbredd/månad, snapshot/backup-möjlighet, Ubuntu LTS som OS.
+- **Provisioning-checklista (när VPS är bokad):**
+  1. Ubuntu 24.04 LTS (eller Debian 12 som fallback).
+  2. Lägg till 2 GB swapfile (`fallocate -l 2G /swapfile …`).
+  3. Skapa non-root user, SSH-nyckel-only, disable password-login.
+  4. UFW: öppna 22, 80, 443.
+  5. Installera Docker + Docker Compose plugin.
+  6. Caddy eller Nginx som reverse proxy (Let's Encrypt automatiskt via Caddy).
+  7. Klona repot + `.env.prod` (scp:a från säker plats, ligger inte i git).
+  8. `docker compose -f docker-compose.prod.yml up -d` + healthcheck-verifiering.
+  9. Sätt upp `pg_dump` cron → dumpa till extern plats (Loopia backup-tjänst eller Backblaze B2).
+  10. Ta bort `127.0.0.1:5433:5432`-mappningen från compose-filen innan deploy (dev-only).
+
 - **Automatiska DB-migrationer vid deploy** — BLOCKERANDE FÖR VPS (tillagt av Release Engineer 2026-04-14)
   - **Problem:** Migrationer körs manuellt med `psql < migrations/*.sql` idag. Ingen spårning (Drizzles `__drizzle_migrations`-tabell används inte), ingen idempotens, ingen rollback-plan. Fungerar i dev där data får wipas, men bryter samma dag en VPS går live.
   - **Beslut som krävs — behöver synkas med det andra teamet** (applikations­teamet), eftersom valet påverkar hur de skriver migrations-PR:er och hur release-cykeln ser ut:
