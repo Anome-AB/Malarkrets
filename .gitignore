@@ -44,3 +44,6 @@ next-env.d.ts
 .claude/
 public/uploads/
 bun.lock
+
+# Local-only notes (VPS details, SSH-hints, infra context that doesn't belong in git)
+.local/
