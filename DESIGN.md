@@ -171,7 +171,11 @@ Activity cards in responsive grid: `grid grid-cols-1 md:grid-cols-2 lg:grid-cols
 - Keep icon usage minimal — text labels are primary, icons support
 
 ## Touch Targets
-Minimum 44x44px on all interactive elements. Sidebar nav: `py-3` (48px). Interest filters: `min-h-[44px]`.
+Minimum 44x44px on all interactive elements (WCAG 2.1 AAA). Use the semantic utility `min-h-touch-target` — never the arbitrary value `min-h-[44px]`. The `<Button>` component applies it automatically for `sm`/`md`/`lg` sizes.
+
+**Compact exception:** `<Button size="compact">` opts out of the 44px minimum (~36px tall). Reserved for desktop-only dense surfaces: admin toolbars, modal footers, sticky action bars inside side panels. Never use `compact` on mobile-reachable surfaces or primary actions.
+
+Sidebar nav: `py-3` (48px). Interest filters: `min-h-touch-target`.
 
 ## Shadows
 Minimal. Cards: no shadow normally, `shadow-md` on hover. Modal: `shadow-xl`.

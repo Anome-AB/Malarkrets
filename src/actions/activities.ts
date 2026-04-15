@@ -656,6 +656,10 @@ export async function getActivityDetail(activityId: string) {
       })
     : null;
 
+  const viewerProfile = await db.query.users.findFirst({
+    where: eq(users.id, user.id!),
+  });
+
   const tags = await db
     .select({ id: interestTags.id, name: interestTags.name, slug: interestTags.slug })
     .from(activityTags)
@@ -721,6 +725,9 @@ export async function getActivityDetail(activityId: string) {
     whatToExpect: wte,
     creatorId: activity.creatorId,
     creatorName: creator?.displayName ?? "Anonym",
+    creatorIsAdmin: creator?.isAdmin ?? false,
+    viewerIsAdmin: viewerProfile?.isAdmin ?? false,
+    deletedAt: activity.deletedAt,
     tags,
     participantCount,
     comments: comments.map((c) => ({

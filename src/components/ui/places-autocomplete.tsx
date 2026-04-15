@@ -130,7 +130,7 @@ export function PlacesAutocomplete({
           value={value}
           onChange={handleInputChange}
           placeholder={placeholder}
-          className={`w-full pl-9 pr-3 py-2 min-h-[44px] rounded-[8px] border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 transition-colors ${
+          className={`w-full pl-9 pr-3 py-2 min-h-touch-target rounded-[8px] border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 transition-colors ${
             error
               ? "border-error focus:border-error focus:ring-error"
               : "border-border focus:border-primary focus:ring-primary"

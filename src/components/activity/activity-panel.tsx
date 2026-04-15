@@ -8,6 +8,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { getColorHex } from "@/lib/color-themes";
 import { CourageSection } from "@/components/activity/courage-section";
 import { CommentList } from "@/components/activity/comment-list";
+import { AdminActivityControls } from "@/components/activity/admin-activity-controls";
 import { useToast } from "@/components/ui/toast";
 import { joinActivity, leaveActivity, getActivityDetail } from "@/actions/activities";
 import { createComment, deleteComment } from "@/actions/comments";
@@ -23,11 +24,14 @@ interface ActivityDetail {
   endTime: Date | string | null;
   maxParticipants: number | null;
   cancelledAt: Date | string | null;
+  deletedAt: Date | string | null;
   imageMediumUrl: string | null;
   colorTheme: string | null;
   whatToExpect: Record<string, unknown> | null;
   creatorId: string | null;
   creatorName: string;
+  creatorIsAdmin: boolean;
+  viewerIsAdmin: boolean;
   tags: Array<{ id: number; name: string; slug: string }>;
   participantCount: number;
   comments: Array<{
@@ -188,10 +192,10 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
         aria-modal="true"
         aria-label={detail?.title ?? "Aktivitetsdetalj"}
         tabIndex={-1}
-        className={`relative bg-white w-full max-w-[480px] h-full overflow-y-auto shadow-xl focus:outline-none transition-transform duration-250 ease-out ${visible ? "translate-x-0" : "translate-x-full"}`}
+        className={`relative bg-white w-full max-w-[480px] h-full flex flex-col shadow-xl focus:outline-none transition-transform duration-250 ease-out ${visible ? "translate-x-0" : "translate-x-full"}`}
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-white border-b border-border px-6 py-4 flex items-center justify-between">
+        <div className="shrink-0 bg-white border-b border-border px-6 py-4 flex items-center justify-between">
           <button
             onClick={onClose}
             className="p-1 rounded-[8px] text-dimmed hover:text-heading hover:bg-primary-light transition-colors"
@@ -210,7 +214,7 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {loading && (
             <div className="space-y-4">
               <div className="h-8 bg-border rounded animate-pulse" />
@@ -392,6 +396,25 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
             </>
           )}
         </div>
+
+        {/* Admin moderation footer — sticky, visible only to non-creator admins on live activities */}
+        {detail && detail.viewerIsAdmin && !detail.isCreator && !detail.deletedAt && (
+          <div className="shrink-0 bg-info-light border-t-2 border-info/40 px-6 py-3 shadow-[0_-4px_12px_-8px_rgba(0,0,0,0.15)]">
+            <AdminActivityControls
+              activity={{
+                id: detail.id,
+                title: detail.title,
+                description: detail.description,
+                location: detail.location,
+                startTime: detail.startTime,
+                endTime: detail.endTime,
+                creatorDisplayName: detail.creatorName,
+              }}
+              creatorIsAdmin={detail.creatorIsAdmin}
+              compact
+            />
+          </div>
+        )}
       </div>
 
       <ConfirmDialog

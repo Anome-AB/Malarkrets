@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 interface Comment {
   id: string;
@@ -124,13 +125,9 @@ export function CommentList({
             placeholder="Ställ en fråga till arrangören..."
             className="flex-1 border border-border rounded-lg px-3 py-2 text-sm text-heading placeholder:text-dimmed focus:outline-none focus:border-primary"
           />
-          <button
-            type="submit"
-            disabled={!newComment.trim()}
-            className="px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
+          <Button type="submit" disabled={!newComment.trim()}>
             Skicka
-          </button>
+          </Button>
         </form>
       ) : (
         <p className="mt-4 text-sm text-secondary bg-background border border-border rounded-lg p-3 text-center">

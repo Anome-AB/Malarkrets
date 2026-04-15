@@ -1,6 +1,6 @@
 services:
   app:
-    image: ghcr.io/ohman74/malarkrets:latest
+    image: ghcr.io/anome-ab/malarkrets:latest
     ports:
       - "3000:3000"
     env_file: .env.prod

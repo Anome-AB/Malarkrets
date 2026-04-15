@@ -48,7 +48,7 @@ bun run test -- --run   # CI-läge
 ## Release-pipeline
 
 Push till `master` → GitHub Actions bygger en Docker-image och pushar till
-`ghcr.io/ohman74/malarkrets:latest` (samt `:sha-<hash>`).
+`ghcr.io/anome-ab/malarkrets:latest` (samt `:sha-<hash>`).
 
 Workflow: [`.github/workflows/release.yml`](.github/workflows/release.yml)
 

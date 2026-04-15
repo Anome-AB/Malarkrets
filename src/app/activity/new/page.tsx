@@ -175,7 +175,7 @@ export default function CreateActivityPage() {
                     id="description"
                     rows={4}
                     placeholder="Berätta mer om aktiviteten..."
-                    className="w-full px-3 py-2 min-h-[44px] rounded-[8px] border border-border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
+                    className="w-full px-3 py-2 min-h-touch-target rounded-[8px] border border-border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
                     {...register("description", {
                       required: "Beskrivning krävs",
                       minLength: { value: 10, message: "Minst 10 tecken" },
@@ -253,7 +253,7 @@ export default function CreateActivityPage() {
                   <label htmlFor="experienceLevel" className="text-sm font-medium text-heading">Erfarenhetsnivå</label>
                   <select
                     id="experienceLevel"
-                    className="w-full px-3 py-2 min-h-[44px] rounded-[8px] border border-border text-heading bg-white focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary"
+                    className="w-full px-3 py-2 min-h-touch-target rounded-[8px] border border-border text-heading bg-white focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary"
                     {...register("experienceLevel")}
                   >
                     <option value="alla">Alla nivåer</option>

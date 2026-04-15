@@ -26,7 +26,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           id={inputId}
           className={`
             w-full px-3 py-2
-            min-h-[44px]
+            min-h-touch-target
             rounded-[8px]
             border
             text-heading

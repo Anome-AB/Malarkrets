@@ -65,7 +65,7 @@
 - ~~Docker Desktop på Windows har en bugg med inference manager socket.~~ LÖST: Docker Desktop v28.4.0 fungerar (verifierat 2026-04-14).
 
 ### För Fredrik — GitHub-kontoägare
-- ~~**Lägg till GitHub Secret `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`**~~ KLAR 2026-04-15. Satt på ohman74/Malarkrets, plockas upp av release.yml + Dockerfile som build-arg.
+- ~~**Lägg till GitHub Secret `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`**~~ KLAR 2026-04-15. Satt på Anome-AB/Malarkrets, plockas upp av release.yml + Dockerfile som build-arg.
 - **Restriktera nyckeln i Google Cloud Console**:
   - ✅ HTTP referrers begränsade till localhost (2026-04-15) — säker som GitHub Secret tills prod-domän är bestämd.
   - ⏳ När prod-domän är klar: lägg till produktionsdomänen som tillåten referrer, annars renderar kartor i prod-imagen som gråa/"for development purposes only".

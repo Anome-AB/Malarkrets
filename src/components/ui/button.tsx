@@ -14,9 +14,12 @@ const variantStyles = {
 } as const;
 
 const sizeStyles = {
-  sm: "px-3 py-1.5 text-sm",
-  md: "px-4 py-2 text-base",
-  lg: "px-6 py-3 text-lg",
+  sm: "px-3 py-1.5 text-sm min-h-touch-target",
+  md: "px-4 py-2 text-base min-h-touch-target",
+  lg: "px-6 py-3 text-lg min-h-touch-target",
+  /* compact: opt-out of the 44px touch target. Desktop-only dense contexts
+     (admin toolbars, modal footers). Not for mobile surfaces. */
+  compact: "px-4 py-2 text-sm",
 } as const;
 
 type ButtonProps = {
@@ -70,7 +73,6 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={disabled || loading}
         className={`
           inline-flex items-center justify-center
-          min-h-[44px]
           rounded-[8px]
           font-medium
           transition-colors duration-150

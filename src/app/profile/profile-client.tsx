@@ -174,7 +174,7 @@ export function ProfileClient({
               id="gender"
               value={gender}
               onChange={(e) => setGender(e.target.value)}
-              className="w-full px-3 py-2 min-h-[44px] rounded-[8px] border border-border text-heading bg-white focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary"
+              className="w-full px-3 py-2 min-h-touch-target rounded-[8px] border border-border text-heading bg-white focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary"
             >
               <option value="ej_angett">Ej angivet</option>
               <option value="kvinna">Kvinna</option>

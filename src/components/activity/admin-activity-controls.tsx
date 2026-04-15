@@ -25,6 +25,7 @@ interface ActivityForEdit {
 interface Props {
   activity: ActivityForEdit;
   creatorIsAdmin: boolean;
+  compact?: boolean;
 }
 
 function toLocalInput(d: Date | string | null): string {
@@ -35,7 +36,7 @@ function toLocalInput(d: Date | string | null): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-export function AdminActivityControls({ activity, creatorIsAdmin }: Props) {
+export function AdminActivityControls({ activity, creatorIsAdmin, compact = false }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -134,22 +135,56 @@ export function AdminActivityControls({ activity, creatorIsAdmin }: Props) {
 
   return (
     <>
-      <div className="border-t border-border pt-4 mt-4">
-        <p className="text-xs font-semibold text-dimmed uppercase tracking-wide mb-2">
-          Moderation
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" onClick={() => setEditOpen(true)} type="button">
-            Redigera som admin
-          </Button>
-          <Button variant="secondary" onClick={() => setCancelOpen(true)} type="button">
-            Avboka
-          </Button>
-          <Button variant="danger" onClick={() => setDeleteOpen(true)} type="button">
-            Ta bort
-          </Button>
+      {compact ? (
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-[11px] font-semibold text-info uppercase tracking-wider">
+            Administration
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="compact"
+              onClick={() => setEditOpen(true)}
+              type="button"
+            >
+              Redigera
+            </Button>
+            <Button
+              variant="secondary"
+              size="compact"
+              onClick={() => setCancelOpen(true)}
+              type="button"
+            >
+              Avboka
+            </Button>
+            <Button
+              variant="danger"
+              size="compact"
+              onClick={() => setDeleteOpen(true)}
+              type="button"
+            >
+              Ta bort
+            </Button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="border-t border-border pt-4 mt-4">
+          <p className="text-xs font-semibold text-dimmed uppercase tracking-wide mb-2">
+            Administration
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" onClick={() => setEditOpen(true)} type="button">
+              Redigera som admin
+            </Button>
+            <Button variant="secondary" onClick={() => setCancelOpen(true)} type="button">
+              Avboka
+            </Button>
+            <Button variant="danger" onClick={() => setDeleteOpen(true)} type="button">
+              Ta bort
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Edit dialog */}
       <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Redigera aktivitet som admin">

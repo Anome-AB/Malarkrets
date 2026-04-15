@@ -45,6 +45,13 @@
   --font-mono: "Geist Mono", monospace;
 }
 
+/* WCAG 2.1 AAA minimum touch target (44x44px) — apply to all interactive elements
+   by default. Compact exceptions (desktop-only admin toolbars, dense modal footers)
+   must be explicit opt-outs. */
+@utility min-h-touch-target {
+  min-height: 44px;
+}
+
 body {
   background: var(--color-background);
   color: var(--color-heading);
