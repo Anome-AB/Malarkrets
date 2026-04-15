@@ -83,11 +83,46 @@ startar `docker-compose.prod.yml`.
 - Webb: Settings → Secrets and variables → Actions.
 - Dokumentera i `.env.prod.example` med kommentar `# set via GitHub Secret`.
 
-### Release-tagging (planerat, se TODOS)
+### Release-tagging (semver)
 
-- `git tag v1.2.3 && git push --tags` → pipelinen taggar imagen
-  `ghcr.io/ohman74/malarkrets:v1.2.3`.
-- Rollback: `docker compose pull` med specifik tag i `.env.prod`.
+Push av git-tag `vX.Y.Z` triggar release.yml och resulterar i fem taggar per
+image:
+
+```
+git tag v1.2.3
+git push origin v1.2.3
+```
+
+Pipelinen pushar till ghcr.io:
+- `malarkrets:1.2.3`, `:1.2`, `:1`, `:sha-<hash>` (app)
+- `malarkrets:migrate-1.2.3`, `:migrate-1.2`, `:migrate-1`, `:migrate-sha-<hash>`
+
+`:latest` flyttas **inte** av en tag-push — bara av push till master. Det
+gör att prod kan peka på t.ex. `:1.2` och få patch-uppdateringar automatiskt
+utan att oavsiktligt plocka upp master-HEAD.
+
+Semver-regler:
+- MAJOR: breaking schema-ändring eller API-förändring som kräver koordinerad
+  migration.
+- MINOR: nya features, bakåtkompatibla migrationer.
+- PATCH: buggfix.
+
+### Rollback
+
+På VPS: pinna image-tag i `.env.prod` (eller `docker-compose.prod.yml`) och
+kör `docker compose up -d`:
+
+```bash
+# I .env.prod (eller inline env)
+APP_TAG=1.2.2
+MIGRATE_TAG=migrate-1.2.2
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d
+```
+
+`app` och `migrate` MÅSTE alltid ha samma version — de körs tillsammans
+och `migrate`-imagen innehåller den version av SQL-filerna som matchar
+`app`-imagen. Aldrig `app:1.2.3` + `migrate:1.2.2`.
 
 ### Databas-migrationer
 
