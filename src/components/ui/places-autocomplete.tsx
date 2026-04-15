@@ -50,7 +50,7 @@ export function PlacesAutocomplete({
     if (!mapLoaded || !inputRef.current || autocompleteRef.current) return;
 
     const autocomplete = new google.maps.places.Autocomplete(inputRef.current, {
-      fields: ["formatted_address", "geometry", "name"],
+      fields: ["address_components", "formatted_address", "geometry", "name"],
       componentRestrictions: { country: "se" },
     });
 
@@ -64,10 +64,26 @@ export function PlacesAutocomplete({
     autocomplete.addListener("place_changed", () => {
       const place = autocomplete.getPlace();
       if (place.geometry?.location) {
+        // Build a local-focused address: street + city, skip postal code + country
+        const components = place.address_components ?? [];
+        const streetNumber = components.find((c) => c.types.includes("street_number"))?.long_name;
+        const route = components.find((c) => c.types.includes("route"))?.long_name;
+        const locality =
+          components.find((c) => c.types.includes("postal_town"))?.long_name ??
+          components.find((c) => c.types.includes("locality"))?.long_name;
+
+        const streetPart = [route, streetNumber].filter(Boolean).join(" ");
+        const addressParts: string[] = [];
+        if (place.name) addressParts.push(place.name);
+        if (streetPart && streetPart !== place.name) addressParts.push(streetPart);
+        if (locality && locality !== place.name) addressParts.push(locality);
+
+        const address = addressParts.length > 0
+          ? addressParts.join(", ")
+          : place.formatted_address ?? "";
+
         const result: PlaceResult = {
-          address: place.name
-            ? `${place.name}, ${place.formatted_address}`
-            : place.formatted_address ?? "",
+          address,
           lat: place.geometry.location.lat(),
           lng: place.geometry.location.lng(),
         };

@@ -27,6 +27,8 @@ interface ActivityDetailClientProps {
   currentUserId: string | null;
   comments: Comment[];
   isCancelled?: boolean;
+  /** When true, only render the action buttons (used by parent action-bar). Skip comments + mobile floating bar. */
+  actionsOnly?: boolean;
 }
 
 export function ActivityDetailClient({
@@ -38,6 +40,7 @@ export function ActivityDetailClient({
   currentUserId,
   comments,
   isCancelled,
+  actionsOnly = false,
 }: ActivityDetailClientProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -126,18 +129,18 @@ export function ActivityDetailClient({
         </Link>
       )}
 
-      {isAuthenticated && participationStatus === "attending" && (
-        <Button variant="secondary" loading={leaving} onClick={handleLeave}>
+      {isAuthenticated && !isCreator && participationStatus === "attending" && (
+        <Button variant="danger" size="sm" loading={leaving} onClick={handleLeave}>
           Kan inte komma
         </Button>
       )}
 
-      {isAuthenticated && participationStatus === "interested" && (
+      {isAuthenticated && !isCreator && participationStatus === "interested" && (
         <div className="flex items-center gap-3 flex-wrap">
-          <Button variant="primary" loading={joining} onClick={() => handleJoin("attending")}>
+          <Button variant="primary" size="sm" loading={joining} onClick={() => handleJoin("attending")}>
             Kommer
           </Button>
-          <Button variant="secondary" loading={leaving} onClick={handleLeave}>
+          <Button variant="secondary" size="sm" loading={leaving} onClick={handleLeave}>
             Ångra
           </Button>
         </div>
@@ -147,6 +150,7 @@ export function ActivityDetailClient({
         <div className="flex gap-3">
           <Button
             variant="primary"
+            size="sm"
             loading={joining}
             onClick={() => handleJoin("attending")}
           >
@@ -154,6 +158,7 @@ export function ActivityDetailClient({
           </Button>
           <Button
             variant="secondary"
+            size="sm"
             loading={joining}
             onClick={() => handleJoin("interested")}
           >
@@ -164,14 +169,32 @@ export function ActivityDetailClient({
     </>
   );
 
+  // actionsOnly mode: render only buttons (used inside parent action bar)
+  if (actionsOnly) {
+    return (
+      <>
+        {actionButtons}
+        <ConfirmDialog
+          open={showLeaveConfirm}
+          onCancel={() => setShowLeaveConfirm(false)}
+          onConfirm={() => {
+            setShowLeaveConfirm(false);
+            doLeave();
+          }}
+          title="Kan du inte komma?"
+          message="Är du säker på att du vill avanmäla dig från aktiviteten?"
+          confirmLabel="Ja"
+          cancelLabel="Nej"
+          variant="danger"
+          loading={leaving}
+        />
+      </>
+    );
+  }
+
   return (
     <>
       <div className="space-y-8">
-        {/* Inline action buttons — desktop only */}
-        {!isCancelled && (
-          <div className="hidden lg:block">{actionButtons}</div>
-        )}
-
         {/* Comments — hidden for cancelled activities */}
         {isAuthenticated && !isCancelled && (
           <CommentList

@@ -27,6 +27,7 @@ interface Activity {
   location: string;
   startTime: Date | string;
   imageThumbUrl: string | null;
+  colorTheme?: string | null;
   maxParticipants: number | null;
   whatToExpect: WhatToExpect | null;
   tags: Tag[];
@@ -75,7 +76,7 @@ export function MyActivitiesClient({
             </Link>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-5">
             {createdActivities.map((activity) => (
               <div key={activity.id} className="relative">
                 <ActivityCard
@@ -130,7 +131,7 @@ export function MyActivitiesClient({
             </Link>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-5">
             {participatingActivities.map((activity) => (
               <div key={activity.id} className="relative">
                 <ActivityCard

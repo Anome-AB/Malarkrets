@@ -56,6 +56,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       size = "md",
       loading = false,
       disabled,
+      type = "button",
       children,
       className = "",
       ...rest
@@ -65,6 +66,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         ref={ref}
+        type={type}
         disabled={disabled || loading}
         className={`
           inline-flex items-center justify-center

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { getColorHex } from "@/lib/color-themes";
 import { CourageSection } from "@/components/activity/courage-section";
 import { CommentList } from "@/components/activity/comment-list";
 import { useToast } from "@/components/ui/toast";
@@ -23,6 +24,7 @@ interface ActivityDetail {
   maxParticipants: number | null;
   cancelledAt: Date | string | null;
   imageMediumUrl: string | null;
+  colorTheme: string | null;
   whatToExpect: Record<string, unknown> | null;
   creatorId: string | null;
   creatorName: string;
@@ -224,17 +226,36 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
 
           {!loading && detail && (
             <>
-              {/* Image */}
+              {/* Image — shown only if uploaded */}
               {detail.imageMediumUrl && (
                 <img
                   src={detail.imageMediumUrl}
                   alt=""
-                  className="w-full h-48 object-cover rounded-lg"
+                  className="w-full aspect-video object-cover rounded-lg"
                 />
               )}
 
-              {/* Title + metadata */}
+              {/* Title + status badge + metadata */}
               <div>
+                {(detail.isCreator || detail.participationStatus) && (
+                  <div className="flex justify-end mb-2">
+                    {detail.isCreator && (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-success-bg text-success-text font-semibold text-xs">
+                        Du arrangerar
+                      </span>
+                    )}
+                    {!detail.isCreator && detail.participationStatus === "attending" && (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-light text-primary font-semibold text-xs">
+                        Kommer &#10003;
+                      </span>
+                    )}
+                    {!detail.isCreator && detail.participationStatus === "interested" && (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-alert-bg text-alert-text font-semibold text-xs">
+                        Intresserad
+                      </span>
+                    )}
+                  </div>
+                )}
                 <h2 className="text-2xl font-bold text-heading">{detail.title}</h2>
                 <div className="mt-2 space-y-1 text-sm text-secondary">
                   <p>
@@ -307,22 +328,14 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
                   )}
                 </div>
 
-                {detail.participationStatus === "attending" && (
-                  <div className="flex items-center gap-3">
-                    <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary-light text-primary font-semibold text-sm">
-                      Kommer &#10003;
-                    </span>
-                    <Button variant="secondary" size="sm" loading={isPending} onClick={handleLeave}>
-                      Kan inte komma
-                    </Button>
-                  </div>
+                {!detail.isCreator && detail.participationStatus === "attending" && (
+                  <Button variant="danger" size="sm" loading={isPending} onClick={handleLeave}>
+                    Kan inte komma
+                  </Button>
                 )}
 
-                {detail.participationStatus === "interested" && (
+                {!detail.isCreator && detail.participationStatus === "interested" && (
                   <div className="flex items-center gap-3 flex-wrap">
-                    <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-alert-bg text-alert-text font-semibold text-sm">
-                      Intresserad
-                    </span>
                     <Button variant="primary" size="sm" loading={isPending} onClick={() => handleJoin("attending")}>
                       Kommer
                     </Button>
@@ -333,22 +346,25 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
                 )}
 
                 {!detail.isParticipant && !detail.isCreator && !detail.cancelledAt && (
-                  <div className="space-y-2">
-                    <Button variant="primary" loading={isPending} onClick={() => handleJoin("attending")} className="w-full">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <Button variant="primary" size="sm" loading={isPending} onClick={() => handleJoin("attending")}>
                       Kommer
                     </Button>
-                    <Button variant="secondary" loading={isPending} onClick={() => handleJoin("interested")} className="w-full">
+                    <Button variant="secondary" size="sm" loading={isPending} onClick={() => handleJoin("interested")}>
                       Intresserad
                     </Button>
                   </div>
                 )}
 
                 {detail.isCreator && (
-                  <Link
-                    href={`/activity/${activityId}/edit`}
-                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-primary border border-primary rounded-[8px] hover:bg-primary-light transition-colors"
-                  >
-                    Redigera
+                  <Link href={`/activity/${activityId}/edit`}>
+                    <Button variant="secondary" size="sm">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                      Redigera
+                    </Button>
                   </Link>
                 )}
               </Card>

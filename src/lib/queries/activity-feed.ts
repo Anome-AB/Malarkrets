@@ -72,6 +72,7 @@ export async function getMatchedActivities(
     startTime: activities.startTime,
     endTime: activities.endTime,
     imageThumbUrl: activities.imageThumbUrl,
+    colorTheme: activities.colorTheme,
     maxParticipants: activities.maxParticipants,
     genderRestriction: activities.genderRestriction,
     minAge: activities.minAge,
@@ -82,6 +83,7 @@ export async function getMatchedActivities(
   };
 
   const baseConditions = [
+    isNull(activities.deletedAt),
     isNull(activities.cancelledAt),
     gt(activities.startTime, now),
     sql`NOT EXISTS (${blockedByCreator})`,

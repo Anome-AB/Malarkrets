@@ -1,5 +1,6 @@
 interface WhatToExpect {
   okAlone?: boolean;
+  audience?: string | string[];
   experienceLevel?: string;
   whoComes?: string;
   latePolicy?: string;
@@ -10,22 +11,33 @@ interface CourageSectionProps {
   whatToExpect: WhatToExpect;
 }
 
-const rows: { key: keyof WhatToExpect; label: string }[] = [
-  { key: "okAlone", label: "Okej att komma ensam?" },
-  { key: "experienceLevel", label: "Erfarenhetsnivå" },
-  { key: "whoComes", label: "Vilka brukar komma?" },
-  { key: "latePolicy", label: "Om jag är sen?" },
-  { key: "groupSize", label: "Gruppstorlek" },
-];
+const AUDIENCE_LABELS: Record<string, string> = {
+  alla: "Alla",
+  par: "Par",
+  familj: "Familjer",
+  // Legacy values from the old multi-select
+  alone: "Alla",
+  with_friend: "Alla",
+  family: "Familjer",
+  pair: "Par",
+};
 
-function formatValue(key: keyof WhatToExpect, value: unknown): string {
-  if (key === "okAlone") {
-    return value ? "Ja, absolut!" : "Bäst att komma med någon";
+function getAudienceLabel(wte: WhatToExpect): string | null {
+  if (typeof wte.audience === "string" && wte.audience) {
+    return AUDIENCE_LABELS[wte.audience] ?? null;
   }
-  return String(value ?? "–");
+  if (Array.isArray(wte.audience) && wte.audience.length > 0) {
+    // Legacy: take first matching label
+    return AUDIENCE_LABELS[wte.audience[0]] ?? null;
+  }
+  // Backwards compat with very old okAlone boolean
+  if (wte.okAlone === true || wte.okAlone === false) return "Alla";
+  return null;
 }
 
 export function CourageSection({ whatToExpect }: CourageSectionProps) {
+  const audienceLabel = getAudienceLabel(whatToExpect);
+
   return (
     <section aria-labelledby="courage-heading">
       <h3
@@ -35,18 +47,36 @@ export function CourageSection({ whatToExpect }: CourageSectionProps) {
         Vad kan jag förvänta mig?
       </h3>
       <dl className="bg-courage-bg border border-courage-border rounded-lg p-4 space-y-3">
-        {rows.map((row) => {
-          const value = whatToExpect[row.key];
-          if (value == null) return null;
-          return (
-            <div key={row.key} className="flex flex-col sm:flex-row sm:gap-2">
-              <dt className="text-sm text-dimmed">{row.label}</dt>
-              <dd className="text-sm text-heading font-medium">
-                {formatValue(row.key, value)}
-              </dd>
-            </div>
-          );
-        })}
+        {audienceLabel && (
+          <div className="flex flex-col sm:flex-row sm:gap-2">
+            <dt className="text-sm text-dimmed">Passar för</dt>
+            <dd className="text-sm text-heading font-medium">{audienceLabel}</dd>
+          </div>
+        )}
+        {whatToExpect.experienceLevel && (
+          <div className="flex flex-col sm:flex-row sm:gap-2">
+            <dt className="text-sm text-dimmed">Erfarenhetsnivå</dt>
+            <dd className="text-sm text-heading font-medium">{whatToExpect.experienceLevel}</dd>
+          </div>
+        )}
+        {whatToExpect.whoComes && (
+          <div className="flex flex-col sm:flex-row sm:gap-2">
+            <dt className="text-sm text-dimmed">Vilka brukar komma?</dt>
+            <dd className="text-sm text-heading font-medium">{whatToExpect.whoComes}</dd>
+          </div>
+        )}
+        {whatToExpect.latePolicy && (
+          <div className="flex flex-col sm:flex-row sm:gap-2">
+            <dt className="text-sm text-dimmed">Om jag är sen?</dt>
+            <dd className="text-sm text-heading font-medium">{whatToExpect.latePolicy}</dd>
+          </div>
+        )}
+        {whatToExpect.groupSize && (
+          <div className="flex flex-col sm:flex-row sm:gap-2">
+            <dt className="text-sm text-dimmed">Gruppstorlek</dt>
+            <dd className="text-sm text-heading font-medium">{whatToExpect.groupSize}</dd>
+          </div>
+        )}
       </dl>
     </section>
   );

@@ -23,6 +23,7 @@ interface ActivityItem {
   location: string;
   startTime: Date | string;
   imageThumbUrl: string | null;
+  colorTheme?: string | null;
   maxParticipants: number | null;
   whatToExpect: unknown;
   tags: Array<{ id: number; name: string; slug: string }>;
@@ -214,7 +215,7 @@ export function ActivityFeed({
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-5">
             {filteredActivities.map((activity) => (
               <ActivityCard
                 key={activity.id}
@@ -229,6 +230,7 @@ export function ActivityFeed({
                   maxParticipants: activity.maxParticipants,
                   whatToExpect: activity.whatToExpect as WhatToExpect | null,
                   imageThumbUrl: activity.imageThumbUrl,
+                  colorTheme: activity.colorTheme,
                 }}
                 isCreator={!!userId && activity.creatorId === userId}
                 userStatus={activity.userStatus}

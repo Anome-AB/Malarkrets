@@ -69,3 +69,16 @@ export async function requireAuth() {
   }
   return session.user as { id: string; email: string; name?: string | null; image?: string | null };
 }
+
+export async function requireAdmin() {
+  const user = await requireAuth();
+  const profile = await db.query.users.findFirst({
+    where: eq(users.id, user.id),
+  });
+
+  if (!profile?.isAdmin || profile.isBanned) {
+    throw new Error("Åtkomst nekad");
+  }
+
+  return { user, profile };
+}

@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/toast";
 import { updateActivity, cancelOrDeleteActivity } from "@/actions/activities";
 import { Card } from "@/components/ui/card";
 import { PlacesAutocomplete } from "@/components/ui/places-autocomplete";
+import { ImageUpload } from "@/components/ui/image-upload";
 import { CancelActivityModal } from "@/components/activity/cancel-activity-modal";
 import Link from "next/link";
 
@@ -26,11 +27,16 @@ interface FormValues {
   endTime: string;
   maxParticipants: string;
   minAge: string;
-  okAlone: boolean;
   experienceLevel: string;
   whoComes: string;
   latePolicy: string;
 }
+
+const AUDIENCE_OPTIONS = [
+  { value: "alla", label: "Alla" },
+  { value: "par", label: "Par" },
+  { value: "familj", label: "Familjer" },
+] as const;
 
 function toLocalDatetimeString(date: string | Date | null): string {
   if (!date) return "";
@@ -61,6 +67,17 @@ export default function EditActivityPage() {
   // Gender state
   const [userGender, setUserGender] = useState<string>("ej_angett");
   const [genderOpen, setGenderOpen] = useState(false);
+
+  // Audience state
+  const [audience, setAudience] = useState<string>("alla");
+
+  // Image state
+  const [image, setImage] = useState<{
+    thumbUrl: string | null;
+    mediumUrl: string | null;
+    ogUrl: string | null;
+  }>({ thumbUrl: null, mediumUrl: null, ogUrl: null });
+  const [colorTheme, setColorTheme] = useState<string | null>(null);
 
   const {
     register,
@@ -95,9 +112,22 @@ export default function EditActivityPage() {
         if (activity.latitude && activity.longitude) {
           setCoordinates({ lat: activity.latitude, lng: activity.longitude });
         }
+        setImage({
+          thumbUrl: activity.imageThumbUrl ?? null,
+          mediumUrl: activity.imageMediumUrl ?? null,
+          ogUrl: activity.imageOgUrl ?? null,
+        });
+        setColorTheme(activity.colorTheme ?? null);
         setGenderOpen(activity.genderRestriction !== "alla");
 
         const wte = activity.whatToExpect ?? {};
+
+        // Map audience: support new single value + old values
+        if (typeof wte.audience === "string" && ["alla", "par", "familj"].includes(wte.audience)) {
+          setAudience(wte.audience);
+        } else {
+          setAudience("alla");
+        }
 
         reset({
           title: activity.title ?? "",
@@ -106,7 +136,6 @@ export default function EditActivityPage() {
           endTime: toLocalDatetimeString(activity.endTime),
           maxParticipants: activity.maxParticipants?.toString() ?? "",
           minAge: activity.minAge?.toString() ?? "",
-          okAlone: wte.okAlone ?? true,
           experienceLevel: wte.experienceLevel ?? "alla",
           whoComes: wte.whoComes ?? "",
           latePolicy: wte.latePolicy ?? "",
@@ -159,6 +188,10 @@ export default function EditActivityPage() {
       toast("Ange en plats", "error");
       return;
     }
+    if (!image.thumbUrl && !colorTheme) {
+      toast("Välj en bild eller en bakgrundsfärg", "error");
+      return;
+    }
 
     startTransition(async () => {
       const formData = new FormData();
@@ -170,6 +203,10 @@ export default function EditActivityPage() {
         formData.set("latitude", String(coordinates.lat));
         formData.set("longitude", String(coordinates.lng));
       }
+      formData.set("imageThumbUrl", image.thumbUrl ?? "");
+      formData.set("imageMediumUrl", image.mediumUrl ?? "");
+      formData.set("imageOgUrl", image.ogUrl ?? "");
+      formData.set("colorTheme", colorTheme ?? "");
       formData.set("startTime", values.startTime);
       if (values.endTime) formData.set("endTime", values.endTime);
       if (values.maxParticipants) formData.set("maxParticipants", values.maxParticipants);
@@ -180,7 +217,7 @@ export default function EditActivityPage() {
       if (values.minAge) formData.set("minAge", values.minAge);
       formData.set("tags", JSON.stringify(selectedTags));
       formData.set("whatToExpect", JSON.stringify({
-        okAlone: values.okAlone,
+        audience,
         experienceLevel: values.experienceLevel,
         whoComes: values.whoComes || undefined,
         latePolicy: values.latePolicy || undefined,
@@ -217,7 +254,7 @@ export default function EditActivityPage() {
   }
 
   return (
-    <div className="px-6 py-8">
+    <div className="px-6 pt-8 flex flex-col min-h-full">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-heading">Redigera aktivitet</h1>
         <Link
@@ -228,10 +265,8 @@ export default function EditActivityPage() {
         </Link>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left column */}
-          <div className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(380px,1fr))] gap-6 items-start">
             <Card title="Grundläggande information" className="space-y-4">
               <Input
                 label="Titel"
@@ -279,15 +314,42 @@ export default function EditActivityPage() {
               </div>
             </Card>
 
+            <Card title="Bild eller färg">
+              <ImageUpload
+                thumbUrl={image.thumbUrl}
+                mediumUrl={image.mediumUrl}
+                ogUrl={image.ogUrl}
+                colorTheme={colorTheme}
+                onChange={setImage}
+                onColorChange={setColorTheme}
+              />
+            </Card>
+
             <Card title="Vad kan deltagare förvänta sig?" className="space-y-4">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="w-5 h-5 rounded border-border text-primary focus:ring-primary"
-                  {...register("okAlone")}
-                />
-                <span className="text-sm text-heading">Okej att komma ensam</span>
-              </label>
+              <div>
+                <label className="text-sm font-medium text-heading mb-1 block">
+                  Vem passar aktiviteten för?
+                </label>
+                <div className="inline-flex rounded-[8px] border border-border overflow-hidden">
+                  {AUDIENCE_OPTIONS.map((opt, i) => {
+                    const active = audience === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setAudience(opt.value)}
+                        className={`px-4 py-2 text-sm font-medium transition-colors ${i > 0 ? "border-l border-border" : ""} ${
+                          active
+                            ? "bg-primary text-white"
+                            : "bg-white text-secondary hover:bg-background"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
               <div className="flex flex-col gap-1">
                 <label htmlFor="edit-experienceLevel" className="text-sm font-medium text-heading">Erfarenhetsnivå</label>
                 <select
@@ -322,10 +384,7 @@ export default function EditActivityPage() {
                 />
               </div>
             </Card>
-          </div>
 
-          {/* Right column */}
-          <div className="space-y-6">
             <Card title="Begränsningar" className="space-y-4">
               <Input
                 label="Max antal deltagare?"
@@ -396,11 +455,10 @@ export default function EditActivityPage() {
                 <p className="text-xs text-dimmed mt-2">Välj minst en tagg</p>
               )}
             </Card>
-          </div>
         </div>
 
-        {/* Submit + cancel activity */}
-        <div className="pt-6 flex justify-between items-center gap-3">
+        {/* Sticky footer — pushed to bottom of viewport */}
+        <div className="sticky bottom-0 -mx-6 px-6 py-3 bg-white border-t border-border shadow-[0_-2px_8px_rgba(0,0,0,0.04)] mt-auto pt-3 flex justify-between items-center gap-3 z-10">
           <Button variant="danger" onClick={() => setShowCancelModal(true)}>
             {participantCount > 0 ? "Ställ in aktivitet" : "Radera aktivitet"}
           </Button>

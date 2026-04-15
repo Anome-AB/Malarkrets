@@ -1,5 +1,7 @@
 "use client";
 
+import { getColorHex } from "@/lib/color-themes";
+
 interface WhatToExpect {
   okAlone?: boolean;
   experienceLevel?: string;
@@ -26,6 +28,7 @@ interface ActivityCardProps {
     maxParticipants: number | null;
     whatToExpect: WhatToExpect | null;
     imageThumbUrl: string | null;
+    colorTheme?: string | null;
   };
   isCreator?: boolean;
   userStatus?: "interested" | "attending" | null;
@@ -71,6 +74,8 @@ function ParticipantDots({
 
 export function ActivityCard({ activity, isCreator = false, userStatus, onClick }: ActivityCardProps) {
   const wte = activity.whatToExpect;
+  const colorHex = getColorHex(activity.colorTheme);
+  const hasBg = !!activity.imageThumbUrl || !!colorHex;
 
   return (
     <article
@@ -83,15 +88,29 @@ export function ActivityCard({ activity, isCreator = false, userStatus, onClick 
           onClick?.(activity.id);
         }
       }}
-      className="bg-white border border-border rounded-[10px] p-4 hover:shadow-md hover:border-primary transition cursor-pointer"
+      className="relative overflow-hidden flex flex-col bg-white border border-border rounded-[10px] p-4 hover:shadow-md hover:border-primary transition cursor-pointer h-full"
+      style={
+        activity.imageThumbUrl
+          ? { backgroundImage: `url(${activity.imageThumbUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+          : colorHex
+            ? {
+                backgroundImage: `linear-gradient(135deg, color-mix(in srgb, ${colorHex} 60%, white) 0%, ${colorHex} 55%, color-mix(in srgb, ${colorHex} 80%, black) 100%)`,
+              }
+            : undefined
+      }
     >
-      {activity.imageThumbUrl && (
-        <img
-          src={activity.imageThumbUrl}
-          alt=""
-          className="w-full h-40 object-cover rounded-lg mb-3"
-        />
-      )}
+      {/* Content on gradient white pill — solid 90% left, fades to 10% right (only over image/color bg) */}
+      <div
+        className={`relative flex flex-col flex-1 ${hasBg ? "backdrop-blur-[2px] rounded-[8px] p-3 -m-1" : ""}`}
+        style={
+          hasBg
+            ? {
+                background:
+                  "linear-gradient(to right, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.9) 50%, rgba(255,255,255,0.1) 100%)",
+              }
+            : undefined
+        }
+      >
 
       {(isCreator || userStatus) && (
         <div className="flex justify-end gap-1.5 mb-1">
@@ -118,8 +137,22 @@ export function ActivityCard({ activity, isCreator = false, userStatus, onClick 
       </h3>
 
       <p className="text-sm text-secondary mt-1">
-        {formatDate(activity.startTime)} &middot; {activity.location}
+        {formatDate(activity.startTime)}
       </p>
+      {(() => {
+        // Split address into name + rest on own lines if we have multiple parts
+        const parts = activity.location.split(",").map((s) => s.trim()).filter(Boolean);
+        if (parts.length >= 3) {
+          // "Name, street, city" → name on own line, rest below
+          return (
+            <>
+              <p className="text-sm text-secondary font-medium">{parts[0]}</p>
+              <p className="text-sm text-secondary">{parts.slice(1).join(", ")}</p>
+            </>
+          );
+        }
+        return <p className="text-sm text-secondary">{activity.location}</p>;
+      })()}
 
       {activity.tags.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mt-2">
@@ -134,11 +167,12 @@ export function ActivityCard({ activity, isCreator = false, userStatus, onClick 
         </div>
       )}
 
-      <div className="mt-3 pt-3 border-t border-border">
+      <div className="mt-auto pt-3 border-t border-border">
         <ParticipantDots
           count={activity.participantCount}
           max={activity.maxParticipants}
         />
+      </div>
       </div>
     </article>
   );

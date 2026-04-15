@@ -44,6 +44,16 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "participant_left",
   "activity_deleted",
   "activity_cancelled",
+  "activity_edited_by_admin",
+]);
+
+export const adminActionTypeEnum = pgEnum("admin_action_type", [
+  "activity_edited",
+  "activity_cancelled",
+  "activity_deleted",
+  "activity_restored",
+  "user_banned",
+  "user_unbanned",
 ]);
 
 export const reportStatusEnum = pgEnum("report_status", [
@@ -144,6 +154,7 @@ export const activities = pgTable(
     imageThumbUrl: text("image_thumb_url"),
     imageMediumUrl: text("image_medium_url"),
     imageOgUrl: text("image_og_url"),
+    colorTheme: text("color_theme"),
     maxParticipants: integer("max_participants"),
     genderRestriction: genderRestrictionEnum("gender_restriction").default(
       "alla",
@@ -155,6 +166,11 @@ export const activities = pgTable(
     ),
     cancelledAt: timestamp("cancelled_at"),
     cancelledReason: text("cancelled_reason"),
+    deletedAt: timestamp("deleted_at"),
+    deletedBy: uuid("deleted_by").references(() => users.id, {
+      onDelete: "restrict",
+    }),
+    deletedReason: text("deleted_reason"),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
   },
@@ -165,6 +181,7 @@ export const activities = pgTable(
       table.minAge,
       table.startTime,
     ),
+    index("activities_deleted_at_idx").on(table.deletedAt),
   ],
 );
 
@@ -265,6 +282,38 @@ export const reports = pgTable("reports", {
   createdAt: timestamp("created_at").defaultNow(),
   reviewedAt: timestamp("reviewed_at"),
 });
+
+export const adminActions = pgTable(
+  "admin_actions",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    adminId: uuid("admin_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    actionType: adminActionTypeEnum("action_type").notNull(),
+    targetActivityId: uuid("target_activity_id").references(
+      () => activities.id,
+      { onDelete: "set null" },
+    ),
+    targetUserId: uuid("target_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    sourceReportId: uuid("source_report_id").references(() => reports.id, {
+      onDelete: "set null",
+    }),
+    reason: text().notNull(),
+    diff: jsonb(),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [
+    index("admin_actions_admin_idx").on(table.adminId, table.createdAt),
+    index("admin_actions_activity_idx").on(
+      table.targetActivityId,
+      table.createdAt,
+    ),
+    index("admin_actions_user_idx").on(table.targetUserId, table.createdAt),
+  ],
+);
 
 export const analyticsEvents = pgTable(
   "analytics_events",
@@ -432,6 +481,27 @@ export const analyticsEventsRelations = relations(
   }),
 );
 
+export const adminActionsRelations = relations(adminActions, ({ one }) => ({
+  admin: one(users, {
+    fields: [adminActions.adminId],
+    references: [users.id],
+    relationName: "adminActionsByAdmin",
+  }),
+  targetActivity: one(activities, {
+    fields: [adminActions.targetActivityId],
+    references: [activities.id],
+  }),
+  targetUser: one(users, {
+    fields: [adminActions.targetUserId],
+    references: [users.id],
+    relationName: "adminActionsAgainstUser",
+  }),
+  sourceReport: one(reports, {
+    fields: [adminActions.sourceReportId],
+    references: [reports.id],
+  }),
+}));
+
 // ─── TypeScript Types ────────────────────────────────────────────────────────
 
 export type User = typeof users.$inferSelect;
@@ -469,3 +539,6 @@ export type NewReport = typeof reports.$inferInsert;
 
 export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
 export type NewAnalyticsEvent = typeof analyticsEvents.$inferInsert;
+
+export type AdminAction = typeof adminActions.$inferSelect;
+export type NewAdminAction = typeof adminActions.$inferInsert;

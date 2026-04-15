@@ -27,10 +27,13 @@ async function getCreatedActivities(userId: string) {
       location: activities.location,
       startTime: activities.startTime,
       imageThumbUrl: activities.imageThumbUrl,
+      colorTheme: activities.colorTheme,
       maxParticipants: activities.maxParticipants,
       whatToExpect: activities.whatToExpect,
       cancelledAt: activities.cancelledAt,
       cancelledReason: activities.cancelledReason,
+      deletedAt: activities.deletedAt,
+      deletedReason: activities.deletedReason,
     })
     .from(activities)
     .where(eq(activities.creatorId, userId))
@@ -97,6 +100,7 @@ async function getCreatedActivities(userId: string) {
     location: a.location,
     startTime: a.startTime,
     imageThumbUrl: a.imageThumbUrl,
+    colorTheme: a.colorTheme,
     maxParticipants: a.maxParticipants,
     whatToExpect: a.whatToExpect as {
       okAlone?: boolean;
@@ -109,6 +113,8 @@ async function getCreatedActivities(userId: string) {
     participantCount: countByActivity.get(a.id) ?? 0,
     cancelledAt: a.cancelledAt,
     cancelledReason: a.cancelledReason,
+    deletedAt: a.deletedAt,
+    deletedReason: a.deletedReason,
   }));
 }
 
@@ -121,10 +127,13 @@ async function getParticipatingActivities(userId: string) {
       location: activities.location,
       startTime: activities.startTime,
       imageThumbUrl: activities.imageThumbUrl,
+      colorTheme: activities.colorTheme,
       maxParticipants: activities.maxParticipants,
       whatToExpect: activities.whatToExpect,
       cancelledAt: activities.cancelledAt,
       cancelledReason: activities.cancelledReason,
+      deletedAt: activities.deletedAt,
+      deletedReason: activities.deletedReason,
       status: activityParticipants.status,
     })
     .from(activityParticipants)
@@ -193,6 +202,7 @@ async function getParticipatingActivities(userId: string) {
     location: a.location,
     startTime: a.startTime,
     imageThumbUrl: a.imageThumbUrl,
+    colorTheme: a.colorTheme,
     maxParticipants: a.maxParticipants,
     whatToExpect: a.whatToExpect as {
       okAlone?: boolean;
@@ -205,6 +215,8 @@ async function getParticipatingActivities(userId: string) {
     participantCount: countByActivity.get(a.id) ?? 0,
     cancelledAt: a.cancelledAt,
     cancelledReason: a.cancelledReason,
+    deletedAt: a.deletedAt,
+    deletedReason: a.deletedReason,
     status: a.status as "interested" | "attending",
   }));
 }

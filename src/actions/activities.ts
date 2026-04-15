@@ -59,6 +59,10 @@ export async function createActivity(formData: FormData) {
       minAge: formData.get("minAge")
         ? Number(formData.get("minAge"))
         : undefined,
+      imageThumbUrl: (formData.get("imageThumbUrl") as string) || undefined,
+      imageMediumUrl: (formData.get("imageMediumUrl") as string) || undefined,
+      imageOgUrl: (formData.get("imageOgUrl") as string) || undefined,
+      colorTheme: (formData.get("colorTheme") as string) || undefined,
       tags: JSON.parse((formData.get("tags") as string) || "[]"),
       whatToExpect: JSON.parse(
         (formData.get("whatToExpect") as string) || "{}",
@@ -121,7 +125,7 @@ export async function createActivity(formData: FormData) {
       }
     }
 
-    const { tags, whatToExpect, startTime, endTime, genderRestriction, latitude, longitude, ...rest } = data;
+    const { tags, whatToExpect, startTime, endTime, genderRestriction, latitude, longitude, imageThumbUrl, imageMediumUrl, imageOgUrl, colorTheme, ...rest } = data;
 
     const [newActivity] = await db
       .insert(activities)
@@ -131,6 +135,10 @@ export async function createActivity(formData: FormData) {
         location: rest.location,
         latitude: latitude ?? null,
         longitude: longitude ?? null,
+        imageThumbUrl: imageThumbUrl ?? null,
+        imageMediumUrl: imageMediumUrl ?? null,
+        imageOgUrl: imageOgUrl ?? null,
+        colorTheme: colorTheme ?? null,
         maxParticipants: rest.maxParticipants,
         minAge: rest.minAge,
         creatorId: user.id!,
@@ -184,6 +192,10 @@ export async function updateActivity(formData: FormData) {
       location: formData.get("location") || undefined,
       latitude: formData.get("latitude") ? Number(formData.get("latitude")) : undefined,
       longitude: formData.get("longitude") ? Number(formData.get("longitude")) : undefined,
+      imageThumbUrl: formData.has("imageThumbUrl") ? (formData.get("imageThumbUrl") as string) || null : undefined,
+      imageMediumUrl: formData.has("imageMediumUrl") ? (formData.get("imageMediumUrl") as string) || null : undefined,
+      imageOgUrl: formData.has("imageOgUrl") ? (formData.get("imageOgUrl") as string) || null : undefined,
+      colorTheme: formData.has("colorTheme") ? (formData.get("colorTheme") as string) || null : undefined,
       startTime: formData.get("startTime") || undefined,
       endTime: formData.get("endTime") || undefined,
       maxParticipants: formData.get("maxParticipants")
@@ -267,7 +279,7 @@ export async function updateActivity(formData: FormData) {
       }
     }
 
-    const { id, tags, whatToExpect, startTime, endTime, latitude, longitude, ...updateData } = data;
+    const { id, tags, whatToExpect, startTime, endTime, latitude, longitude, imageThumbUrl, imageMediumUrl, imageOgUrl, colorTheme, ...updateData } = data;
 
     await db
       .update(activities)
@@ -275,6 +287,10 @@ export async function updateActivity(formData: FormData) {
         ...updateData,
         ...(latitude !== undefined && { latitude }),
         ...(longitude !== undefined && { longitude }),
+        ...(imageThumbUrl !== undefined && { imageThumbUrl }),
+        ...(imageMediumUrl !== undefined && { imageMediumUrl }),
+        ...(imageOgUrl !== undefined && { imageOgUrl }),
+        ...(colorTheme !== undefined && { colorTheme }),
         ...(whatToExpect !== undefined && { whatToExpect }),
         ...(startTime !== undefined && { startTime: new Date(startTime) }),
         ...(endTime !== undefined && { endTime: new Date(endTime) }),
@@ -701,6 +717,7 @@ export async function getActivityDetail(activityId: string) {
     maxParticipants: activity.maxParticipants,
     cancelledAt: activity.cancelledAt,
     imageMediumUrl: activity.imageMediumUrl,
+    colorTheme: activity.colorTheme,
     whatToExpect: wte,
     creatorId: activity.creatorId,
     creatorName: creator?.displayName ?? "Anonym",

@@ -1,6 +1,6 @@
 "use server";
 
-import { requireAuth } from "@/lib/auth";
+import { requireAdmin as requireAdminFromAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
   users,
@@ -16,15 +16,7 @@ import { eq, and, gt, isNull, or, ilike, count, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 async function requireAdmin() {
-  const user = await requireAuth();
-  const profile = await db.query.users.findFirst({
-    where: eq(users.id, user.id),
-  });
-
-  if (!profile?.isAdmin) {
-    throw new Error("Åtkomst nekad");
-  }
-
+  const { user } = await requireAdminFromAuth();
   return user;
 }
 
