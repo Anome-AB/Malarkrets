@@ -57,18 +57,24 @@ startar `docker-compose.prod.yml`.
 
 ### Databas-migrationer
 
-**Status:** Manuellt idag. Automatiseringsbeslut pågår — se `TODOS.md`
-("Automatiska DB-migrationer vid deploy"). Kräver avstämning med GreenLion.
+**Status:** Automatiska. `migrate`-tjänsten i `docker-compose.prod.yml` kör
+Drizzle-migrationer vid varje `docker compose up` och avslutar med 0 innan
+app-containern startar. Implementationen:
 
-**Idag (dev/staging):**
-```bash
-for f in src/db/migrations/0*.sql; do
-  docker compose -f docker-compose.prod.yml exec -T postgres \
-    psql -U malarkrets -d malarkrets < "$f"
-done
-```
+- `scripts/migrate.mjs` kör `migrate()` från `drizzle-orm/postgres-js/migrator`
+  mot `DATABASE_URL`.
+- `migrate`-stage i `Dockerfile` bygger en minimal image (node:22-alpine +
+  prod-deps + migrationsfiler). Pushas i release.yml som
+  `ghcr.io/anome-ab/malarkrets:migrate-latest` / `:migrate-sha-<hash>`.
+- `app` i compose har `depends_on: migrate: condition: service_completed_successfully`,
+  så en trasig migration stoppar hela stacken (medvetet — hellre ner än
+  schemadrift).
 
-Prod-postgres exponerar **inte** 5432 mot host. Temporär portmappning
+**Rollback vid trasig migration:** pinna både `app`- och `migrate`-imagen
+till föregående gröna sha i `.env.prod` (eller direkt i compose) och kör
+`docker compose up -d`. Backup tas via pg_dump-cron (se TODOS).
+
+**Prod-postgres** exponerar inte 5432 mot host. Temporär portmappning
 `127.0.0.1:5433:5432` kan läggas till i compose-filen för seed/verktyg,
 och ska tas bort direkt efter.
 

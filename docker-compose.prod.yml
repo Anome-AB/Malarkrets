@@ -1,4 +1,14 @@
 services:
+  migrate:
+    # Runs Drizzle migrations once and exits. App waits for exit 0 before starting.
+    # Image built from the `migrate` stage in Dockerfile — see .github/workflows/release.yml.
+    image: ghcr.io/anome-ab/malarkrets:migrate-latest
+    env_file: .env.prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
   app:
     image: ghcr.io/anome-ab/malarkrets:latest
     ports:
@@ -7,6 +17,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]

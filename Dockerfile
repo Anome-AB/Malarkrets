@@ -25,3 +25,16 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 CMD ["node", "server.js"]
+
+# Separate image for running Drizzle migrations. Used by the `migrate` service
+# in docker-compose.prod.yml. Stays small by installing only prod deps (no
+# Next.js build, no drizzle-kit — the migrator is the runtime one from
+# drizzle-orm/postgres-js/migrator).
+FROM node:22-alpine AS migrate
+WORKDIR /app
+ENV NODE_ENV=production
+COPY package.json package-lock.json* ./
+RUN npm ci --omit=dev && npm cache clean --force
+COPY src/db/migrations ./src/db/migrations
+COPY scripts/migrate.mjs ./scripts/migrate.mjs
+CMD ["node", "scripts/migrate.mjs"]
