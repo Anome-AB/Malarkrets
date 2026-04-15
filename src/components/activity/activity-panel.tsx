@@ -404,10 +404,6 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
               activity={{
                 id: detail.id,
                 title: detail.title,
-                description: detail.description,
-                location: detail.location,
-                startTime: detail.startTime,
-                endTime: detail.endTime,
                 creatorDisplayName: detail.creatorName,
               }}
               creatorIsAdmin={detail.creatorIsAdmin}

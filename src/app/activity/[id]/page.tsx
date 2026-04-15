@@ -493,24 +493,6 @@ export default async function ActivityDetailPage({
               </div>
             </Card>
 
-            {/* Admin moderation controls — visible only to non-creator admins on live activities */}
-            {isAdmin && !isCreator && !activity.deletedAt && (
-              <Card>
-                <AdminActivityControls
-                  activity={{
-                    id: activity.id,
-                    title: activity.title,
-                    description: activity.description,
-                    location: activity.location,
-                    startTime: activity.startTime,
-                    endTime: activity.endTime,
-                    creatorDisplayName: activity.creator?.displayName ?? null,
-                  }}
-                  creatorIsAdmin={activity.creator?.isAdmin ?? false}
-                />
-              </Card>
-            )}
-
             {/* Card: Courage section */}
             {wte && (
               <Card>
@@ -531,6 +513,23 @@ export default async function ActivityDetailPage({
                 isCancelled={!!activity.cancelledAt}
               />
             </Card>
+
+            {/* Admin moderation — placed last so it naturally sits at the bottom of the
+                content column, and sticks to the viewport bottom on desktop while scrolling
+                back up through the page. Mobile stays inline to avoid colliding with the
+                floating join/leave action bar. */}
+            {isAdmin && !isCreator && !activity.deletedAt && (
+              <Card className="!bg-info-light border-info/30 lg:sticky lg:bottom-4 lg:z-20 shadow-admin-footer">
+                <AdminActivityControls
+                  activity={{
+                    id: activity.id,
+                    title: activity.title,
+                    creatorDisplayName: activity.creator?.displayName ?? null,
+                  }}
+                  creatorIsAdmin={activity.creator?.isAdmin ?? false}
+                />
+              </Card>
+            )}
         </div>
       </div>
     </div>

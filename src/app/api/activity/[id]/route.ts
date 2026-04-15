@@ -5,6 +5,7 @@ import {
   activityTags,
   activityParticipants,
   interestTags,
+  users,
 } from "@/db/schema";
 import { eq, count } from "drizzle-orm";
 import { NextResponse } from "next/server";
@@ -28,9 +29,19 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  if (activity.creatorId !== session.user.id) {
+  const viewer = await db.query.users.findFirst({
+    where: eq(users.id, session.user.id),
+  });
+  const isCreator = activity.creatorId === session.user.id;
+  const isAdmin = viewer?.isAdmin ?? false;
+
+  if (!isCreator && !isAdmin) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+
+  const creator = activity.creatorId
+    ? await db.query.users.findFirst({ where: eq(users.id, activity.creatorId) })
+    : null;
 
   // Get tags
   const tags = await db
@@ -71,6 +82,11 @@ export async function GET(
       whatToExpect,
       tags: tags.map((t) => t.id),
       participantCount,
+      creatorId: activity.creatorId,
+      creatorDisplayName: creator?.displayName ?? null,
+      creatorGender: creator?.gender ?? "ej_angett",
+      viewerIsAdmin: isAdmin,
+      viewerIsCreator: isCreator,
     },
   });
 }

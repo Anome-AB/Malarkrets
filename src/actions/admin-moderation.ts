@@ -232,10 +232,12 @@ export async function adminCancelActivity(input: unknown, sourceReportId?: strin
         reason,
       });
 
-      // Notify creator + all participants
+      // Notify creator + all participants, excluding the acting admin if they happen
+      // to be a participant on the activity.
       const recipientIds = new Set<string>();
       if (activity.creatorId) recipientIds.add(activity.creatorId);
       for (const p of participants) recipientIds.add(p.userId);
+      recipientIds.delete(admin.id);
 
       if (recipientIds.size > 0) {
         await tx.insert(notifications).values(
@@ -343,11 +345,12 @@ export async function adminDeleteActivity(input: unknown, sourceReportId?: strin
         reason,
       });
 
-      // Notify creator + all participants
+      // Notify creator + all participants, excluding the acting admin.
       const creatorId = activity.creatorId;
       const recipientIds = new Set<string>();
       if (creatorId) recipientIds.add(creatorId);
       for (const p of participants) recipientIds.add(p.userId);
+      recipientIds.delete(admin.id);
 
       if (recipientIds.size > 0) {
         await tx.insert(notifications).values(

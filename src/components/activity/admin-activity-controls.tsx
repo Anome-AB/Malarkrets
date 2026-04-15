@@ -1,13 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import {
-  adminEditActivity,
   adminCancelActivity,
   adminDeleteActivity,
 } from "@/actions/admin-moderation";
@@ -15,10 +14,6 @@ import {
 interface ActivityForEdit {
   id: string;
   title: string;
-  description: string;
-  location: string;
-  startTime: Date | string;
-  endTime: Date | string | null;
   creatorDisplayName?: string | null;
 }
 
@@ -28,72 +23,19 @@ interface Props {
   compact?: boolean;
 }
 
-function toLocalInput(d: Date | string | null): string {
-  if (!d) return "";
-  const date = typeof d === "string" ? new Date(d) : d;
-  // yyyy-MM-ddTHH:mm
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-
 export function AdminActivityControls({ activity, creatorIsAdmin, compact = false }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
-  const [editOpen, setEditOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  // Edit form state
-  const [title, setTitle] = useState(activity.title);
-  const [description, setDescription] = useState(activity.description);
-  const [location, setLocation] = useState(activity.location);
-  const [startTime, setStartTime] = useState(toLocalInput(activity.startTime));
-  const [endTime, setEndTime] = useState(toLocalInput(activity.endTime));
-  const [editReason, setEditReason] = useState("");
-
-  // Cancel form state
   const [cancelReason, setCancelReason] = useState("");
 
-  // Delete form state
   const [deleteReason, setDeleteReason] = useState("");
   const [banCreator, setBanCreator] = useState(false);
   const [banReason, setBanReason] = useState("");
-
-  function handleEdit() {
-    const patch: Record<string, string> = {};
-    if (title !== activity.title) patch.title = title;
-    if (description !== activity.description) patch.description = description;
-    if (location !== activity.location) patch.location = location;
-    const origStart = toLocalInput(activity.startTime);
-    if (startTime !== origStart) patch.startTime = new Date(startTime).toISOString();
-    const origEnd = toLocalInput(activity.endTime);
-    if (endTime !== origEnd) {
-      patch.endTime = endTime ? new Date(endTime).toISOString() : "";
-    }
-
-    if (Object.keys(patch).length === 0) {
-      toast("Inga ändringar att spara", "warning");
-      return;
-    }
-
-    startTransition(async () => {
-      const result = await adminEditActivity({
-        activityId: activity.id,
-        reason: editReason,
-        patch,
-      });
-      if (result.success) {
-        toast("Aktiviteten har redigerats och arrangören notifierats", "success");
-        setEditOpen(false);
-        setEditReason("");
-        router.refresh();
-      } else {
-        toast(result.error ?? "Något gick fel", "error");
-      }
-    });
-  }
 
   function handleCancel() {
     startTransition(async () => {
@@ -133,6 +75,8 @@ export function AdminActivityControls({ activity, creatorIsAdmin, compact = fals
     });
   }
 
+  const editHref = `/activity/${activity.id}/edit`;
+
   return (
     <>
       {compact ? (
@@ -141,14 +85,11 @@ export function AdminActivityControls({ activity, creatorIsAdmin, compact = fals
             Administration
           </span>
           <div className="flex items-center gap-2">
-            <Button
-              variant="secondary"
-              size="compact"
-              onClick={() => setEditOpen(true)}
-              type="button"
-            >
-              Redigera
-            </Button>
+            <Link href={editHref}>
+              <Button variant="secondary" size="compact" type="button">
+                Redigera
+              </Button>
+            </Link>
             <Button
               variant="secondary"
               size="compact"
@@ -168,14 +109,16 @@ export function AdminActivityControls({ activity, creatorIsAdmin, compact = fals
           </div>
         </div>
       ) : (
-        <div className="border-t border-border pt-4 mt-4">
-          <p className="text-xs font-semibold text-dimmed uppercase tracking-wide mb-2">
+        <div>
+          <p className="text-xs font-semibold text-info uppercase tracking-wider mb-3">
             Administration
           </p>
           <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" onClick={() => setEditOpen(true)} type="button">
-              Redigera som admin
-            </Button>
+            <Link href={editHref}>
+              <Button variant="secondary" type="button">
+                Redigera som admin
+              </Button>
+            </Link>
             <Button variant="secondary" onClick={() => setCancelOpen(true)} type="button">
               Avboka
             </Button>
@@ -185,73 +128,6 @@ export function AdminActivityControls({ activity, creatorIsAdmin, compact = fals
           </div>
         </div>
       )}
-
-      {/* Edit dialog */}
-      <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Redigera aktivitet som admin">
-        <div className="space-y-4">
-          <p className="text-sm text-secondary">
-            Arrangören får en notis med anledningen och de fält som ändrats.
-          </p>
-          <Input
-            label="Titel"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-          <div className="flex flex-col gap-1">
-            <label htmlFor="admin-edit-desc" className="text-sm font-medium text-heading">
-              Beskrivning
-            </label>
-            <textarea
-              id="admin-edit-desc"
-              rows={4}
-              className="w-full px-3 py-2 rounded-control border border-border text-heading bg-white focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-          <Input
-            label="Plats"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-          />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              label="Starttid"
-              type="datetime-local"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-            />
-            <Input
-              label="Sluttid"
-              type="datetime-local"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="admin-edit-reason" className="text-sm font-medium text-heading">
-              Anledning till ändring <span className="text-error">*</span>
-            </label>
-            <textarea
-              id="admin-edit-reason"
-              rows={2}
-              placeholder="Beskriv varför du redigerar (minst 10 tecken)"
-              className="w-full px-3 py-2 rounded-control border border-border text-heading bg-white focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
-              value={editReason}
-              onChange={(e) => setEditReason(e.target.value)}
-              required
-            />
-          </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="secondary" onClick={() => setEditOpen(false)} type="button">
-              Avbryt
-            </Button>
-            <Button variant="primary" onClick={handleEdit} loading={isPending} type="button">
-              Spara ändringar
-            </Button>
-          </div>
-        </div>
-      </Modal>
 
       {/* Cancel dialog */}
       <Modal open={cancelOpen} onClose={() => setCancelOpen(false)} title="Avboka aktivitet">
@@ -335,7 +211,7 @@ export function AdminActivityControls({ activity, creatorIsAdmin, compact = fals
                     id="admin-ban-reason"
                     rows={2}
                     placeholder="Beskriv varför användaren stängs av"
-                    className="w-full px-3 py-2 rounded-control border border-border text-heading bg-white focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
+                    className="w-full px-3 py-2 rounded-control border border-border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
                     value={banReason}
                     onChange={(e) => setBanReason(e.target.value)}
                   />

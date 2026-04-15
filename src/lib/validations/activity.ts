@@ -34,7 +34,16 @@ export const createActivitySchema = baseActivitySchema.refine(
 
 export const updateActivitySchema = baseActivitySchema
   .partial()
-  .extend({ id: z.string().uuid() });
+  .extend({
+    id: z.string().uuid(),
+    // When a non-creator admin edits, an explanation is required.
+    // Ignored when the creator edits their own activity.
+    adminReason: z
+      .string()
+      .min(10, "Ange en anledning (minst 10 tecken)")
+      .max(500, "Max 500 tecken")
+      .optional(),
+  });
 
 export type CreateActivityInput = z.infer<typeof createActivitySchema>;
 export type UpdateActivityInput = z.infer<typeof updateActivitySchema>;

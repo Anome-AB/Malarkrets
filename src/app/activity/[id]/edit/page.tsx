@@ -30,6 +30,7 @@ interface FormValues {
   experienceLevel: string;
   whoComes: string;
   latePolicy: string;
+  adminReason: string;
 }
 
 const AUDIENCE_OPTIONS = [
@@ -64,9 +65,13 @@ export default function EditActivityPage() {
   const [locationText, setLocationText] = useState("");
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
 
-  // Gender state
+  // Gender state (creator-owned: in admin mode we display the creator's gender instead of the viewer's)
   const [userGender, setUserGender] = useState<string>("ej_angett");
   const [genderOpen, setGenderOpen] = useState(false);
+
+  // Admin-mode flags
+  const [isAdminEdit, setIsAdminEdit] = useState(false);
+  const [creatorDisplayName, setCreatorDisplayName] = useState<string | null>(null);
 
   // Audience state
   const [audience, setAudience] = useState<string>("alla");
@@ -104,8 +109,18 @@ export default function EditActivityPage() {
         const { activity } = await actRes.json();
         const intData = intRes.ok ? await intRes.json() : { interests: [], gender: "ej_angett" };
 
+        const adminEditing = !!activity.viewerIsAdmin && !activity.viewerIsCreator;
+        setIsAdminEdit(adminEditing);
+        setCreatorDisplayName(activity.creatorDisplayName ?? null);
+
         setUserInterests(intData.interests ?? []);
-        if (intData.gender) setUserGender(intData.gender);
+        // Gender toggle UI reflects the creator's gender when an admin is editing —
+        // otherwise gender semantics would be incorrect (toggle would read "Endast kvinnor"
+        // based on the admin's gender, not the creator's).
+        const genderForToggle = adminEditing
+          ? (activity.creatorGender ?? "ej_angett")
+          : (intData.gender ?? "ej_angett");
+        setUserGender(genderForToggle);
         setSelectedTags(activity.tags ?? []);
         setParticipantCount(activity.participantCount ?? 0);
         setLocationText(activity.location ?? "");
@@ -139,6 +154,7 @@ export default function EditActivityPage() {
           experienceLevel: wte.experienceLevel ?? "alla",
           whoComes: wte.whoComes ?? "",
           latePolicy: wte.latePolicy ?? "",
+          adminReason: "",
         });
       } catch {
         setLoadError("Kunde inte ladda aktiviteten");
@@ -222,6 +238,9 @@ export default function EditActivityPage() {
         whoComes: values.whoComes || undefined,
         latePolicy: values.latePolicy || undefined,
       }));
+      if (isAdminEdit) {
+        formData.set("adminReason", values.adminReason);
+      }
 
       const result = await updateActivity(formData);
 
@@ -256,7 +275,16 @@ export default function EditActivityPage() {
   return (
     <div className="px-6 pt-8 flex flex-col min-h-full">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-heading">Redigera aktivitet</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-heading">
+            {isAdminEdit ? "Redigera aktivitet som admin" : "Redigera aktivitet"}
+          </h1>
+          {isAdminEdit && creatorDisplayName && (
+            <p className="text-sm text-secondary mt-1">
+              Arrangör: <span className="font-medium text-heading">{creatorDisplayName}</span>
+            </p>
+          )}
+        </div>
         <Link
           href={`/activity/${activityId}`}
           className="text-sm text-secondary hover:text-heading transition-colors"
@@ -264,6 +292,33 @@ export default function EditActivityPage() {
           Avbryt
         </Link>
       </div>
+
+      {isAdminEdit && (
+        <Card className="mb-6 !bg-info-light border-info/30">
+          <div className="flex flex-col gap-1">
+            <label htmlFor="edit-admin-reason" className="text-sm font-semibold text-info">
+              Anledning till ändring <span className="text-error">*</span>
+            </label>
+            <p className="text-xs text-secondary mb-1">
+              Arrangören får en notis med anledningen och en lista över de fält du ändrat.
+            </p>
+            <textarea
+              id="edit-admin-reason"
+              rows={3}
+              placeholder="Beskriv varför du redigerar (minst 10 tecken)"
+              className="w-full px-3 py-2 rounded-control border border-info/40 text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-info focus:ring-info resize-y"
+              {...register("adminReason", isAdminEdit ? {
+                required: "Ange en anledning (minst 10 tecken)",
+                minLength: { value: 10, message: "Minst 10 tecken" },
+                maxLength: { value: 500, message: "Max 500 tecken" },
+              } : {})}
+            />
+            {errors.adminReason && (
+              <p className="text-sm text-error">{errors.adminReason.message}</p>
+            )}
+          </div>
+        </Card>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1">
         <div className="grid grid-cols-activity-form gap-6 items-start">
@@ -394,15 +449,17 @@ export default function EditActivityPage() {
                 placeholder="Obegränsat"
                 {...register("maxParticipants")}
               />
-              <Input
-                label="Åldersgräns?"
-                type="number"
-                min={0}
-                max={120}
-                placeholder="Ingen"
-                {...register("minAge")}
-              />
-              {userGender !== "ej_angett" && (
+              {!isAdminEdit && (
+                <Input
+                  label="Åldersgräns?"
+                  type="number"
+                  min={0}
+                  max={120}
+                  placeholder="Ingen"
+                  {...register("minAge")}
+                />
+              )}
+              {!isAdminEdit && userGender !== "ej_angett" && (
                 <div>
                   <label className="text-sm font-medium text-heading mb-1 block">Aktiviteten är öppen för</label>
                   <div className="inline-flex rounded-control border border-border overflow-hidden">
@@ -459,9 +516,15 @@ export default function EditActivityPage() {
 
         {/* Sticky footer — pushed to bottom of viewport */}
         <div className="sticky bottom-0 -mx-6 px-6 py-3 bg-white border-t border-border shadow-sticky-footer mt-auto pt-3 flex justify-between items-center gap-3 z-10">
-          <Button variant="danger" onClick={() => setShowCancelModal(true)}>
-            {participantCount > 0 ? "Ställ in aktivitet" : "Radera aktivitet"}
-          </Button>
+          {isAdminEdit ? (
+            <p className="text-xs text-dimmed">
+              Avboka eller ta bort görs via moderations-verktygen på aktivitetssidan.
+            </p>
+          ) : (
+            <Button variant="danger" onClick={() => setShowCancelModal(true)}>
+              {participantCount > 0 ? "Ställ in aktivitet" : "Radera aktivitet"}
+            </Button>
+          )}
           <Button type="submit" variant="primary" loading={isPending}>
             Spara ändringar
           </Button>

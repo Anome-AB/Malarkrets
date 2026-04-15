@@ -1,24 +1,36 @@
 import { db } from "@/lib/db";
 import { notifications, activities } from "@/db/schema";
-import { eq, and, desc, count, sql } from "drizzle-orm";
+import { eq, and, desc, count } from "drizzle-orm";
+
+const notificationSelect = {
+  id: notifications.id,
+  type: notifications.type,
+  activityId: notifications.activityId,
+  activityTitle: activities.title,
+  params: notifications.params,
+  read: notifications.read,
+  createdAt: notifications.createdAt,
+};
 
 export async function getUnreadNotifications(userId: string) {
   return db
-    .select({
-      id: notifications.id,
-      type: notifications.type,
-      activityId: notifications.activityId,
-      activityTitle: activities.title,
-      params: notifications.params,
-      read: notifications.read,
-      createdAt: notifications.createdAt,
-    })
+    .select(notificationSelect)
     .from(notifications)
     .leftJoin(activities, eq(notifications.activityId, activities.id))
     .where(
       and(eq(notifications.userId, userId), eq(notifications.read, false)),
     )
     .orderBy(desc(notifications.createdAt));
+}
+
+export async function getRecentNotifications(userId: string, limit = 50) {
+  return db
+    .select(notificationSelect)
+    .from(notifications)
+    .leftJoin(activities, eq(notifications.activityId, activities.id))
+    .where(eq(notifications.userId, userId))
+    .orderBy(desc(notifications.createdAt))
+    .limit(limit);
 }
 
 export async function getNotificationCount(userId: string) {

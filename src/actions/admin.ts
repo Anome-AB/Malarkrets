@@ -113,9 +113,10 @@ export async function banUser(userId: string, reason: string) {
         .from(activityParticipants)
         .where(eq(activityParticipants.activityId, activity.id));
 
-      if (participants.length > 0) {
+      const recipients = participants.filter((p) => p.userId !== admin.id);
+      if (recipients.length > 0) {
         await db.insert(notifications).values(
-          participants.map((p) => ({
+          recipients.map((p) => ({
             userId: p.userId,
             type: "activity_cancelled" as const,
             activityId: activity.id,
