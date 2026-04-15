@@ -15,6 +15,40 @@ diskuteras.
 - Release-tagging och rollback
 - Observability (health checks, loggning, backup)
 
+## VPS-provisionering
+
+Fresh Ubuntu 24.04-box → redo för `docker compose up` i ett steg:
+
+```bash
+SSH_PUBKEY="ssh-ed25519 AAAA... you@host" \
+  bash scripts/provision-vps.sh
+```
+
+Scriptet körs som root, är idempotent, och gör:
+- `deploy`-user med passwordless sudo + SSH-nyckel.
+- SSH-hardening (disable root login, password auth).
+- UFW öppet på 22, 80, 443.
+- 2 GB swap + `vm.swappiness=10`.
+- `unattended-upgrades` (security-only) + `fail2ban`.
+- Docker CE + compose-plugin.
+
+Scriptet rör **inte** repot, `.env.prod`, eller compose — det är hostnivå
+enbart. Efter provisioning: git clone + scp `.env.prod` + `docker compose up`.
+
+## Reverse proxy (Caddy)
+
+Caddy kör som container i `docker-compose.prod.yml`, terminerar TLS, och
+proxy:ar till app:3000. Konfiguration: `Caddyfile` + två env-vars i `.env.prod`:
+
+- `DOMAIN` — `localhost` för lokalt test, riktigt hostnamn i prod.
+- `LETSENCRYPT_EMAIL` — required när DOMAIN är riktigt hostnamn.
+
+Med riktigt DOMAIN hämtar Caddy Let's Encrypt-cert vid första request (HTTP-01
+challenge över port 80). Cert + nycklar persist:as i `caddy_data`-volymen.
+
+App-containern exponerar `127.0.0.1:3000:3000` — bara lokal debug, aldrig
+publikt. All extern trafik måste gå via Caddy.
+
 ## Pipeline-översikt
 
 ```
