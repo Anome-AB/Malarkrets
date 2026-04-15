@@ -1,4 +1,12 @@
 @AGENTS.md
+@TEAMS.md
+
+## Conditional context
+
+- When editing `.github/workflows/`, `Dockerfile`, `docker-compose*.yml`,
+  `scripts/`, or `.env*` files → read `RELEASE.md` before making changes.
+- When a change crosses a team boundary (see `TEAMS.md`) → flag it in your
+  response so the user can coordinate.
 
 ## Design System
 
