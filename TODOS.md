@@ -64,15 +64,13 @@
 ### Docker
 - ~~Docker Desktop på Windows har en bugg med inference manager socket.~~ LÖST: Docker Desktop v28.4.0 fungerar (verifierat 2026-04-14).
 
-### För Fredrik — GitHub-kontoägare (blockerande)
-- **Lägg till GitHub Secret `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`** i repot ohman74/Malarkrets.
-  - Via CLI: `gh secret set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY --repo ohman74/Malarkrets`
-  - Eller webben: Settings → Secrets and variables → Actions → New repository secret.
-  - Pipelinen (release.yml) och Dockerfile är redan förberedda att ta emot nyckeln som build-arg och baka in den i klient-bundeln. Utan detta secret kommer kartor i den byggda imagen att rendera utan nyckel (gråa/"for development purposes only").
-- **Restriktera nyckeln i Google Cloud Console** innan den används:
-  - HTTP referrers: produktionsdomän + `http://localhost:3000/*`.
-  - API restrictions: endast Maps JavaScript API + Maps Static API.
-  - Sätt dygns-/månadskvot så stulen nyckel inte kan debiteras oändligt.
+### För Fredrik — GitHub-kontoägare
+- ~~**Lägg till GitHub Secret `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`**~~ KLAR 2026-04-15. Satt på ohman74/Malarkrets, plockas upp av release.yml + Dockerfile som build-arg.
+- **Restriktera nyckeln i Google Cloud Console**:
+  - ✅ HTTP referrers begränsade till localhost (2026-04-15) — säker som GitHub Secret tills prod-domän är bestämd.
+  - ⏳ När prod-domän är klar: lägg till produktionsdomänen som tillåten referrer, annars renderar kartor i prod-imagen som gråa/"for development purposes only".
+  - ⏳ API restrictions: sätt till endast Maps JavaScript API + Maps Static API.
+  - ⏳ Dygns-/månadskvot så stulen nyckel inte kan debiteras oändligt.
 - Om ni har fler hemligheter (SMTP, VPS SSH-nyckel osv) — lägg dem som secrets samtidigt, säg till så uppdaterar vi pipelinen.
 
 ### Release Pipeline (tillagt av /plan-eng-review 2026-04-14)
