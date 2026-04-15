@@ -43,6 +43,13 @@
       "when": 1781712000000,
       "tag": "0005_flat_tags_and_geo",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1776261161821,
+      "tag": "0006_illegal_kid_colt",
+      "breakpoints": true
     }
   ]
 }
