@@ -88,7 +88,7 @@ export function ActivityCard({ activity, isCreator = false, userStatus, onClick 
           onClick?.(activity.id);
         }
       }}
-      className="relative overflow-hidden flex flex-col bg-white border border-border rounded-[10px] p-4 hover:shadow-md hover:border-primary transition cursor-pointer h-full"
+      className="relative overflow-hidden flex flex-col bg-white border border-border rounded-card p-4 hover:shadow-md hover:border-primary transition cursor-pointer h-full"
       style={
         activity.imageThumbUrl
           ? { backgroundImage: `url(${activity.imageThumbUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
@@ -101,7 +101,7 @@ export function ActivityCard({ activity, isCreator = false, userStatus, onClick 
     >
       {/* Content on gradient white pill — solid 90% left, fades to 10% right (only over image/color bg) */}
       <div
-        className={`relative flex flex-col flex-1 ${hasBg ? "backdrop-blur-[2px] rounded-[8px] p-3 -m-1" : ""}`}
+        className={`relative flex flex-col flex-1 ${hasBg ? "backdrop-blur-card-overlay rounded-control p-3 -m-1" : ""}`}
         style={
           hasBg
             ? {

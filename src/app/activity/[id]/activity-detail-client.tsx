@@ -211,7 +211,7 @@ export function ActivityDetailClient({
 
       {/* Floating CTA bar — mobile only, above BottomNav */}
       {!isCancelled && actionButtons && (
-        <div className="fixed bottom-[56px] left-0 right-0 lg:hidden bg-white border-t border-border px-4 py-3 z-40 shadow-[0_-2px_8px_rgba(0,0,0,0.06)]">
+        <div className="fixed bottom-bottomnav left-0 right-0 lg:hidden bg-white border-t border-border px-4 py-3 z-40 shadow-action-bar">
           <div className="flex items-center gap-2 [&>div]:flex-wrap [&>div]:w-full [&_button]:flex-1 [&_a]:flex-1 [&_a]:text-center">
             {actionButtons}
           </div>

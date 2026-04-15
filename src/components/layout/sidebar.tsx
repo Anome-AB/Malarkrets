@@ -70,7 +70,7 @@ export function Sidebar({ interests, activeFilters = [], showAll = false, isAdmi
   const [loggingOut, setLoggingOut] = useState(false);
 
   return (
-    <aside className="w-[200px] bg-white border-r border-border hidden lg:flex flex-col h-full overflow-y-auto">
+    <aside className="w-sidebar bg-white border-r border-border hidden lg:flex flex-col h-full overflow-y-auto">
       <nav className="py-4">
         <ul className="space-y-1">
           {navItems.map((item) => {
@@ -155,7 +155,7 @@ export function Sidebar({ interests, activeFilters = [], showAll = false, isAdmi
                 <Link
                   key={interest.id}
                   href={href}
-                  className={`inline-block px-2 py-1 text-[11px] rounded-full transition-colors ${
+                  className={`inline-block px-2 py-1 text-xs rounded-full transition-colors ${
                     isActive
                       ? "bg-primary text-white font-medium"
                       : "bg-muted text-secondary hover:bg-primary-light hover:text-primary"

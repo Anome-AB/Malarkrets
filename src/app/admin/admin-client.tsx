@@ -271,7 +271,7 @@ export function AdminClient({ initialUsers, tags }: AdminClientProps) {
             <span className="text-sm text-heading">Annat</span>
           </label>
           {banReasonType === "custom" && (
-            <textarea rows={2} value={banCustomReason} onChange={(e) => setBanCustomReason(e.target.value)} placeholder="Ange anledning..." className="w-full mt-1 px-3 py-2 rounded-[8px] border border-border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y text-sm" />
+            <textarea rows={2} value={banCustomReason} onChange={(e) => setBanCustomReason(e.target.value)} placeholder="Ange anledning..." className="w-full mt-1 px-3 py-2 rounded-control border border-border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y text-sm" />
           )}
         </fieldset>
         <div className="flex gap-3 justify-end">
@@ -308,7 +308,7 @@ export function AdminClient({ initialUsers, tags }: AdminClientProps) {
               value={userSearch}
               onChange={(e) => setUserSearch(e.target.value)}
               placeholder="Sök på e-post eller namn..."
-              className="w-full max-w-md px-3 py-2 rounded-[8px] border border-border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary text-sm"
+              className="w-full max-w-md px-3 py-2 rounded-control border border-border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary text-sm"
             />
           </div>
 
@@ -386,7 +386,7 @@ export function AdminClient({ initialUsers, tags }: AdminClientProps) {
                   <button
                     onClick={() => goToPage(usersData.page - 1)}
                     disabled={usersData.page <= 1 || searchLoading}
-                    className="px-3 py-1.5 text-xs rounded-[8px] border border-border text-secondary hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-3 py-1.5 text-xs rounded-control border border-border text-secondary hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     Föregående
                   </button>
@@ -407,7 +407,7 @@ export function AdminClient({ initialUsers, tags }: AdminClientProps) {
                         key={pageNum}
                         onClick={() => goToPage(pageNum)}
                         disabled={searchLoading}
-                        className={`px-3 py-1.5 text-xs rounded-[8px] border transition-colors ${
+                        className={`px-3 py-1.5 text-xs rounded-control border transition-colors ${
                           pageNum === usersData.page
                             ? "bg-primary text-white border-primary"
                             : "border-border text-secondary hover:bg-white"
@@ -420,7 +420,7 @@ export function AdminClient({ initialUsers, tags }: AdminClientProps) {
                   <button
                     onClick={() => goToPage(usersData.page + 1)}
                     disabled={usersData.page >= usersData.totalPages || searchLoading}
-                    className="px-3 py-1.5 text-xs rounded-[8px] border border-border text-secondary hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-3 py-1.5 text-xs rounded-control border border-border text-secondary hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     Nästa
                   </button>

@@ -71,7 +71,7 @@ function Modal({ open, onClose, title, children }: ModalProps) {
         className="
           relative
           bg-white
-          rounded-[10px]
+          rounded-card
           shadow-xl
           w-full max-w-lg
           mx-4
@@ -91,7 +91,7 @@ function Modal({ open, onClose, title, children }: ModalProps) {
           <button
             onClick={onClose}
             className="
-              p-1 rounded-[8px]
+              p-1 rounded-control
               text-dimmed hover:text-heading
               hover:bg-primary-light
               transition-colors duration-150

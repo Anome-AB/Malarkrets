@@ -63,7 +63,7 @@ export function CancelActivityModal({
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="Berätta varför aktiviteten ställs in..."
-                className="w-full px-3 py-2 rounded-[8px] border border-border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
+                className="w-full px-3 py-2 rounded-control border border-border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
               />
             </div>
           </>

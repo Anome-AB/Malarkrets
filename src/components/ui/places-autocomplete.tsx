@@ -130,7 +130,7 @@ export function PlacesAutocomplete({
           value={value}
           onChange={handleInputChange}
           placeholder={placeholder}
-          className={`w-full pl-9 pr-3 py-2 min-h-touch-target rounded-[8px] border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 transition-colors ${
+          className={`w-full pl-9 pr-3 py-2 min-h-touch-target rounded-control border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 transition-colors ${
             error
               ? "border-error focus:border-error focus:ring-error"
               : "border-border focus:border-primary focus:ring-primary"
@@ -140,11 +140,11 @@ export function PlacesAutocomplete({
       {error && <p className="text-sm text-error">{error}</p>}
 
       {selectedPlace && (
-        <div className="mt-2 rounded-[8px] overflow-hidden border border-border">
+        <div className="mt-2 rounded-control overflow-hidden border border-border">
           <img
             src={`https://maps.googleapis.com/maps/api/staticmap?center=${selectedPlace.lat},${selectedPlace.lng}&zoom=15&size=600x200&scale=2&markers=color:0x3d6b5e%7C${selectedPlace.lat},${selectedPlace.lng}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`}
             alt={`Karta: ${selectedPlace.address}`}
-            className="w-full h-[150px] object-cover"
+            className="w-full h-static-map object-cover"
           />
         </div>
       )}

@@ -157,7 +157,7 @@ export default function CreateActivityPage() {
     <div className="px-6 pt-8 flex flex-col min-h-full">
       <h1 className="text-2xl font-bold text-heading mb-6">Skapa ny aktivitet</h1>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1">
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(380px,1fr))] gap-6 items-start">
+          <div className="grid grid-cols-activity-form gap-6 items-start">
               <Card title="Grundläggande information" className="space-y-4">
                 <Input
                   label="Titel"
@@ -175,7 +175,7 @@ export default function CreateActivityPage() {
                     id="description"
                     rows={4}
                     placeholder="Berätta mer om aktiviteten..."
-                    className="w-full px-3 py-2 min-h-touch-target rounded-[8px] border border-border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
+                    className="w-full px-3 py-2 min-h-touch-target rounded-control border border-border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
                     {...register("description", {
                       required: "Beskrivning krävs",
                       minLength: { value: 10, message: "Minst 10 tecken" },
@@ -228,7 +228,7 @@ export default function CreateActivityPage() {
                   <label className="text-sm font-medium text-heading mb-1 block">
                     Vem passar aktiviteten för?
                   </label>
-                  <div className="inline-flex rounded-[8px] border border-border overflow-hidden">
+                  <div className="inline-flex rounded-control border border-border overflow-hidden">
                     {AUDIENCE_OPTIONS.map((opt, i) => {
                       const active = audience === opt.value;
                       return (
@@ -253,7 +253,7 @@ export default function CreateActivityPage() {
                   <label htmlFor="experienceLevel" className="text-sm font-medium text-heading">Erfarenhetsnivå</label>
                   <select
                     id="experienceLevel"
-                    className="w-full px-3 py-2 min-h-touch-target rounded-[8px] border border-border text-heading bg-white focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary"
+                    className="w-full px-3 py-2 min-h-touch-target rounded-control border border-border text-heading bg-white focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary"
                     {...register("experienceLevel")}
                   >
                     <option value="alla">Alla nivåer</option>
@@ -269,7 +269,7 @@ export default function CreateActivityPage() {
                     id="whoComes"
                     rows={2}
                     placeholder="T.ex. 'Blandad ålder, mest nybörjare'"
-                    className="w-full px-3 py-2 rounded-[8px] border border-border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
+                    className="w-full px-3 py-2 rounded-control border border-border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
                     {...register("whoComes", { maxLength: { value: 500, message: "Max 500 tecken" } })}
                   />
                 </div>
@@ -280,7 +280,7 @@ export default function CreateActivityPage() {
                     id="latePolicy"
                     rows={2}
                     placeholder="T.ex. 'Kom när du kan, vi börjar kl 18'"
-                    className="w-full px-3 py-2 rounded-[8px] border border-border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
+                    className="w-full px-3 py-2 rounded-control border border-border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
                     {...register("latePolicy", { maxLength: { value: 200, message: "Max 200 tecken" } })}
                   />
                 </div>
@@ -306,7 +306,7 @@ export default function CreateActivityPage() {
                 {userGender !== "ej_angett" && (
                   <div>
                     <label className="text-sm font-medium text-heading mb-1 block">Aktiviteten är öppen för</label>
-                    <div className="inline-flex rounded-[8px] border border-border overflow-hidden">
+                    <div className="inline-flex rounded-control border border-border overflow-hidden">
                       <button
                         type="button"
                         onClick={() => setGenderOpen(false)}
@@ -361,7 +361,7 @@ export default function CreateActivityPage() {
           </div>
 
           {/* Sticky footer — pushed to bottom of viewport */}
-          <div className="sticky bottom-0 -mx-6 px-6 py-3 bg-white border-t border-border shadow-[0_-2px_8px_rgba(0,0,0,0.04)] mt-auto pt-3 flex justify-end z-10">
+          <div className="sticky bottom-0 -mx-6 px-6 py-3 bg-white border-t border-border shadow-sticky-footer mt-auto pt-3 flex justify-end z-10">
             <Button type="submit" variant="primary" loading={isPending}>
               Skapa aktivitet
             </Button>

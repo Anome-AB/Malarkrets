@@ -27,7 +27,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           className={`
             w-full px-3 py-2
             min-h-touch-target
-            rounded-[8px]
+            rounded-control
             border
             text-heading
             bg-white

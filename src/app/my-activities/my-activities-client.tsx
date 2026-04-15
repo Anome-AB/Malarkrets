@@ -76,7 +76,7 @@ export function MyActivitiesClient({
             </Link>
           </Card>
         ) : (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-5">
+          <div className="grid grid-cols-activity-feed gap-5">
             {createdActivities.map((activity) => (
               <div key={activity.id} className="relative">
                 <ActivityCard
@@ -131,7 +131,7 @@ export function MyActivitiesClient({
             </Link>
           </Card>
         ) : (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-5">
+          <div className="grid grid-cols-activity-feed gap-5">
             {participatingActivities.map((activity) => (
               <div key={activity.id} className="relative">
                 <ActivityCard

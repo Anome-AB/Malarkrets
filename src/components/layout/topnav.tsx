@@ -29,7 +29,7 @@ export function TopNav({ unreadCount, userInitials }: TopNavProps) {
   }, [menuOpen]);
 
   return (
-    <nav className="bg-primary text-white h-[60px] flex justify-between items-center px-6">
+    <nav className="bg-primary text-white h-topnav flex justify-between items-center px-6">
       <Link href="/" className="text-xl font-semibold">
         Mälarkrets
       </Link>
@@ -50,7 +50,7 @@ export function TopNav({ unreadCount, userInitials }: TopNavProps) {
             <path d="M13.73 21a2 2 0 0 1-3.46 0" />
           </svg>
           {unreadCount > 0 && (
-            <span className="absolute top-0 right-0 bg-warning text-white text-[10px] font-bold rounded-full w-[18px] h-[18px] flex items-center justify-center">
+            <span className="absolute top-0 right-0 bg-warning text-white text-nano font-bold rounded-full size-badge flex items-center justify-center">
               {unreadCount > 99 ? "99+" : unreadCount}
             </span>
           )}

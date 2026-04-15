@@ -273,11 +273,11 @@ export default async function ActivityDetailPage({
         </header>
       )}
 
-      <div className="px-6 py-8 pb-[140px] lg:pb-8">
+      <div className="px-6 py-8 pb-detail-mobile-footer lg:pb-8">
         {/* Deleted banner — only visible to admins since other viewers are already
             routed to the tombstone above. */}
         {activity.deletedAt && (
-          <div className="bg-red-50 border border-red-300 rounded-[10px] p-4 mb-6">
+          <div className="bg-red-50 border border-red-300 rounded-card p-4 mb-6">
             <p className="text-sm font-semibold text-red-700">
               BORTTAGEN — modererad av admin
             </p>
@@ -291,7 +291,7 @@ export default async function ActivityDetailPage({
 
         {/* Cancelled banner */}
         {activity.cancelledAt && (
-          <div className="bg-red-50 border border-red-200 rounded-[10px] p-4 mb-6">
+          <div className="bg-red-50 border border-red-200 rounded-card p-4 mb-6">
             <p className="text-sm font-semibold text-red-700">
               Denna aktivitet är inställd
             </p>
@@ -405,12 +405,12 @@ export default async function ActivityDetailPage({
                     href={`https://www.google.com/maps/search/?api=1&query=${activity.latitude},${activity.longitude}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-shrink-0 w-full sm:w-64 h-fit rounded-[8px] overflow-hidden border border-border hover:shadow-md transition-shadow"
+                    className="flex-shrink-0 w-full sm:w-64 h-fit rounded-control overflow-hidden border border-border hover:shadow-md transition-shadow"
                   >
                     <img
                       src={`https://maps.googleapis.com/maps/api/staticmap?center=${activity.latitude},${activity.longitude}&zoom=15&size=400x300&scale=2&markers=color:0x3d6b5e%7C${activity.latitude},${activity.longitude}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`}
                       alt={`Karta: ${activity.location}`}
-                      className="w-full h-[180px] object-cover block"
+                      className="w-full h-detail-map object-cover block"
                     />
                     <div className="px-3 py-2 bg-white text-xs text-primary font-medium flex items-center gap-1">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

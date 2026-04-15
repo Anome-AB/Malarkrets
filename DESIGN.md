@@ -84,8 +84,9 @@ Note: Previous md(12) was non-standard. All spacing now follows a clean 4px grid
   - Desktop (lg): 2-3 columns depending on page
 - **Max content width:** None on detail pages (fill available space). `max-w-3xl` on form pages.
 - **Border radius:**
-  - Cards/panels: `rounded-[10px]` (10px)
-  - Buttons/inputs: `rounded-[8px]` (8px)
+  - Cards/panels: `rounded-card` (10px — defined in `globals.css` via `--radius-card`)
+  - Buttons/inputs: `rounded-control` (8px — defined in `globals.css` via `--radius-control`)
+  - Never use arbitrary values (`rounded-[8px]`, `rounded-[10px]`). Names describe intent; arbitrary values don't.
   - Tags/badges: `rounded-full` (9999px)
   - Avatars: `rounded-full`
 
@@ -97,11 +98,11 @@ Import: `import { Card } from "@/components/ui/card";`
 <Card title="Farligt" variant="danger">...</Card>  // red background, red border
 ```
 
-Card renders: `rounded-[10px] p-6 border`. Variants:
+Card renders: `rounded-card p-6 border`. Variants:
 - `default`: `bg-white border-[#dddddd]`
 - `danger`: `bg-red-50 border-red-200`, title in `text-[#dc3545]`
 
-ALWAYS use Card component. Never write `bg-white border border-[#dddddd] rounded-[10px] p-6` inline.
+ALWAYS use Card component. Never write `bg-white border border-border rounded-card p-6` inline.
 
 ## Page Layouts
 

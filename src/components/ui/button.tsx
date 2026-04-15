@@ -73,7 +73,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={disabled || loading}
         className={`
           inline-flex items-center justify-center
-          rounded-[8px]
+          rounded-control
           font-medium
           transition-colors duration-150
           focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2

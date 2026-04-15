@@ -35,7 +35,7 @@ export function AppShell({
       <div className="flex" style={{ height: "calc(100vh - 60px)" }}>
         <Sidebar interests={interests} activeFilters={activeFilters} showAll={showAll} isAdmin={isAdmin} />
 
-        <main className="flex-1 overflow-y-auto pb-[56px] lg:pb-0">
+        <main className="flex-1 overflow-y-auto pb-bottomnav lg:pb-0">
           {children}
         </main>
       </div>

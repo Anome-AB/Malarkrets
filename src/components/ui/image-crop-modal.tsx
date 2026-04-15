@@ -71,7 +71,7 @@ export function ImageCropModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-[10px] shadow-xl max-w-2xl w-full overflow-hidden">
+      <div className="bg-white rounded-card shadow-xl max-w-2xl w-full overflow-hidden">
         <div className="px-6 py-4 border-b border-border">
           <h2 className="text-lg font-bold text-heading">Justera bilden</h2>
           <p className="text-sm text-secondary mt-1">
@@ -79,7 +79,7 @@ export function ImageCropModal({
           </p>
         </div>
 
-        <div className="relative w-full h-[400px] bg-heading">
+        <div className="relative w-full h-crop-modal bg-heading">
           <Cropper
             image={imageSrc}
             crop={crop}

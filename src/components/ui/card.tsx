@@ -8,7 +8,7 @@ interface CardProps {
 }
 
 export function Card({ children, className = "", variant = "default", title }: CardProps) {
-  const base = "rounded-[10px] p-6";
+  const base = "rounded-card p-6";
   const variants = {
     default: "bg-white border border-border",
     danger: "bg-red-50 border border-red-200",

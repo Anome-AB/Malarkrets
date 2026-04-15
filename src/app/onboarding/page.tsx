@@ -93,7 +93,7 @@ export default function OnboardingPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Sök intressen..."
-                className="w-full px-4 py-2.5 rounded-[8px] border border-border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary text-sm"
+                className="w-full px-4 py-2.5 rounded-control border border-border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary text-sm"
               />
             </div>
 

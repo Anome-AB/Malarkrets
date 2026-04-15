@@ -107,7 +107,7 @@ export function ImageUpload({ thumbUrl, mediumUrl, ogUrl, colorTheme, onChange, 
           <img
             src={mediumUrl ?? thumbUrl ?? ""}
             alt="Aktivitetsbild"
-            className="w-full aspect-video object-cover rounded-[8px] border border-border"
+            className="w-full aspect-video object-cover rounded-control border border-border"
           />
           <div className="absolute top-2 right-2 flex gap-2">
             <button
@@ -141,7 +141,7 @@ export function ImageUpload({ thumbUrl, mediumUrl, ogUrl, colorTheme, onChange, 
           onDrop={handleDrop}
           onClick={() => inputRef.current?.click()}
           className={`
-            w-full aspect-video rounded-[8px] border-2 border-dashed cursor-pointer
+            w-full aspect-video rounded-control border-2 border-dashed cursor-pointer
             flex flex-col items-center justify-center gap-2 transition-colors
             ${dragActive ? "border-primary bg-primary-light" : "border-border bg-background hover:border-primary hover:bg-primary-light/50"}
             ${uploading ? "opacity-50 cursor-wait" : ""}

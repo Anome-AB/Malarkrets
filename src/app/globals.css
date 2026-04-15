@@ -43,6 +43,16 @@
   /* Fonts */
   --font-sans: "Instrument Sans", sans-serif;
   --font-mono: "Geist Mono", monospace;
+
+  /* Radii — semantic names, used via rounded-control / rounded-card */
+  --radius-control: 8px;  /* inputs, buttons, small interactive surfaces */
+  --radius-card: 10px;    /* cards, modals, panels, auth containers */
+
+  /* Navigation heights — consumed by the h-topnav / h-bottomnav / pb-bottomnav /
+     bottom-bottomnav / top-below-topnav utilities below. Change a value here and
+     all coupled layout offsets follow automatically. */
+  --height-topnav: 60px;     /* desktop + mobile top bar */
+  --height-bottomnav: 56px;  /* mobile bottom tab bar */
 }
 
 /* WCAG 2.1 AAA minimum touch target (44x44px) — apply to all interactive elements
@@ -50,6 +60,98 @@
    must be explicit opt-outs. */
 @utility min-h-touch-target {
   min-height: 44px;
+}
+
+/* Activity grids — auto-fill responsive grids tuned to the card and form widths */
+@utility grid-cols-activity-feed {
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+}
+@utility grid-cols-activity-form {
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+}
+
+/* Sticky footer shadow — subtle top-shadow used on form action bars */
+@utility shadow-sticky-footer {
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* Navigation layout — all coupled offsets derive from --height-topnav / --height-bottomnav
+   so changing a nav height updates everything that sits next to it. */
+@utility h-topnav {
+  height: var(--height-topnav);
+}
+@utility h-bottomnav {
+  height: var(--height-bottomnav);
+}
+@utility pb-bottomnav {
+  padding-bottom: var(--height-bottomnav);
+}
+@utility bottom-bottomnav {
+  bottom: var(--height-bottomnav);
+}
+/* Toast and other elements that need to sit just below the topnav (topnav height + 16px gap) */
+@utility top-below-topnav {
+  top: calc(var(--height-topnav) + 1rem);
+}
+/* Activity detail bottom padding: clears mobile action bar (56px) + bottomnav + 28px breathing room */
+@utility pb-detail-mobile-footer {
+  padding-bottom: calc(var(--height-bottomnav) + 84px);
+}
+
+/* Typography — sub-text-xs size reserved for notification badges and dense meta labels.
+   Do not use for body copy; accessibility starts being a concern below 12px. */
+@utility text-nano {
+  font-size: 10px;
+  line-height: 1;
+}
+
+/* Static map thumbnail height — used on activity detail map and places-autocomplete preview */
+@utility h-static-map {
+  height: 150px;
+}
+/* Static map height on the full activity detail page — slightly taller than the panel preview */
+@utility h-detail-map {
+  height: 180px;
+}
+
+/* Desktop sidebar width — fixed-width nav column on lg+ screens */
+@utility w-sidebar {
+  width: 200px;
+}
+/* Sliding detail panel max width — opens from the right on desktop */
+@utility max-w-slide-panel {
+  max-width: 480px;
+}
+
+/* Notification pill in the activity feed — min width lets single-digit counts stay circular */
+@utility min-w-pill {
+  min-width: 20px;
+}
+/* Small circular badge (topnav notification indicator) — 18x18 */
+@utility size-badge {
+  width: 18px;
+  height: 18px;
+}
+
+/* Image crop modal stage height */
+@utility h-crop-modal {
+  height: 400px;
+}
+
+/* Subtle backdrop blur applied to activity card text overlay when a background image is set */
+@utility backdrop-blur-card-overlay {
+  backdrop-filter: blur(2px);
+}
+
+/* Sticky action-bar shadows — three distinct top-shadows for three distinct contexts.
+   Each intensity is tuned to the weight of the bar it sits under. */
+@utility shadow-action-bar {
+  /* Mobile action bar above the bottomnav on activity detail — lightest */
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
+}
+@utility shadow-admin-footer {
+  /* Admin moderation footer inside sliding panel — strongest, signals a heavier action zone */
+  box-shadow: 0 -4px 12px -8px rgba(0, 0, 0, 0.15);
 }
 
 body {

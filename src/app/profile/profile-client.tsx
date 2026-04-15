@@ -174,7 +174,7 @@ export function ProfileClient({
               id="gender"
               value={gender}
               onChange={(e) => setGender(e.target.value)}
-              className="w-full px-3 py-2 min-h-touch-target rounded-[8px] border border-border text-heading bg-white focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary"
+              className="w-full px-3 py-2 min-h-touch-target rounded-control border border-border text-heading bg-white focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary"
             >
               <option value="ej_angett">Ej angivet</option>
               <option value="kvinna">Kvinna</option>
@@ -207,7 +207,7 @@ export function ProfileClient({
           value={tagSearch}
           onChange={(e) => setTagSearch(e.target.value)}
           placeholder="Sök intressen..."
-          className="w-full px-3 py-2 mb-3 rounded-[8px] border border-border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary text-sm"
+          className="w-full px-3 py-2 mb-3 rounded-control border border-border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary text-sm"
         />
         <div className="flex flex-wrap gap-2 mb-4">
           {filteredTags.map((tag) => (

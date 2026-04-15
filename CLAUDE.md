@@ -13,7 +13,7 @@
 All UI decisions follow `DESIGN.md`. Read it before making any frontend changes.
 
 Key rules:
-- Use `<Card>` component (`@/components/ui/card`) for ALL content containers. Never write `bg-white border rounded-[10px] p-6` inline.
+- Use `<Card>` component (`@/components/ui/card`) for ALL content containers. Never write `bg-white border rounded-card p-6` inline.
 - Use `<Card variant="danger">` for destructive action sections. Never `bg-red-50` inline.
 - Use `<ConfirmDialog>` for confirmations. Never `window.confirm()`.
 - Detail pages use responsive grid layouts that fill available space. Never `max-w-* mx-auto` on detail pages.

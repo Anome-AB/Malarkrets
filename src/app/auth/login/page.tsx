@@ -52,7 +52,7 @@ function LoginForm() {
   }
 
   return (
-    <div className="w-full max-w-md rounded-[10px] bg-white p-8 shadow">
+    <div className="w-full max-w-md rounded-card bg-white p-8 shadow">
       <div className="mb-8 text-center">
         <h1 className="text-2xl font-bold text-primary">Mälarkrets</h1>
         <p className="mt-1 text-sm text-secondary">Logga in på ditt konto</p>
@@ -78,7 +78,7 @@ function LoginForm() {
         />
 
         {banInfo && (
-          <div className="rounded-[8px] border border-error/30 bg-red-50 p-4" role="alert">
+          <div className="rounded-control border border-error/30 bg-red-50 p-4" role="alert">
             <p className="text-sm font-semibold text-error mb-1">
               Ditt konto har blockerats av en administratör
             </p>
@@ -116,7 +116,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="w-full max-w-md rounded-[10px] bg-white p-8 shadow animate-pulse h-96" />}>
+    <Suspense fallback={<div className="w-full max-w-md rounded-card bg-white p-8 shadow animate-pulse h-96" />}>
       <LoginForm />
     </Suspense>
   );

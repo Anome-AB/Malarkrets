@@ -96,7 +96,7 @@ function LandingPage({
               <Link
                 key={activity.id}
                 href={`/activity/${activity.id}`}
-                className="bg-white border border-border rounded-[10px] p-4 hover:shadow-md hover:border-primary transition block"
+                className="bg-white border border-border rounded-card p-4 hover:shadow-md hover:border-primary transition block"
               >
                 {activity.imageThumbUrl && (
                   <img
@@ -141,9 +141,9 @@ function FeedSkeleton() {
           <Skeleton key={i} className="h-8 w-24 rounded-full" />
         ))}
       </div>
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-4">
+      <div className="grid grid-cols-activity-feed gap-4">
         {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="h-56 rounded-[10px]" />
+          <Skeleton key={i} className="h-56 rounded-card" />
         ))}
       </div>
     </div>

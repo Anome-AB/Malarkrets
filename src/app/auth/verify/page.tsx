@@ -10,7 +10,7 @@ export default async function VerifyPage({
 
   if (!token || typeof token !== "string") {
     return (
-      <div className="w-full max-w-md rounded-[10px] bg-white p-8 shadow">
+      <div className="w-full max-w-md rounded-card bg-white p-8 shadow">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-primary">Mälarkrets</h1>
           <p className="mt-4 text-sm text-error">
@@ -25,7 +25,7 @@ export default async function VerifyPage({
 
   if (result.error) {
     return (
-      <div className="w-full max-w-md rounded-[10px] bg-white p-8 shadow">
+      <div className="w-full max-w-md rounded-card bg-white p-8 shadow">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-primary">Mälarkrets</h1>
           <p className="mt-4 text-sm text-error">
@@ -37,7 +37,7 @@ export default async function VerifyPage({
   }
 
   return (
-    <div className="w-full max-w-md rounded-[10px] bg-white p-8 shadow">
+    <div className="w-full max-w-md rounded-card bg-white p-8 shadow">
       <div className="text-center">
         <h1 className="text-2xl font-bold text-primary">Mälarkrets</h1>
         <p className="mt-4 text-sm text-heading">

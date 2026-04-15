@@ -137,7 +137,7 @@ export function AdminActivityControls({ activity, creatorIsAdmin, compact = fals
     <>
       {compact ? (
         <div className="flex items-center justify-between gap-3">
-          <span className="text-[11px] font-semibold text-info uppercase tracking-wider">
+          <span className="text-xs font-semibold text-info uppercase tracking-wider">
             Administration
           </span>
           <div className="flex items-center gap-2">
@@ -204,7 +204,7 @@ export function AdminActivityControls({ activity, creatorIsAdmin, compact = fals
             <textarea
               id="admin-edit-desc"
               rows={4}
-              className="w-full px-3 py-2 rounded-[8px] border border-border text-heading bg-white focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
+              className="w-full px-3 py-2 rounded-control border border-border text-heading bg-white focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
@@ -236,7 +236,7 @@ export function AdminActivityControls({ activity, creatorIsAdmin, compact = fals
               id="admin-edit-reason"
               rows={2}
               placeholder="Beskriv varför du redigerar (minst 10 tecken)"
-              className="w-full px-3 py-2 rounded-[8px] border border-border text-heading bg-white focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
+              className="w-full px-3 py-2 rounded-control border border-border text-heading bg-white focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
               value={editReason}
               onChange={(e) => setEditReason(e.target.value)}
               required
@@ -267,7 +267,7 @@ export function AdminActivityControls({ activity, creatorIsAdmin, compact = fals
               id="admin-cancel-reason"
               rows={3}
               placeholder="Beskriv varför aktiviteten avbokas (minst 10 tecken)"
-              className="w-full px-3 py-2 rounded-[8px] border border-border text-heading bg-white focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
+              className="w-full px-3 py-2 rounded-control border border-border text-heading bg-white focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
               value={cancelReason}
               onChange={(e) => setCancelReason(e.target.value)}
               required
@@ -287,7 +287,7 @@ export function AdminActivityControls({ activity, creatorIsAdmin, compact = fals
       {/* Delete dialog */}
       <Modal open={deleteOpen} onClose={() => setDeleteOpen(false)} title="Ta bort aktivitet">
         <div className="space-y-4">
-          <div className="bg-alert-bg border border-alert-border rounded-[8px] p-3">
+          <div className="bg-alert-bg border border-alert-border rounded-control p-3">
             <p className="text-sm text-alert-text font-semibold">
               Aktiviteten döljs från appen
             </p>
@@ -303,7 +303,7 @@ export function AdminActivityControls({ activity, creatorIsAdmin, compact = fals
               id="admin-delete-reason"
               rows={3}
               placeholder="Beskriv varför aktiviteten tas bort (minst 10 tecken)"
-              className="w-full px-3 py-2 rounded-[8px] border border-border text-heading bg-white focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
+              className="w-full px-3 py-2 rounded-control border border-border text-heading bg-white focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
               value={deleteReason}
               onChange={(e) => setDeleteReason(e.target.value)}
               required
@@ -335,7 +335,7 @@ export function AdminActivityControls({ activity, creatorIsAdmin, compact = fals
                     id="admin-ban-reason"
                     rows={2}
                     placeholder="Beskriv varför användaren stängs av"
-                    className="w-full px-3 py-2 rounded-[8px] border border-border text-heading bg-white focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
+                    className="w-full px-3 py-2 rounded-control border border-border text-heading bg-white focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
                     value={banReason}
                     onChange={(e) => setBanReason(e.target.value)}
                   />

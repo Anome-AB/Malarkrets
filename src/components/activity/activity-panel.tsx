@@ -192,13 +192,13 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
         aria-modal="true"
         aria-label={detail?.title ?? "Aktivitetsdetalj"}
         tabIndex={-1}
-        className={`relative bg-white w-full max-w-[480px] h-full flex flex-col shadow-xl focus:outline-none transition-transform duration-250 ease-out ${visible ? "translate-x-0" : "translate-x-full"}`}
+        className={`relative bg-white w-full max-w-slide-panel h-full flex flex-col shadow-xl focus:outline-none transition-transform duration-250 ease-out ${visible ? "translate-x-0" : "translate-x-full"}`}
       >
         {/* Header */}
         <div className="shrink-0 bg-white border-b border-border px-6 py-4 flex items-center justify-between">
           <button
             onClick={onClose}
-            className="p-1 rounded-[8px] text-dimmed hover:text-heading hover:bg-primary-light transition-colors"
+            className="p-1 rounded-control text-dimmed hover:text-heading hover:bg-primary-light transition-colors"
             aria-label="Stäng"
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -288,7 +288,7 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
                 </div>
 
                 {detail.latitude && detail.longitude && (
-                  <div className="mt-3 rounded-[8px] overflow-hidden border border-border">
+                  <div className="mt-3 rounded-control overflow-hidden border border-border">
                     <a
                       href={`https://www.google.com/maps/search/?api=1&query=${detail.latitude},${detail.longitude}`}
                       target="_blank"
@@ -297,7 +297,7 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
                       <img
                         src={`https://maps.googleapis.com/maps/api/staticmap?center=${detail.latitude},${detail.longitude}&zoom=15&size=600x200&scale=2&markers=color:0x3d6b5e%7C${detail.latitude},${detail.longitude}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`}
                         alt={`Karta: ${detail.location}`}
-                        className="w-full h-[150px] object-cover"
+                        className="w-full h-static-map object-cover"
                       />
                     </a>
                   </div>
@@ -399,7 +399,7 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
 
         {/* Admin moderation footer — sticky, visible only to non-creator admins on live activities */}
         {detail && detail.viewerIsAdmin && !detail.isCreator && !detail.deletedAt && (
-          <div className="shrink-0 bg-info-light border-t-2 border-info/40 px-6 py-3 shadow-[0_-4px_12px_-8px_rgba(0,0,0,0.15)]">
+          <div className="shrink-0 bg-info-light border-t-2 border-info/40 px-6 py-3 shadow-admin-footer">
             <AdminActivityControls
               activity={{
                 id: detail.id,

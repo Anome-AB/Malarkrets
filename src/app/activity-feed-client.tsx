@@ -141,7 +141,7 @@ export function ActivityFeed({
           </svg>
           Filtrera
           {activeFilters.length > 0 && (
-            <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-white text-xs font-semibold">
+            <span className="inline-flex items-center justify-center min-w-pill h-5 px-1.5 rounded-full bg-primary text-white text-xs font-semibold">
               {activeFilters.length}
             </span>
           )}
@@ -215,7 +215,7 @@ export function ActivityFeed({
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-5">
+          <div className="grid grid-cols-activity-feed gap-5">
             {filteredActivities.map((activity) => (
               <ActivityCard
                 key={activity.id}
