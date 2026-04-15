@@ -124,6 +124,11 @@ Alla UI-beslut följer [`DESIGN.md`](DESIGN.md). Kortversion:
 Detta projekt använder en Next.js-version med brytande ändringar mot äldre docs —
 läs alltid `node_modules/next/dist/docs/` innan du skriver kod. Se `AGENTS.md`.
 
+## Team-struktur
+
+Repot underhålls av två team. Ansvarsområden och gränsytor: [`TEAMS.md`](TEAMS.md).
+RedFox intern release-spelbok: [`RELEASE.md`](RELEASE.md).
+
 ## TODOS
 
 Aktuella prioriteringar och backlog finns i [`TODOS.md`](TODOS.md).
