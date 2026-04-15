@@ -1,40 +1,40 @@
 # CODEOWNERS — automatic review routing
 #
-# Handles:
-#   @ohman74  — Fredrik Öhman Imfall (Team GreenLion — application)
-#   @froling  — Håkan Fröling          (Team RedFox    — release & deploy)
+# Teams (GitHub org: Anome-AB):
+#   @Anome-AB/greenlion  — application code (lead: @ohman74)
+#   @Anome-AB/redfox     — release & deploy (lead: @froling)
 #
 # Last matching line wins. Keep broad rules first, specific last.
 
-# Default — repo owner
-*                       @ohman74
+# Default — application team (repo ownership in the app team by default)
+*                       @Anome-AB/greenlion
 
 # ───────── Team GreenLion — application code ─────────
-/src/                   @ohman74
-/public/                @ohman74
-/package.json           @ohman74
-/bun.lock               @ohman74
-/tsconfig.json          @ohman74
-/next.config.ts         @ohman74
-/drizzle.config.ts      @ohman74
-/eslint.config.mjs      @ohman74
-/postcss.config.mjs     @ohman74
-/vitest.config.ts       @ohman74
-/DESIGN.md              @ohman74
+/src/                   @Anome-AB/greenlion
+/public/                @Anome-AB/greenlion
+/package.json           @Anome-AB/greenlion
+/bun.lock               @Anome-AB/greenlion
+/tsconfig.json          @Anome-AB/greenlion
+/next.config.ts         @Anome-AB/greenlion
+/drizzle.config.ts      @Anome-AB/greenlion
+/eslint.config.mjs      @Anome-AB/greenlion
+/postcss.config.mjs     @Anome-AB/greenlion
+/vitest.config.ts       @Anome-AB/greenlion
+/DESIGN.md              @Anome-AB/greenlion
 
 # ───────── Team RedFox — release & deploy ─────────
-/.github/               @froling
-/Dockerfile             @froling
-/.dockerignore          @froling
-/docker-compose.yml     @froling
-/docker-compose.prod.yml @froling
-/scripts/               @froling
-/.env.prod.example      @froling
-/RELEASE.md             @froling
+/.github/               @Anome-AB/redfox
+/Dockerfile             @Anome-AB/redfox
+/.dockerignore          @Anome-AB/redfox
+/docker-compose.yml     @Anome-AB/redfox
+/docker-compose.prod.yml @Anome-AB/redfox
+/scripts/               @Anome-AB/redfox
+/.env.prod.example      @Anome-AB/redfox
+/RELEASE.md             @Anome-AB/redfox
 
 # ───────── Shared — both teams must approve ─────────
-/TEAMS.md               @ohman74 @froling
-/AGENTS.md              @ohman74 @froling
-/CLAUDE.md              @ohman74 @froling
-/README.md              @ohman74 @froling
-/TODOS.md               @ohman74 @froling
+/TEAMS.md               @Anome-AB/greenlion @Anome-AB/redfox
+/AGENTS.md              @Anome-AB/greenlion @Anome-AB/redfox
+/CLAUDE.md              @Anome-AB/greenlion @Anome-AB/redfox
+/README.md              @Anome-AB/greenlion @Anome-AB/redfox
+/TODOS.md               @Anome-AB/greenlion @Anome-AB/redfox
