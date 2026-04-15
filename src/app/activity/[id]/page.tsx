@@ -384,6 +384,25 @@ export default async function ActivityDetailPage({
                         </span>
                       </p>
                     )}
+                    <p>
+                      Deltagare:{" "}
+                      <span className="font-medium text-heading">
+                        {activity.participantCount}
+                        {activity.maxParticipants ? ` / ${activity.maxParticipants}` : ""}
+                      </span>
+                      {activity.interestedCount > 0 && (
+                        <>
+                          <span className="mx-2 text-dimmed">·</span>
+                          Intresserade:{" "}
+                          <span className="font-medium text-heading">
+                            {activity.interestedCount}
+                          </span>
+                        </>
+                      )}
+                    </p>
+                    {feedbackText && (
+                      <p className="text-primary font-medium">{feedbackText}</p>
+                    )}
                   </div>
 
                   {activity.tags.length > 0 && (
@@ -429,44 +448,11 @@ export default async function ActivityDetailPage({
                 {activity.description}
               </p>
 
-              {/* Action bar: participation + actions */}
-              <div className="mt-6 pt-4 border-t border-border-light flex flex-wrap items-center gap-4">
-                <div className="flex items-center gap-2 text-sm">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-secondary">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                  </svg>
-                  <span className="text-secondary">Deltagare:</span>
-                  <span className="font-semibold text-heading">
-                    {activity.participantCount}
-                    {activity.maxParticipants ? ` / ${activity.maxParticipants}` : ""}
-                  </span>
-                </div>
-
-                {activity.interestedCount > 0 && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-secondary">
-                      <circle cx="12" cy="12" r="10" />
-                      <line x1="12" y1="8" x2="12" y2="12" />
-                      <line x1="12" y1="16" x2="12.01" y2="16" />
-                    </svg>
-                    <span className="text-secondary">Intresserade:</span>
-                    <span className="font-semibold text-heading">{activity.interestedCount}</span>
-                  </div>
-                )}
-
-                {feedbackText && (
-                  <div className="text-sm text-primary font-medium">
-                    {feedbackText}
-                  </div>
-                )}
-
-                <div className="flex-1" />
-
-                {/* Action buttons — desktop only, mobile uses floating bar */}
-                <div className="hidden lg:flex items-center gap-2 flex-wrap">
+              {/* Action buttons — desktop only, mobile uses floating bar.
+                  Creators get their Edit button in a sticky card at the end of the
+                  content column instead of here. */}
+              {!isCreator && (
+                <div className="mt-6 pt-4 border-t border-border-light hidden lg:flex items-center justify-end gap-2 flex-wrap">
                   <ActivityDetailClient
                     activityId={id}
                     isAuthenticated={!!currentUserId}
@@ -478,19 +464,8 @@ export default async function ActivityDetailPage({
                     isCancelled={!!activity.cancelledAt}
                     actionsOnly
                   />
-                  {currentUserId && isCreator && (
-                    <Link href={`/activity/${id}/edit`}>
-                      <Button variant="secondary" size="sm">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                        </svg>
-                        Redigera
-                      </Button>
-                    </Link>
-                  )}
                 </div>
-              </div>
+              )}
             </Card>
 
             {/* Card: Courage section */}
@@ -528,6 +503,27 @@ export default async function ActivityDetailPage({
                   }}
                   creatorIsAdmin={activity.creator?.isAdmin ?? false}
                 />
+              </Card>
+            )}
+
+            {/* Creator tools — sticky footer mirroring the admin card pattern. Only the
+                edit action lives here; cancel/delete stay on the edit page. */}
+            {currentUserId && isCreator && !activity.deletedAt && (
+              <Card className="!bg-primary-light border-primary/20 lg:sticky lg:bottom-4 lg:z-20 shadow-admin-footer">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-xs font-semibold text-primary uppercase tracking-wider">
+                    Din aktivitet
+                  </span>
+                  <Link href={`/activity/${id}/edit`}>
+                    <Button variant="secondary" size="compact" type="button">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                      Redigera
+                    </Button>
+                  </Link>
+                </div>
               </Card>
             )}
         </div>

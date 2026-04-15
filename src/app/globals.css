@@ -118,9 +118,11 @@
 @utility w-sidebar {
   width: 200px;
 }
-/* Sliding detail panel max width — opens from the right on desktop */
+/* Sliding detail panel max width — opens from the right on desktop.
+   Sized to fit a side-by-side layout of title/metadata (~300px) + square static map
+   (~220px) with 16px gap + 48px internal padding. */
 @utility max-w-slide-panel {
-  max-width: 480px;
+  max-width: 560px;
 }
 
 /* Notification pill in the activity feed — min width lets single-digit counts stay circular */

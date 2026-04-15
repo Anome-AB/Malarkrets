@@ -138,7 +138,7 @@ export function ActivityDetailClient({
       {isAuthenticated && !isCreator && participationStatus === "interested" && (
         <div className="flex items-center gap-3 flex-wrap">
           <Button variant="primary" size="sm" loading={joining} onClick={() => handleJoin("attending")}>
-            Kommer
+            Jag kommer!
           </Button>
           <Button variant="secondary" size="sm" loading={leaving} onClick={handleLeave}>
             Ångra
@@ -154,7 +154,7 @@ export function ActivityDetailClient({
             loading={joining}
             onClick={() => handleJoin("attending")}
           >
-            Kommer
+            Jag kommer!
           </Button>
           <Button
             variant="secondary"
@@ -162,7 +162,7 @@ export function ActivityDetailClient({
             loading={joining}
             onClick={() => handleJoin("interested")}
           >
-            Intresserad
+            Jag är intresserad
           </Button>
         </div>
       )}

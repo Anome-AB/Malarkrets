@@ -772,6 +772,14 @@ export async function getActivityDetail(activityId: string) {
       eq(activityParticipants.status, "attending"),
     ));
 
+  const [{ count: interestedCount }] = await db
+    .select({ count: count() })
+    .from(activityParticipants)
+    .where(and(
+      eq(activityParticipants.activityId, activityId),
+      eq(activityParticipants.status, "interested"),
+    ));
+
   const comments = await db
     .select({
       id: activityComments.id,
@@ -828,6 +836,7 @@ export async function getActivityDetail(activityId: string) {
     deletedAt: activity.deletedAt,
     tags,
     participantCount,
+    interestedCount,
     comments: comments.map((c) => ({
       id: c.id,
       userId: c.userId,
