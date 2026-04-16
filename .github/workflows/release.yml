@@ -82,3 +82,28 @@ jobs:
           labels: ${{ steps.meta-migrate.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Extract metadata (seed)
+        id: meta-seed
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: |
+            prefix=seed-,onlatest=true
+          tags: |
+            type=sha
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+
+      - name: Build and push (seed)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: seed
+          push: true
+          tags: ${{ steps.meta-seed.outputs.tags }}
+          labels: ${{ steps.meta-seed.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

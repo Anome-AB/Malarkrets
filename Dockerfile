@@ -38,3 +38,14 @@ RUN npm ci --omit=dev && npm cache clean --force
 COPY src/db/migrations ./src/db/migrations
 COPY scripts/migrate.mjs ./scripts/migrate.mjs
 CMD ["node", "scripts/migrate.mjs"]
+
+# On-demand seed image. Not started automatically — run manually with:
+#   docker compose -f docker-compose.prod.yml run --rm seed
+FROM node:22-alpine AS seed
+WORKDIR /app
+COPY package.json package-lock.json* ./
+RUN npm ci && npm cache clean --force
+COPY src/db/schema.ts ./src/db/schema.ts
+COPY src/db/seed.ts ./src/db/seed.ts
+COPY tsconfig.json ./
+CMD ["npx", "tsx", "src/db/seed.ts"]

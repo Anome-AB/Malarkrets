@@ -79,6 +79,16 @@ services:
     command: server /data --console-address ":9001"
     restart: unless-stopped
 
+  seed:
+    # On-demand only — run with: docker compose -f docker-compose.prod.yml run --rm seed
+    image: ghcr.io/anome-ab/malarkrets:${SEED_TAG:-seed-latest}
+    env_file: .env.prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    profiles: ["tools"]
+
 volumes:
   postgres_prod_data:
   minio_prod_data:
