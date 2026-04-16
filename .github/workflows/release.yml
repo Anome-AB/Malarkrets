@@ -3,6 +3,7 @@ name: Release
 on:
   push:
     branches: [master]
+    tags: ['v*.*.*']
 
 env:
   REGISTRY: ghcr.io
@@ -25,6 +26,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Tagging strategy:
+      #   push to master        -> :latest, :sha-<hash>
+      #   push tag vX.Y.Z       -> :X.Y.Z, :X.Y, :X, :sha-<hash>  (no :latest move)
+      # Migrate image mirrors the app with a `migrate-` prefix.
       - name: Extract metadata (app)
         id: meta
         uses: docker/metadata-action@v5
@@ -32,7 +37,10 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=sha
-            type=raw,value=latest
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
 
       - name: Extract metadata (migrate)
         id: meta-migrate
@@ -43,7 +51,10 @@ jobs:
             prefix=migrate-,onlatest=true
           tags: |
             type=sha
-            type=raw,value=latest
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
