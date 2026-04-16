@@ -2,7 +2,8 @@ services:
   migrate:
     # Runs Drizzle migrations once and exits. App waits for exit 0 before starting.
     # Image built from the `migrate` stage in Dockerfile — see .github/workflows/release.yml.
-    image: ghcr.io/anome-ab/malarkrets:migrate-latest
+    # MIGRATE_TAG must always match APP_TAG — see RELEASE.md (Rollback).
+    image: ghcr.io/anome-ab/malarkrets:${MIGRATE_TAG:-migrate-latest}
     env_file: .env.prod
     depends_on:
       postgres:
@@ -10,15 +11,33 @@ services:
     restart: "no"
 
   app:
-    image: ghcr.io/anome-ab/malarkrets:latest
+    image: ghcr.io/anome-ab/malarkrets:${APP_TAG:-latest}
+    # Bound to 127.0.0.1 so the app is never reachable directly from the
+    # internet — traffic must go through Caddy. Local debugging on the host
+    # still works via http://localhost:3000.
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     env_file: .env.prod
     depends_on:
       postgres:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"  # HTTP/3
+    env_file: .env.prod
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
@@ -64,3 +83,5 @@ services:
 volumes:
   postgres_prod_data:
   minio_prod_data:
+  caddy_data:
+  caddy_config:

@@ -103,7 +103,7 @@
 - Om ni har fler hemligheter (SMTP, VPS SSH-nyckel osv) — lägg dem som secrets samtidigt, säg till så uppdaterar vi pipelinen.
 
 ### Release Pipeline (tillagt av /plan-eng-review 2026-04-14)
-- **Semver image-tagging:** Lägg till stöd för git tags (v1.0.0) som triggar GitHub Actions att tagga Docker-imagen med versionsnummer. Krävs för rollback på VPS. Insats: S. Beror på: pipeline finns.
+- ~~**Semver image-tagging**~~ KLAR 2026-04-15. `git tag vX.Y.Z && git push --tags` genererar `:X.Y.Z`, `:X.Y`, `:X` + migrate-motsvarigheter. `:latest` flyttas bara av master-push. Compose stödjer `APP_TAG` / `MIGRATE_TAG` env-override för rollback.
 - **VPS-deploy i pipeline:** Lägg till SSH-deploy-steg i release.yml som kör docker compose pull + up på extern server. 15 rader YAML + 3 GitHub Secrets (VPS_HOST, VPS_USER, VPS_SSH_KEY). Insats: S. Beror på: pipeline + VPS finns.
 
 ### VPS-leverantör: Loopia (beslut 2026-04-15)
