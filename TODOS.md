@@ -83,6 +83,51 @@
 
 **v2 — per-instans-override:** Lägg till `modified_from_series` boolean på `activities`. Edit av en enskild instans sätter flaggan och slutar följa serieändringar. Edit av serien hoppar över modifierade instanser. Cancel av en instans = bara den raden. Ingen ny schema-ändring krävs utöver den flaggan.
 
+## Säkerhetshärdning (security review 2026-04-17)
+
+### HIGH — Seed skapar admin med känt lösenord, körbar i prod
+- **Vad:** `src/db/seed.ts` skapar `testadmin1@malarkrets.se` med lösenord `testm`. Seed-containern finns i `docker-compose.prod.yml` och kan köras mot prod.
+- **Fix:** Lägg till miljöguard i seed.ts som vägrar köra när `NODE_ENV=production` eller liknande. Alternativt: kräv en explicit `SEED_CONFIRM=yes` env-variabel.
+- **Insats:** S
+- **Ägs av:** GreenLion (seed.ts) + RedFox (compose)
+
+### HIGH — Postgres-port exponerad i prod-compose
+- **Vad:** `127.0.0.1:5433:5432` finns kvar i `docker-compose.prod.yml` med kommentaren "REMOVE before VPS deploy". Kommentar-baserad säkerhet är skört.
+- **Fix:** Ta bort `ports`-blocket helt. Skapa separat `docker-compose.override.yml` (gitignored) för lokal databasåtkomst. Använd SSH-tunnel eller `docker compose exec` i prod.
+- **Insats:** S
+
+### HIGH — Placeholder AUTH_SECRET i staging
+- **Vad:** `.env.staging.example` har `AUTH_SECRET=CHANGE_ME_...`. Om staging körs med detta värde kan vem som helst förfalska sessioner.
+- **Fix:** Generera riktigt AUTH_SECRET även i staging. Eventuellt: startup-check i appen som vägrar starta om AUTH_SECRET innehåller `CHANGE_ME`.
+- **Insats:** S
+- **Ägs av:** GreenLion (app-check) + RedFox (env-mall)
+
+### MEDIUM — MinIO-konsol exponerad på host
+- **Vad:** Port 9000/9001 binds till `127.0.0.1` i prod-compose. Nåbar via SSRF eller annan process på host.
+- **Fix:** Ta bort `ports` i prod. Appen når MinIO via Docker-nätverket (`minio:9000`). Admin via SSH-tunnel.
+- **Insats:** S
+
+### MEDIUM — Migrate/seed kör som root
+- **Vad:** `runner`-stage har non-root user, men `migrate` och `seed` kör som root.
+- **Fix:** Lägg till non-root user i migrate/seed-stages i Dockerfile.
+- **Insats:** S
+
+### MEDIUM — Caddy healthcheck pekar fel
+- **Vad:** Healthcheck `wget http://localhost:3000/api/health` — port 3000 finns inte inuti Caddy-containern. Checken misslyckas alltid.
+- **Fix:** Ändra till `wget http://localhost:80/` eller `caddy validate`.
+- **Insats:** S
+
+### MEDIUM — Saknar Content-Security-Policy och X-Frame-Options
+- **Vad:** Caddyfile har HSTS och X-Content-Type-Options men saknar CSP och frame-skydd.
+- **Fix:** Lägg till `X-Frame-Options DENY` och en CSP-policy anpassad för appen (inkl. Google Maps-origins).
+- **Insats:** S-M
+- **Ägs av:** RedFox (Caddyfile)
+
+### MEDIUM — Google Maps API-nyckel i image-layer metadata
+- **Vad:** `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` lagras som ARG/ENV i builder-stage. Nåbar via `docker inspect` om imagen är publikt tillgänglig.
+- **Fix:** Säkerställ att GHCR-paketet är privat. Restriktera nyckeln med HTTP referrer i Google Cloud Console (se Fredrik-TODO nedan).
+- **Insats:** S
+
 ## Backlog
 
 ### Env-config: en enda källa för alla tjänster
@@ -103,7 +148,7 @@
 - ~~**Lägg till GitHub Secret `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`**~~ KLAR 2026-04-15. Satt på Anome-AB/Malarkrets, plockas upp av release.yml + Dockerfile som build-arg.
 - **Restriktera nyckeln i Google Cloud Console**:
   - ✅ HTTP referrers begränsade till localhost (2026-04-15) — säker som GitHub Secret tills prod-domän är bestämd.
-  - ⏳ När prod-domän är klar: lägg till produktionsdomänen som tillåten referrer, annars renderar kartor i prod-imagen som gråa/"for development purposes only".
+  - ⏳ Prod-domän är `malarkrets.se` — lägg till som tillåten referrer, annars renderar kartor i prod som gråa/"for development purposes only".
   - ⏳ API restrictions: sätt till endast Maps JavaScript API + Maps Static API.
   - ⏳ Dygns-/månadskvot så stulen nyckel inte kan debiteras oändligt.
 - Om ni har fler hemligheter (SMTP, VPS SSH-nyckel osv) — lägg dem som secrets samtidigt, säg till så uppdaterar vi pipelinen.
@@ -128,7 +173,7 @@
   7. Klona repot + `.env.prod` (scp:a från säker plats, ligger inte i git).
   8. `docker compose -f docker-compose.prod.yml up -d` + healthcheck-verifiering.
   9. Sätt upp `pg_dump` cron → dumpa till extern plats (Loopia backup-tjänst eller Backblaze B2).
-  10. Ta bort `127.0.0.1:5433:5432`-mappningen från compose-filen innan deploy (dev-only).
+  10. ~~Ta bort `127.0.0.1:5433:5432`-mappningen från compose-filen innan deploy (dev-only).~~ → Se säkerhetshärdning ovan: ta bort postgres + minio ports helt från prod-compose.
 
 - **Automatiska DB-migrationer vid deploy** — KLAR 2026-04-15 (alternativ 2 valt).
   - Init-container `migrate` i `docker-compose.prod.yml` kör Drizzle-migrationer
