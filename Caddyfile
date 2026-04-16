@@ -1,0 +1,22 @@
+# Caddyfile — reverse proxy + auto-TLS for the Next.js app.
+#
+# DOMAIN          public hostname (e.g. malarkrets.se). Defaults to `localhost`
+#                 for local testing, where Caddy serves HTTP on :80 without a cert.
+# LETSENCRYPT_EMAIL  required for a real domain — Let's Encrypt uses it for
+#                    expiry warnings and rate-limit accounting.
+
+{
+    email {$LETSENCRYPT_EMAIL:admin@example.com}
+}
+
+{$DOMAIN:localhost} {
+    encode gzip
+    reverse_proxy app:3000
+
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        -Server
+    }
+}

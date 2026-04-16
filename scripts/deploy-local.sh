@@ -26,12 +26,12 @@ if [ ! -f ".env.prod" ]; then
   exit 1
 fi
 
-# Pull latest image
-echo "[1/5] Pulling latest image..."
-docker compose -f "$COMPOSE_FILE" pull app
+# Pull latest images (app + migrate)
+echo "[1/4] Pulling latest images..."
+docker compose -f "$COMPOSE_FILE" pull app migrate
 
 # Start database first
-echo "[2/5] Starting database..."
+echo "[2/4] Starting database..."
 docker compose -f "$COMPOSE_FILE" up -d postgres
 echo "       Waiting for postgres to be healthy..."
 until docker compose -f "$COMPOSE_FILE" exec -T postgres pg_isready -U malarkrets > /dev/null 2>&1; do
@@ -39,17 +39,13 @@ until docker compose -f "$COMPOSE_FILE" exec -T postgres pg_isready -U malarkret
 done
 echo "       Postgres is ready."
 
-# Verify DB connectivity (migrations handled separately via drizzle push)
-echo "[3/5] Verifying database connectivity..."
-docker compose -f "$COMPOSE_FILE" exec -T postgres psql -U malarkrets -c "SELECT 1" > /dev/null 2>&1
-echo "       Database connected. Migrations: run 'drizzle push' separately if needed."
-
-# Start all services
-echo "[4/5] Starting all services..."
+# Start all services. The `migrate` service runs Drizzle migrations and exits;
+# `app` waits for `migrate` to complete successfully (compose depends_on).
+echo "[3/4] Running migrations and starting services..."
 docker compose -f "$COMPOSE_FILE" up -d
 
 # Health check
-echo "[5/5] Waiting for health check..."
+echo "[4/4] Waiting for health check..."
 for i in $(seq 1 $MAX_RETRIES); do
   if curl -sf "$HEALTH_URL" > /dev/null 2>&1; then
     echo ""
