@@ -109,16 +109,25 @@ sudo sshd -T | grep -E 'passwordauthentication|permitrootlogin'
 git clone https://github.com/Anome-AB/Malarkrets.git ~/malarkrets
 
 # Från din workstation, skicka upp .env.prod (aldrig i git):
-scp .env.prod deploy@<vps-ip>:~/malarkrets/.env.prod
-ssh deploy@<vps-ip> 'chmod 600 ~/malarkrets/.env.prod'
+scp .env.prod deploy@malarkrets.se:~/malarkrets/.env.prod
+ssh deploy@malarkrets.se 'chmod 600 ~/malarkrets/.env.prod'
 
 # Redigera .env.prod på VPS:n och sätt:
 #   DOMAIN=malarkrets.se
 #   LETSENCRYPT_EMAIL=hakan.froling@anome.se
 #   AUTH_SECRET, POSTGRES_PASSWORD, etc. — riktiga secrets
 
+# Logga in vid behov
+  1. Skapa en Personal Access Token (PAT) på GitHub
+  1. Gå till GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)
+  2. Klicka Generate new token (classic)
+  3. Ge den ett namn, t.ex. vps-ghcr-pull
+  4. Välj scope: read:packages (bara den)
+  5. Kopiera tokenen
+echo "[TOKEN]" | docker login ghcr.io -u froling --password-stdin
+
 # Starta stacken:
-ssh deploy@<vps-ip> 'cd ~/malarkrets && docker compose -f docker-compose.prod.yml up -d'
+ssh deploy@malarkrets.se 'cd ~/malarkrets && docker compose -f docker-compose.prod.yml up -d'
 
 # Verifiera (från din workstation):
 curl -I https://malarkrets.se/api/health
