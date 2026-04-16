@@ -85,6 +85,12 @@
 
 ## Backlog
 
+### Env-config: en enda källa för alla tjänster
+- **Vad:** `docker-compose.prod.yml` har `env_file: .env.prod` på `app` och `migrate`, men `postgres` och `minio` läser lösenord via `${VAR:-default}` shell-interpolering. Det gör att `.env.prod`-värden ignoreras av dessa tjänster och default-lösenord används istället.
+- **Snabbfix (gjord 2026-04-16):** Lade till `env_file: .env.prod` på `postgres` och `minio` så alla tjänster läser från samma källa.
+- **Kvar att göra:** Rensa bort `${VAR:-default}` fallbacks i compose `environment:`-blocken så det inte finns två ställen som sätter samma variabel. `.env.prod` ska vara den enda källan.
+- **Insats:** S
+
 ### Observability / Operations
 - Backup-strategi för PostgreSQL (pg_dump cron) — S
 - ~~Health check endpoint `/api/health`~~ KLAR (b69a227, 2026-04-14)

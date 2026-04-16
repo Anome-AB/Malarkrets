@@ -47,6 +47,7 @@ services:
 
   postgres:
     image: postgres:16-alpine
+    env_file: .env.prod
     ports:
       # DEV-ONLY: exposes postgres to the host so a local DB client (DBeaver, pgAdmin, psql)
       # can connect. Bound to 127.0.0.1 so it never leaks past this machine.
@@ -57,7 +58,6 @@ services:
     environment:
       POSTGRES_DB: malarkrets
       POSTGRES_USER: malarkrets
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-malarkrets_prod}
     volumes:
       - postgres_prod_data:/var/lib/postgresql/data
     healthcheck:
@@ -69,12 +69,11 @@ services:
 
   minio:
     image: minio/minio:latest
+    env_file: .env.prod
     ports:
       - "127.0.0.1:9000:9000"
       - "127.0.0.1:9001:9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    # MINIO_ROOT_USER and MINIO_ROOT_PASSWORD read from env_file
     volumes:
       - minio_prod_data:/data
     command: server /data --console-address ":9001"
