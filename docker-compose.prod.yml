@@ -18,6 +18,12 @@ services:
     ports:
       - "127.0.0.1:3000:3000"
     env_file: .env.prod
+    environment:
+      # OTel: app pushes OTLP over HTTP to the collector on the docker network.
+      # Endpoint + service name are baked here since they never vary across deploys.
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4318"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
+      OTEL_SERVICE_NAME: "malarkrets-app"
     depends_on:
       postgres:
         condition: service_healthy
@@ -76,6 +82,24 @@ services:
         condition: service_healthy
     restart: "no"
     profiles: ["tools"]
+
+  otel-collector:
+    # OpenTelemetry Collector. Receives OTLP from the app, docker_stats from the
+    # socket, and container logs from the json-file driver — ships everything
+    # via OTLP/HTTP to Dash0. Auth: Bearer token from DASH0_AUTH_TOKEN in .env.prod.
+    image: otel/opentelemetry-collector-contrib:0.114.0
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    env_file: .env.prod
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:13133/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
 
 volumes:
   postgres_prod_data:
