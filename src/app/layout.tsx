@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ToastProvider } from "@/components/ui/toast";
+import { SiteBanner } from "@/components/site-banner";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -22,6 +23,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400&display=swap" rel="stylesheet" />
       </head>
       <body className="bg-background text-heading min-h-screen">
+        <SiteBanner />
         <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
