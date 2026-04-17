@@ -4,6 +4,7 @@
 set -euo pipefail
 
 COMPOSE_FILE="docker-compose.prod.yml"
+ENV_FILE=".env.prod"
 HEALTH_URL="http://localhost:3000/api/health"
 MAX_RETRIES=30
 RETRY_INTERVAL=2
@@ -21,20 +22,20 @@ if [ ! -f "$COMPOSE_FILE" ]; then
   exit 1
 fi
 
-if [ ! -f ".env.prod" ]; then
-  echo "ERROR: .env.prod not found. Copy .env.prod.example and fill in values." >&2
+if [ ! -f "$ENV_FILE" ]; then
+  echo "ERROR: $ENV_FILE not found. Copy .env.prod.example and fill in values." >&2
   exit 1
 fi
 
 # Pull latest images (app + migrate)
 echo "[1/4] Pulling latest images..."
-docker compose -f "$COMPOSE_FILE" pull app migrate
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" pull app migrate
 
 # Start database first
 echo "[2/4] Starting database..."
-docker compose -f "$COMPOSE_FILE" up -d postgres
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d postgres
 echo "       Waiting for postgres to be healthy..."
-until docker compose -f "$COMPOSE_FILE" exec -T postgres pg_isready -U malarkrets > /dev/null 2>&1; do
+until docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T postgres pg_isready -U malarkrets > /dev/null 2>&1; do
   sleep 1
 done
 echo "       Postgres is ready."
@@ -42,7 +43,7 @@ echo "       Postgres is ready."
 # Start all services. The `migrate` service runs Drizzle migrations and exits;
 # `app` waits for `migrate` to complete successfully (compose depends_on).
 echo "[3/4] Running migrations and starting services..."
-docker compose -f "$COMPOSE_FILE" up -d
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d
 
 # Health check
 echo "[4/4] Waiting for health check..."
@@ -61,5 +62,5 @@ done
 
 echo ""
 echo "ERROR: Health check failed after $((MAX_RETRIES * RETRY_INTERVAL))s" >&2
-echo "Check logs: docker compose -f $COMPOSE_FILE logs app" >&2
+echo "Check logs: docker compose --env-file $ENV_FILE -f $COMPOSE_FILE logs app" >&2
 exit 1

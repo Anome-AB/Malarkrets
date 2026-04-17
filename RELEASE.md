@@ -163,13 +163,32 @@ inte vid omstart. Följande *räcker inte* för att nya env-värden ska nå appe
 Använd `--force-recreate` (eller full `down` + `up`):
 
 ```bash
-docker compose -f docker-compose.prod.yml up -d --force-recreate app
+docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --force-recreate app
 # Verifiera att nya värdet är inne:
-docker compose -f docker-compose.prod.yml exec app env | grep <VAR_NAME>
+docker compose --env-file .env.prod -f docker-compose.prod.yml exec app env | grep <VAR_NAME>
 ```
 
 Samma gäller när env för postgres/migrate ändras — rekreera motsvarande
 service.
+
+### Varför `--env-file .env.prod` alltid
+
+Compose har två separata env-mekanismer som är lätt att förväxla:
+
+1. **`env_file:` i compose** → skickar variablerna *in i containern* vid
+   start. Påverkar inte compose-filens egen `${VAR}`-syntax.
+2. **Variabel-interpolering `${VAR}`** → läses från shell-env eller en
+   `.env`-fil i projekt-roten vid default. Läses *inte* från `env_file:`.
+
+Eftersom vi har vars som `${DOCKER_GID}` i compose-filen själv, måste compose
+veta var de ligger. Lägg alltid till `--env-file .env.prod` i manuella
+kommandon på VPS:n:
+
+```bash
+docker compose --env-file .env.prod -f docker-compose.prod.yml <command>
+```
+
+`scripts/deploy-local.sh` gör detta automatiskt.
 
 ### Telemetri — Dash0 via OTel Collector
 
