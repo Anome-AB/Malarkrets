@@ -18,7 +18,7 @@ function chain(terminal: unknown = []) {
     "onConflictDoUpdate", "returning",
   ];
   for (const m of methods) {
-    (promise as Record<string, unknown>)[m] = vi.fn().mockReturnValue(promise);
+    (promise as unknown as Record<string, unknown>)[m] = vi.fn().mockReturnValue(promise);
   }
   return promise;
 }

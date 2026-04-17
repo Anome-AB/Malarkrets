@@ -23,20 +23,20 @@ function chain(terminal: unknown = []) {
     "onConflictDoUpdate", "onConflictDoNothing", "returning",
   ];
   for (const m of methods) {
-    (promise as Record<string, unknown>)[m] = vi.fn().mockReturnValue(promise);
+    (promise as unknown as Record<string, unknown>)[m] = vi.fn().mockReturnValue(promise);
   }
   return promise;
 }
 
 // Queue-based select mock: each call to db.select() pops the next result
 const selectQueue: unknown[][] = [];
-const mockSelect = vi.fn(() => {
+const mockSelect = vi.fn((..._args: unknown[]) => {
   const result = selectQueue.shift() ?? [];
   return chain(result);
 });
-const mockInsert = vi.fn(() => chain([{ id: "new-id" }]));
-const mockUpdate = vi.fn(() => chain());
-const mockDelete = vi.fn(() => chain());
+const mockInsert = vi.fn((..._args: unknown[]) => chain([{ id: "new-id" }]));
+const mockUpdate = vi.fn((..._args: unknown[]) => chain());
+const mockDelete = vi.fn((..._args: unknown[]) => chain());
 
 vi.mock("@/lib/db", () => ({
   db: {
