@@ -1,0 +1,76 @@
+# OpenTelemetry Collector config for shipping traces/metrics/logs to Dash0.
+# Consumed by the `otel-collector` service in docker-compose.prod.yml.
+#
+# Environment variables read at container start:
+#   DASH0_AUTH_TOKEN    — Bearer token, ingestion scope. Required.
+#   DEPLOYMENT_ENV      — "production" | "staging" | etc. Free-form.
+
+receivers:
+  # App pushes OTLP over HTTP (protobuf) from inside the docker network.
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+
+  # Per-container CPU / memory / network / disk.
+  docker_stats:
+    endpoint: unix:///var/run/docker.sock
+    collection_interval: 30s
+
+  # Tail every container's stdout/stderr (Docker JSON-file log driver).
+  filelog:
+    include:
+      - /var/lib/docker/containers/*/*-json.log
+    start_at: end
+    operators:
+      - type: json_parser
+        id: parser-docker
+        timestamp:
+          parse_from: attributes.time
+          layout: "%Y-%m-%dT%H:%M:%S.%LZ"
+      - type: regex_parser
+        id: extract_container_id
+        regex: '^.*containers/(?P<container_id>[^/]+)/.*-json\.log$'
+        parse_from: attributes["log.file.path"]
+      - type: move
+        from: attributes.log
+        to: body
+
+processors:
+  batch:
+    timeout: 5s
+    send_batch_size: 1000
+  resource:
+    attributes:
+      - key: deployment.environment
+        value: "${env:DEPLOYMENT_ENV}"
+        action: upsert
+      - key: service.namespace
+        value: malarkrets
+        action: upsert
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+exporters:
+  otlphttp/dash0:
+    endpoint: https://ingress.eu-west-1.aws.dash0.com
+    headers:
+      Authorization: "Bearer ${env:DASH0_AUTH_TOKEN}"
+
+service:
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [resource, batch]
+      exporters: [otlphttp/dash0]
+    metrics:
+      receivers: [otlp, docker_stats]
+      processors: [resource, batch]
+      exporters: [otlphttp/dash0]
+    logs:
+      receivers: [otlp, filelog]
+      processors: [resource, batch]
+      exporters: [otlphttp/dash0]
