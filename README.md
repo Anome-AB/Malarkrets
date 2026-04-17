@@ -9,7 +9,6 @@ intraprenörsprojekt.
 - **Next.js 16** (App Router, standalone output)
 - **PostgreSQL 16** + Drizzle ORM
 - **NextAuth v5** (Credentials-provider, bcrypt)
-- **MinIO** (S3-kompatibel objektlagring för bilder)
 - **Tailwind CSS** + Satoshi/Instrument Sans
 - **Vitest** för enhetstester
 - **Docker** + GitHub Actions för release
@@ -66,11 +65,10 @@ Scriptet:
 1. Pullar senaste imagen från ghcr.io.
 2. Startar PostgreSQL och väntar på `pg_isready`.
 3. Verifierar DB-anslutningen.
-4. Startar app + MinIO.
+4. Startar app.
 5. Pollar `/api/health` tills appen svarar.
 
-Appen körs på `http://localhost:3000`, MinIO-konsolen på
-`http://127.0.0.1:9001` (endast loopback).
+Appen körs på `http://localhost:3000`.
 
 ### Köra migrationer och seed mot prod-databasen
 
@@ -105,7 +103,7 @@ scripts/        # deploy-local.sh
 .github/
   workflows/    # release.yml
 Dockerfile                  # multi-stage build (node:22-alpine)
-docker-compose.prod.yml     # app + postgres + minio
+docker-compose.prod.yml     # app + postgres + caddy
 ```
 
 ## Designsystem

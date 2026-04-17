@@ -50,6 +50,13 @@
       "when": 1776261161821,
       "tag": "0006_illegal_kid_colt",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1781942400000,
+      "tag": "0007_images_in_database",
+      "breakpoints": true
     }
   ]
 }

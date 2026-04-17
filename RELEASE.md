@@ -150,13 +150,12 @@ och ska tas bort direkt efter.
 ### Deploya lokalt från ghcr.io
 
 Se `README.md` för user-facing steg. Internt:
-`scripts/deploy-local.sh` gör pull → postgres-wait → db-probe → app+minio →
+`scripts/deploy-local.sh` gör pull → postgres-wait → db-probe → app →
 health poll. Läs scriptet innan ändringar.
 
 ## Säkerhet
 
 - `.env.prod` committas **aldrig**. `.gitignore` skyddar det.
-- MinIO-konsolen binds till `127.0.0.1:9001` — inte exponerad.
 - Postgres exponerar inte port i prod-compose (förutom vid temporär dev-access).
 - Google Maps-nyckel är `NEXT_PUBLIC_*` → exponeras i klient-bundeln.
   Måste restriktioneras i Google Cloud Console (HTTP referrers + API-scope +

@@ -16,6 +16,7 @@ import {
   index,
   unique,
   check,
+  customType,
 } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 
@@ -75,7 +76,28 @@ export const experienceLevelEnum = pgEnum("experience_level", [
   "alla",
 ]);
 
+// ─── Custom types ───────────────────────────────────────────────────────────
+
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({
+  dataType() {
+    return "bytea";
+  },
+  toDriver(value: Buffer): Buffer {
+    return value;
+  },
+  fromDriver(value: Buffer): Buffer {
+    return value;
+  },
+});
+
 // ─── Tables ──────────────────────────────────────────────────────────────────
+
+export const images = pgTable("images", {
+  id: uuid().defaultRandom().primaryKey(),
+  data: bytea("data").notNull(),
+  contentType: varchar("content_type", { length: 50 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
 
 export const users = pgTable("users", {
   id: uuid().defaultRandom().primaryKey(),
@@ -542,3 +564,6 @@ export type NewAnalyticsEvent = typeof analyticsEvents.$inferInsert;
 
 export type AdminAction = typeof adminActions.$inferSelect;
 export type NewAdminAction = typeof adminActions.$inferInsert;
+
+export type Image = typeof images.$inferSelect;
+export type NewImage = typeof images.$inferInsert;

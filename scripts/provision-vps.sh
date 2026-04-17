@@ -142,5 +142,5 @@ Security:
   - Root SSH login disabled.
   - Password auth disabled.
   - Only 22/80/443 open to the internet.
-  - Postgres / MinIO / app are reachable only inside the Docker network.
+  - Postgres / app are reachable only inside the Docker network.
 EOM
