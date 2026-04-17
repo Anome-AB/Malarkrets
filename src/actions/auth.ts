@@ -8,6 +8,7 @@ import { signOut } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users } from "@/db/schema";
 import { registerSchema } from "@/lib/validations/auth";
+import { sendVerificationEmail } from "@/lib/email";
 
 export async function register(formData: FormData) {
   const raw = {
@@ -40,6 +41,12 @@ export async function register(formData: FormData) {
     emailVerificationToken,
     emailVerified: false,
   });
+
+  try {
+    await sendVerificationEmail(email, emailVerificationToken);
+  } catch (err) {
+    console.error("sendVerificationEmail failed", err);
+  }
 
   return { success: true };
 }
