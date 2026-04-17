@@ -1,5 +1,35 @@
 # TODOS — Mälarkrets
 
+## Release-tillstånd
+
+**Nuvarande: PRE-GO-LIVE** (aktiv utvärdering, inga riktiga kunder).
+
+Denna TODO-lista har två lägen. Vissa åtgärder aktiveras eller avaktiveras beroende på läge. Flippen från PRE till POST är ett **medvetet beslut** — kopplat till första riktiga kunden — inte något som bara glider förbi.
+
+### PRE-GO-LIVE (nuvarande)
+- Dataförlust är acceptabel (ingen kund har riktig data ännu).
+- Downtime är acceptabel (vi kan wipa & bygga om när vi vill).
+- Strategi: *cattle not pets* — VPS ska kunna återställas från noll via provisioning + backup.
+- Ephemeral runtime-state-skydd behövs inte.
+- `AUTH_SECRET=CHANGE_ME` i staging är ett irritationsmoment, inte en säkerhetsrisk.
+
+### POST-GO-LIVE — checklista som måste vara avbockad *innan* flippen
+Obs: flera punkter måste påbörjas i god tid före flipp-datum, de är inte efterstädning.
+
+- [ ] Restic + B2-backup verifierad via minst en lyckad restore-övning på staging ("cattle drill").
+- [ ] RTO-siffra uppmätt och dokumenterad (hur lång tid tar wipe & rebuild?).
+- [ ] RPO-siffra beslutad och acceptabel (dagligen = 24 h; timvis om kunden kräver).
+- [ ] Köpt TLS-cert installerat (ersätter Let's Encrypt auto-provisioning, se RedFox-TODO).
+- [ ] Daglig backup-schemaläggning har kört utan fel i minst en vecka.
+- [ ] Alla HIGH-säkerhetsobjekt under "Säkerhetshärdning" avbockade.
+- [ ] In-flight-jobb / sessions / webhook-delivery — beslut taget (redundans? acceptera förlust?).
+- [ ] Monitoring + alerts på VPS-uptime, disk-space, postgres-health.
+- [ ] Kontaktväg/rutin när något går sönder kl 03:00 på natten.
+- [ ] GDPR-rutiner: logg-retention, rätten att bli glömd, personuppgiftsbiträdesavtal med Loopia/B2.
+
+### POST-GO-LIVE — parking lot (lägg till nya items här efter flippen)
+Tom just nu. När flippen skett läggs nya POST-items direkt här.
+
 ## Nästa session — Prioritet 1
 
 ### Design-genomgång av aktivitetsdetaljsidan — KLAR
