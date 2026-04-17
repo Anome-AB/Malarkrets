@@ -153,6 +153,24 @@ Se `README.md` för user-facing steg. Internt:
 `scripts/deploy-local.sh` gör pull → postgres-wait → db-probe → app →
 health poll. Läs scriptet innan ändringar.
 
+### Ladda om `.env.prod` efter ändring
+
+**Gotcha:** `env_file` i docker-compose läses bara vid **container-skapande**,
+inte vid omstart. Följande *räcker inte* för att nya env-värden ska nå appen:
+- `docker compose restart app` — behåller samma container, samma env.
+- `docker compose up -d app` — återanvänder oftast existerande container.
+
+Använd `--force-recreate` (eller full `down` + `up`):
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --force-recreate app
+# Verifiera att nya värdet är inne:
+docker compose -f docker-compose.prod.yml exec app env | grep <VAR_NAME>
+```
+
+Samma gäller när env för postgres/migrate ändras — rekreera motsvarande
+service.
+
 ## Säkerhet
 
 - `.env.prod` committas **aldrig**. `.gitignore` skyddar det.
