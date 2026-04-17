@@ -44,6 +44,7 @@ vi.mock("drizzle-orm", () => ({
   eq: vi.fn((...args: unknown[]) => args),
   and: vi.fn((...args: unknown[]) => args),
   or: vi.fn((...args: unknown[]) => args),
+  gte: vi.fn((...args: unknown[]) => args),
   count: vi.fn(() => "count"),
   sql: Object.assign(vi.fn((...args: unknown[]) => args), {
     join: vi.fn((...args: unknown[]) => args),
