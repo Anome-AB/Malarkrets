@@ -171,6 +171,28 @@ docker compose -f docker-compose.prod.yml exec app env | grep <VAR_NAME>
 Samma gäller när env för postgres/migrate ändras — rekreera motsvarande
 service.
 
+### Telemetri — Dash0 via OTel Collector
+
+`otel-collector`-servicen i compose shippar traces + metrics via OTLP/HTTP
+till Dash0. Instrumentering i appen görs av `@vercel/otel` (se
+`src/instrumentation.ts`) och skickar till collectorn på docker-nätverket.
+
+**Krav i `.env.prod` på VPS:**
+- `DASH0_AUTH_TOKEN` — ingestion-scoped token från Dash0-UI:t.
+- `DEPLOYMENT_ENV` — `production` (eller `staging`). Taggar all telemetri.
+- `DOCKER_GID` — docker-gruppens GID på *just den host:en*. Skrivs ut av
+  `scripts/provision-vps.sh`. Utan den kan collectorn (som är distroless och
+  kör som UID 10001) inte läsa `docker.sock` för `docker_stats`-receivern.
+
+**Kända gotchas:**
+- Contrib-imagen är distroless → `user: root` failar ("no matching entries
+  in passwd"). Vi använder `group_add: ["${DOCKER_GID}"]` istället.
+- `docker_stats`-receivern default:ar till Docker API 1.25; Docker 25+
+  kräver minst 1.40. Vi pinnar `api_version: "1.40"` i collector-configen.
+- `filelog` mot `/var/lib/docker/containers` är medvetet inte påslaget —
+  mappen är mode 710 `root:root` och kräver faktisk root för att läsa.
+  App-logs ska istället skickas via OTel SDK när det blir aktuellt.
+
 ## Säkerhet
 
 - `.env.prod` committas **aldrig**. `.gitignore` skyddar det.

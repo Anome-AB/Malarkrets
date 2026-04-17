@@ -84,16 +84,21 @@ services:
     profiles: ["tools"]
 
   otel-collector:
-    # OpenTelemetry Collector. Receives OTLP from the app, docker_stats from the
-    # socket, and container logs from the json-file driver — ships everything
-    # via OTLP/HTTP to Dash0. Auth: Bearer token from DASH0_AUTH_TOKEN in .env.prod.
+    # OpenTelemetry Collector. Receives OTLP from the app + docker_stats from
+    # the socket, ships via OTLP/HTTP to Dash0. Auth: Bearer token from
+    # DASH0_AUTH_TOKEN in .env.prod.
+    #
+    # Imagen är distroless (ingen /etc/passwd), därför använder vi `group_add`
+    # istället för `user:` för att ge access till docker.sock. DOCKER_GID
+    # varierar per host — sätts av scripts/provision-vps.sh i .env.prod.
     image: otel/opentelemetry-collector-contrib:0.114.0
     command: ["--config=/etc/otelcol-contrib/config.yaml"]
     env_file: .env.prod
+    group_add:
+      - "${DOCKER_GID}"
     volumes:
       - ./otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:13133/"]
       interval: 30s

@@ -116,6 +116,12 @@ fi
 usermod -aG docker "$DEPLOY_USER"
 systemctl enable --now docker >/dev/null
 
+# Docker-gruppens GID varierar per host (988, 999, ...). Behövs i .env.prod så
+# otel-collector-containern kan läsa docker.sock via `group_add`. Vi skriver
+# inte till .env.prod här (scriptet rör aldrig secrets) — vi skriver ut värdet
+# så man klistrar in det vid deploy-setup.
+DOCKER_GID_VALUE="$(getent group docker | cut -d: -f3)"
+
 cat <<EOM
 
 === Provisioning complete ===
@@ -126,6 +132,7 @@ Host state:
   - Firewall:   UFW (22, 80, 443)
   - Auto-patch: unattended-upgrades
   - Docker:     $(docker --version 2>/dev/null | cut -d, -f1)
+  - Docker GID: ${DOCKER_GID_VALUE}     ← lägg till i .env.prod som DOCKER_GID=${DOCKER_GID_VALUE}
 
 Next steps (run from your workstation):
 

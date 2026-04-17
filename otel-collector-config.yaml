@@ -4,6 +4,10 @@
 # Environment variables read at container start:
 #   DASH0_AUTH_TOKEN    — Bearer token, ingestion scope. Required.
 #   DEPLOYMENT_ENV      — "production" | "staging" | etc. Free-form.
+#
+# Logs: filelog-receivern är medvetet inte påslagen — /var/lib/docker/containers
+# är mode 710 root:root vilket kräver faktisk root-access. App-logs ska istället
+# skickas via OTel SDK direkt från appen (en follow-up).
 
 receivers:
   # App pushes OTLP over HTTP (protobuf) from inside the docker network.
@@ -13,28 +17,11 @@ receivers:
         endpoint: 0.0.0.0:4318
 
   # Per-container CPU / memory / network / disk.
+  # api_version måste vara >= 1.40 för Docker 25+.
   docker_stats:
     endpoint: unix:///var/run/docker.sock
+    api_version: "1.40"
     collection_interval: 30s
-
-  # Tail every container's stdout/stderr (Docker JSON-file log driver).
-  filelog:
-    include:
-      - /var/lib/docker/containers/*/*-json.log
-    start_at: end
-    operators:
-      - type: json_parser
-        id: parser-docker
-        timestamp:
-          parse_from: attributes.time
-          layout: "%Y-%m-%dT%H:%M:%S.%LZ"
-      - type: regex_parser
-        id: extract_container_id
-        regex: '^.*containers/(?P<container_id>[^/]+)/.*-json\.log$'
-        parse_from: attributes["log.file.path"]
-      - type: move
-        from: attributes.log
-        to: body
 
 processors:
   batch:
@@ -71,6 +58,6 @@ service:
       processors: [resource, batch]
       exporters: [otlphttp/dash0]
     logs:
-      receivers: [otlp, filelog]
+      receivers: [otlp]
       processors: [resource, batch]
       exporters: [otlphttp/dash0]
