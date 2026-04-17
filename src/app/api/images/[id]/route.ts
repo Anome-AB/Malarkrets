@@ -19,7 +19,7 @@ export async function GET(
     return new Response("Not found", { status: 404 });
   }
 
-  return new Response(row.data, {
+  return new Response(new Uint8Array(row.data), {
     headers: {
       "Content-Type": row.contentType,
       "Cache-Control": "public, max-age=31536000, immutable",
