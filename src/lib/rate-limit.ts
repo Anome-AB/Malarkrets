@@ -37,7 +37,8 @@ export async function checkRateLimit(
     FOR UPDATE
   `);
 
-  const currentCount = (result as any)[0]?.count ?? 0;
+  const rows = result as unknown as Array<{ count: number }>;
+  const currentCount = rows[0]?.count ?? 0;
   const remaining = Math.max(0, limit - currentCount);
 
   return {

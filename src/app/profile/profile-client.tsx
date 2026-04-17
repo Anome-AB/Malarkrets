@@ -220,7 +220,7 @@ export function ProfileClient({
           ))}
           {filteredTags.length === 0 && tagSearch.trim() && (
             <p className="text-xs text-dimmed">
-              Inga intressen matchar "{tagSearch}"
+              Inga intressen matchar &quot;{tagSearch}&quot;
             </p>
           )}
         </div>

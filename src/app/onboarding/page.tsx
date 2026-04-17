@@ -109,7 +109,7 @@ export default function OnboardingPage() {
               ))}
               {filteredTags.length === 0 && search.trim() && (
                 <p className="text-sm text-dimmed">
-                  Inga intressen matchar "{search}"
+                  Inga intressen matchar &quot;{search}&quot;
                 </p>
               )}
             </div>

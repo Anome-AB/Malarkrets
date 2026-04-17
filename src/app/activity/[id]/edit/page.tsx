@@ -172,7 +172,7 @@ export default function EditActivityPage() {
 
     if (result.success) {
       setShowCancelModal(false);
-      if ((result as any).deleted) {
+      if ((result as { deleted?: boolean }).deleted) {
         toast("Aktiviteten har raderats", "success");
         router.push("/my-activities");
       } else {

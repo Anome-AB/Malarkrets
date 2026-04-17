@@ -39,14 +39,22 @@ export function NotificationDropdown({ initialUnreadCount }: Props) {
 
   useEffect(() => {
     if (!open) return;
+    let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- external data fetch into local UI state; refactor to a data-fetching lib is out of scope here.
     setLoading(true);
     fetch("/api/notifications")
       .then((r) => r.json())
       .then((data) => {
+        if (cancelled) return;
         setItems(data.notifications ?? []);
         setUnreadCount(data.unreadCount ?? 0);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [open]);
 
   function handleMarkAllRead() {

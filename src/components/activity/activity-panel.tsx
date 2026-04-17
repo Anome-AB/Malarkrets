@@ -68,21 +68,29 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
   // Fetch data when panel opens
   useEffect(() => {
     if (!open || !activityId) return;
+    let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- external data fetch into local UI state; refactor to a data-fetching lib (SWR/tanstack query) is out of scope here.
     setLoading(true);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- same as above.
     setDetail(null);
     getActivityDetail(activityId).then((data) => {
+      if (cancelled) return;
       setDetail(data as ActivityDetail | null);
       setLoading(false);
     });
+    return () => {
+      cancelled = true;
+    };
   }, [open, activityId]);
 
   // Slide-in animation
   useEffect(() => {
     if (open) {
-      requestAnimationFrame(() => setVisible(true));
-    } else {
-      setVisible(false);
+      const raf = requestAnimationFrame(() => setVisible(true));
+      return () => cancelAnimationFrame(raf);
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing visibility to the `open` prop for slide-out animation; no clean render-time derivation available.
+    setVisible(false);
   }, [open]);
 
   // Focus management

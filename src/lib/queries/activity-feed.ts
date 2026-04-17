@@ -21,7 +21,7 @@ import {
 
 // Map user gender to activity restriction enum
 // User gender: man/kvinna/ej_angett → Activity restriction: man/kvinnor/alla
-function genderToRestriction(gender: string | null): string | null {
+function genderToRestriction(gender: string | null): "man" | "kvinnor" | null {
   if (gender === "man") return "man";
   if (gender === "kvinna") return "kvinnor";
   return null; // ej_angett or null can only see "alla"
@@ -127,7 +127,7 @@ export async function getMatchedActivities(
         viewerRestriction
           ? or(
               eq(activities.genderRestriction, "alla"),
-              eq(activities.genderRestriction, viewerRestriction as any),
+              eq(activities.genderRestriction, viewerRestriction),
             )
           : eq(activities.genderRestriction, "alla"),
         // Min age filter
