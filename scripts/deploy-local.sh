@@ -51,7 +51,6 @@ for i in $(seq 1 $MAX_RETRIES); do
     echo ""
     echo "=== Deploy complete! ==="
     echo "App:   http://localhost:3000"
-    echo "MinIO: http://localhost:9001 (console)"
     echo ""
     curl -s "$HEALTH_URL" | python3 -m json.tool 2>/dev/null || curl -s "$HEALTH_URL"
     exit 0

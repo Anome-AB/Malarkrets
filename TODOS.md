@@ -46,7 +46,7 @@
 
 ### Profilbild-uppladdning
 **Vad:** Profilen saknar uppladdning av profilbild.
-**Varför:** Sharp + MinIO redan konfigurerat för aktivitetsbilder, samma pipeline kan återanvändas.
+**Varför:** Sharp redan konfigurerat för aktivitetsbilder, samma pipeline kan återanvändas.
 **Insats:** S
 
 ### Flervals-intressefilter
@@ -102,11 +102,6 @@
 - **Insats:** S
 - **Ägs av:** GreenLion (app-check) + RedFox (env-mall)
 
-### MEDIUM — MinIO-konsol exponerad på host
-- **Vad:** Port 9000/9001 binds till `127.0.0.1` i prod-compose. Nåbar via SSRF eller annan process på host.
-- **Fix:** Ta bort `ports` i prod. Appen når MinIO via Docker-nätverket (`minio:9000`). Admin via SSH-tunnel.
-- **Insats:** S
-
 ### MEDIUM — Migrate/seed kör som root
 - **Vad:** `runner`-stage har non-root user, men `migrate` och `seed` kör som root.
 - **Fix:** Lägg till non-root user i migrate/seed-stages i Dockerfile.
@@ -131,8 +126,8 @@
 ## Backlog
 
 ### Env-config: en enda källa för alla tjänster
-- **Vad:** `docker-compose.prod.yml` har `env_file: .env.prod` på `app` och `migrate`, men `postgres` och `minio` läser lösenord via `${VAR:-default}` shell-interpolering. Det gör att `.env.prod`-värden ignoreras av dessa tjänster och default-lösenord används istället.
-- **Snabbfix (gjord 2026-04-16):** Lade till `env_file: .env.prod` på `postgres` och `minio` så alla tjänster läser från samma källa.
+- **Vad:** `docker-compose.prod.yml` har `env_file: .env.prod` på `app` och `migrate`, men `postgres` läser lösenord via `${VAR:-default}` shell-interpolering. Det gör att `.env.prod`-värden ignoreras av denna tjänst och default-lösenord används istället.
+- **Snabbfix (gjord 2026-04-16):** Lade till `env_file: .env.prod` på `postgres` så alla tjänster läser från samma källa.
 - **Kvar att göra:** Rensa bort `${VAR:-default}` fallbacks i compose `environment:`-blocken så det inte finns två ställen som sätter samma variabel. `.env.prod` ska vara den enda källan.
 - **Insats:** S
 
@@ -173,7 +168,7 @@
   7. Klona repot + `.env.prod` (scp:a från säker plats, ligger inte i git).
   8. `docker compose -f docker-compose.prod.yml up -d` + healthcheck-verifiering.
   9. Sätt upp `pg_dump` cron → dumpa till extern plats (Loopia backup-tjänst eller Backblaze B2).
-  10. ~~Ta bort `127.0.0.1:5433:5432`-mappningen från compose-filen innan deploy (dev-only).~~ → Se säkerhetshärdning ovan: ta bort postgres + minio ports helt från prod-compose.
+  10. ~~Ta bort `127.0.0.1:5433:5432`-mappningen från compose-filen innan deploy (dev-only).~~ → Se säkerhetshärdning ovan: ta bort postgres ports helt från prod-compose.
 
 - **Automatiska DB-migrationer vid deploy** — KLAR 2026-04-15 (alternativ 2 valt).
   - Init-container `migrate` i `docker-compose.prod.yml` kör Drizzle-migrationer

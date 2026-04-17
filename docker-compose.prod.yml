@@ -67,18 +67,6 @@ services:
       retries: 5
     restart: unless-stopped
 
-  minio:
-    image: minio/minio:latest
-    env_file: .env.prod
-    ports:
-      - "127.0.0.1:9000:9000"
-      - "127.0.0.1:9001:9001"
-    # MINIO_ROOT_USER and MINIO_ROOT_PASSWORD read from env_file
-    volumes:
-      - minio_prod_data:/data
-    command: server /data --console-address ":9001"
-    restart: unless-stopped
-
   seed:
     # On-demand only — run with: docker compose -f docker-compose.prod.yml run --rm seed
     image: ghcr.io/anome-ab/malarkrets:${SEED_TAG:-seed-latest}
@@ -91,6 +79,5 @@ services:
 
 volumes:
   postgres_prod_data:
-  minio_prod_data:
   caddy_data:
   caddy_config:
