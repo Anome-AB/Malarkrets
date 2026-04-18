@@ -156,6 +156,16 @@
   box-shadow: 0 -4px 12px -8px rgba(0, 0, 0, 0.15);
 }
 
+/* Site banner height is published as a CSS variable via :has() so layouts
+   that hard-code calc(100vh - Xpx) can subtract the banner too. The
+   height matches SiteBanner's actual box (py-2 + text-sm line-height). */
+html {
+  --banner-h: 0px;
+}
+html:has([data-site-banner]) {
+  --banner-h: 36px;
+}
+
 body {
   background: var(--color-background);
   color: var(--color-heading);
