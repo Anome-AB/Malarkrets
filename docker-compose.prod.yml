@@ -4,7 +4,7 @@ services:
     # Image built from the `migrate` stage in Dockerfile — see .github/workflows/release.yml.
     # MIGRATE_TAG must always match APP_TAG — see RELEASE.md (Rollback).
     image: ghcr.io/anome-ab/malarkrets:${MIGRATE_TAG:-migrate-latest}
-    env_file: .env.prod
+    env_file: .env
     depends_on:
       postgres:
         condition: service_healthy
@@ -17,7 +17,7 @@ services:
     # still works via http://localhost:3000.
     ports:
       - "127.0.0.1:3000:3000"
-    env_file: .env.prod
+    env_file: .env
     environment:
       # OTel: app pushes OTLP over HTTP to the collector on the docker network.
       # Endpoint + service name are baked here since they never vary across deploys.
@@ -37,7 +37,7 @@ services:
       - "80:80"
       - "443:443"
       - "443:443/udp"  # HTTP/3
-    env_file: .env.prod
+    env_file: .env
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
@@ -53,7 +53,7 @@ services:
 
   postgres:
     image: postgres:16-alpine
-    env_file: .env.prod
+    env_file: .env
     ports:
       # DEV-ONLY: exposes postgres to the host so a local DB client (DBeaver, pgAdmin, psql)
       # can connect. Bound to 127.0.0.1 so it never leaks past this machine.
@@ -76,7 +76,7 @@ services:
   seed:
     # On-demand only — run with: docker compose -f docker-compose.prod.yml run --rm seed
     image: ghcr.io/anome-ab/malarkrets:${SEED_TAG:-seed-latest}
-    env_file: .env.prod
+    env_file: .env
     depends_on:
       postgres:
         condition: service_healthy
@@ -85,15 +85,16 @@ services:
 
   otel-collector:
     # OpenTelemetry Collector. Receives OTLP from the app + docker_stats from
-    # the socket, ships via OTLP/HTTP to Dash0. Auth: Bearer token from
-    # DASH0_AUTH_TOKEN in .env.prod.
+    # the socket, ships via OTLP/HTTP to Dash0. Auth: Bearer token från
+    # DASH0_AUTH_TOKEN i .env.
     #
     # Imagen är distroless (ingen /etc/passwd), därför använder vi `group_add`
     # istället för `user:` för att ge access till docker.sock. DOCKER_GID
-    # varierar per host — sätts av scripts/provision-vps.sh i .env.prod.
+    # varierar per host — scripts/provision-vps.sh skriver ut värdet, klistras
+    # in manuellt i .env.
     image: otel/opentelemetry-collector-contrib:0.114.0
     command: ["--config=/etc/otelcol-contrib/config.yaml"]
-    env_file: .env.prod
+    env_file: .env
     group_add:
       - "${DOCKER_GID}"
     volumes:

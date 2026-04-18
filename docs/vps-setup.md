@@ -108,11 +108,12 @@ sudo sshd -T | grep -E 'passwordauthentication|permitrootlogin'
 # På VPS:n som deploy-user:
 git clone https://github.com/Anome-AB/Malarkrets.git ~/malarkrets
 
-# Från din workstation, skicka upp .env.prod (aldrig i git):
-scp .env.prod deploy@malarkrets.se:~/malarkrets/.env.prod
-ssh deploy@malarkrets.se 'chmod 600 ~/malarkrets/.env.prod'
+# Från din workstation, skicka upp env-filen (aldrig i git).
+# På hosten heter den alltid `.env` — docker compose läser den automatiskt.
+scp .env.prod deploy@malarkrets.se:~/malarkrets/.env
+ssh deploy@malarkrets.se 'chmod 600 ~/malarkrets/.env'
 
-# Redigera .env.prod på VPS:n och sätt:
+# Redigera .env på VPS:n och sätt:
 #   DOMAIN=malarkrets.se
 #   LETSENCRYPT_EMAIL=hakan.froling@anome.se
 #   AUTH_SECRET, POSTGRES_PASSWORD, etc. — riktiga secrets

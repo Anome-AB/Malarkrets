@@ -57,7 +57,7 @@ Kräver Docker Desktop och `docker login ghcr.io` med en GitHub PAT som har
 `read:packages`.
 
 ```bash
-cp .env.prod.example .env.prod  # fyll i värden (AUTH_SECRET, lösenord)
+cp .env.prod.example .env       # fyll i värden (AUTH_SECRET, lösenord)
 bash scripts/deploy-local.sh    # pullar image + startar hela stacken
 ```
 
