@@ -121,10 +121,9 @@ Tom just nu. När flippen skett läggs nya POST-items direkt här.
 - **Insats:** S
 - **Ägs av:** GreenLion (seed.ts) + RedFox (compose)
 
-### HIGH — Postgres-port exponerad i prod-compose
-- **Vad:** `127.0.0.1:5433:5432` finns kvar i `docker-compose.prod.yml` med kommentaren "REMOVE before VPS deploy". Kommentar-baserad säkerhet är skört.
-- **Fix:** Ta bort `ports`-blocket helt. Skapa separat `docker-compose.override.yml` (gitignored) för lokal databasåtkomst. Använd SSH-tunnel eller `docker compose exec` i prod.
-- **Insats:** S
+### ~~HIGH — Postgres-port exponerad i prod-compose~~ (omvärderad 2026-04-18)
+- **Tidigare oro:** `127.0.0.1:5433:5432` i `docker-compose.prod.yml` med kommentaren "REMOVE before VPS deploy" — kommentar-baserad säkerhet är skört.
+- **Nytt beslut:** Bindning kvar men på `127.0.0.1:5432:5432` (explicit loopback). Aldrig internet-exponerad. Används via SSH-tunnel från workstation för DB-klient-åtkomst. Dokumenterat i RELEASE.md. UFW blockerar ändå allt utom 22/80/443, så även om någon råkade byta `127.0.0.1` → `0.0.0.0` skulle brandväggen ta emot.
 
 ### HIGH — Placeholder AUTH_SECRET i staging
 - **Vad:** `.env.staging.example` har `AUTH_SECRET=CHANGE_ME_...`. Om staging körs med detta värde kan vem som helst förfalska sessioner.

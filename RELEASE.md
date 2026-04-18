@@ -144,9 +144,17 @@ app-containern startar. Implementationen:
 till föregående gröna sha i `.env` (eller direkt i compose) och kör
 `docker compose up -d`. Backup tas via pg_dump-cron (se TODOS).
 
-**Prod-postgres** exponerar inte 5432 mot host. Temporär portmappning
-`127.0.0.1:5433:5432` kan läggas till i compose-filen för seed/verktyg,
-och ska tas bort direkt efter.
+**Prod-postgres** binder `127.0.0.1:5432:5432` — endast loopback, aldrig
+internet. För DB-klient-åtkomst från workstation: SSH-tunnel.
+
+```bash
+# På workstation
+ssh -L 5433:localhost:5432 deploy@malarkrets.se
+# Medan SSH är uppe: anslut DBeaver/VS Code PG-extension/psql till
+# localhost:5433 med credentials från .env på VPS.
+```
+
+Tunneln är SSH-key-gatad och lever bara under din session.
 
 ### Deploya lokalt från ghcr.io
 

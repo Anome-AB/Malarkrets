@@ -55,12 +55,13 @@ services:
     image: postgres:16-alpine
     env_file: .env
     ports:
-      # DEV-ONLY: exposes postgres to the host so a local DB client (DBeaver, pgAdmin, psql)
-      # can connect. Bound to 127.0.0.1 so it never leaks past this machine.
-      # Port 5433 avoids clashing with a native postgres install on 5432.
-      # REMOVE this block before deploying to a VPS — prod databases should only be
-      # reachable from the app container over the Docker network.
-      - "127.0.0.1:5433:5432"
+      # Loopback-binding: endast processer på hosten själv kan nå denna port,
+      # aldrig internet. Används för SSH-tunnel från workstation:
+      #   ssh -L 5433:localhost:5432 deploy@malarkrets.se
+      # och anslut DB-klient (DBeaver, VS Code PG-extension, psql) till
+      # localhost:5433 på workstation. Samma setup lokalt på dev-host med
+      # docker compose.
+      - "127.0.0.1:5432:5432"
     environment:
       POSTGRES_DB: malarkrets
       POSTGRES_USER: malarkrets
