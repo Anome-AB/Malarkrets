@@ -48,3 +48,10 @@ bun.lock
 
 # Local-only notes (VPS details, SSH-hints, infra context that doesn't belong in git)
 .local/
+
+# Editor state — vim swap/backup files, Emacs auto-saves, etc.
+# Otherwise these block deploy-local.sh's "clean working tree" check.
+.*.sw[a-p]
+*~
+\#*\#
+.#*
