@@ -38,7 +38,7 @@ enbart. Efter provisioning: git clone + scp `<din-fylld-fil> host:~/malarkrets/.
 
 ## Reverse proxy (Caddy)
 
-Caddy kör som container i `docker-compose.prod.yml`, terminerar TLS, och
+Caddy kör som container i `docker-compose.yml`, terminerar TLS, och
 proxy:ar till app:3000. Konfiguration: `Caddyfile` + två env-vars i `.env`:
 
 - `DOMAIN` — `localhost` för lokalt test, riktigt hostnamn i prod.
@@ -62,7 +62,7 @@ push master ──► .github/workflows/release.yml
 ```
 
 Deploy (idag manuellt): `bash scripts/deploy-local.sh` pullar imagen och
-startar `docker-compose.prod.yml`.
+startar `docker-compose.yml`.
 
 ## Rutiner
 
@@ -72,7 +72,7 @@ startar `docker-compose.prod.yml`.
 2. Avgör om den behövs vid **build** (t.ex. `NEXT_PUBLIC_*`) eller **runtime**.
 3. **Build-tid:** lägg till i `Dockerfile` som `ARG` + `ENV`, och i
    `release.yml` som `--build-arg`. Kräver GitHub Secret.
-4. **Runtime:** lägg till i `docker-compose.prod.yml` under `environment:`
+4. **Runtime:** lägg till i `docker-compose.yml` under `environment:`
    och i `.env.prod.example`.
 5. Om värdet är hemligt → GitHub Secret. Annars → committad default i
    `.env.prod.example`.
@@ -110,15 +110,15 @@ Semver-regler:
 
 ### Rollback
 
-På VPS: pinna image-tag i `.env` (eller `docker-compose.prod.yml`) och
+På VPS: pinna image-tag i `.env` (eller `docker-compose.yml`) och
 kör `docker compose up -d`:
 
 ```bash
 # I .env (eller inline env)
 APP_TAG=1.2.2
 MIGRATE_TAG=migrate-1.2.2
-docker compose -f docker-compose.prod.yml pull
-docker compose -f docker-compose.prod.yml up -d
+docker compose pull
+docker compose up -d
 ```
 
 `app` och `migrate` MÅSTE alltid ha samma version — de körs tillsammans
@@ -127,7 +127,7 @@ och `migrate`-imagen innehåller den version av SQL-filerna som matchar
 
 ### Databas-migrationer
 
-**Status:** Automatiska. `migrate`-tjänsten i `docker-compose.prod.yml` kör
+**Status:** Automatiska. `migrate`-tjänsten i `docker-compose.yml` kör
 Drizzle-migrationer vid varje `docker compose up` och avslutar med 0 innan
 app-containern startar. Implementationen:
 
@@ -172,9 +172,9 @@ inte vid omstart. Följande *räcker inte* för att nya env-värden ska nå appe
 Använd `--force-recreate` (eller full `down` + `up`):
 
 ```bash
-docker compose -f docker-compose.prod.yml up -d --force-recreate app
+docker compose up -d --force-recreate app
 # Verifiera att nya värdet är inne:
-docker compose -f docker-compose.prod.yml exec app env | grep <VAR_NAME>
+docker compose exec app env | grep <VAR_NAME>
 ```
 
 Samma gäller när env för postgres/migrate ändras — rekreera motsvarande

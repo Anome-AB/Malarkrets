@@ -28,7 +28,7 @@ respektive teams egna filer (`RELEASE.md`, ev. `DEVELOPMENT.md`).
 **Äger följande i repot:**
 - `.github/workflows/` — GitHub Actions
 - `Dockerfile`, `.dockerignore`
-- `docker-compose.yml`, `docker-compose.prod.yml`
+- `docker-compose.yml`
 - `scripts/` — deploy- och ops-scripts
 - `.env.prod.example` (mallen; själva `.env.prod` committas aldrig)
 - `RELEASE.md`
@@ -48,7 +48,7 @@ när den rör dessa:
 
 | Utlösare | GreenLion gör | RedFox gör |
 |---|---|---|
-| Ny env-variabel behövs i runtime | Lägger till i `.env.example` + kod | Wire:ar i `docker-compose.prod.yml`, ev. `Dockerfile` (build-arg), `.env.prod.example`, GitHub Secret |
+| Ny env-variabel behövs i runtime | Lägger till i `.env.example` + kod | Wire:ar i `docker-compose.yml`, ev. `Dockerfile` (build-arg), `.env.prod.example`, GitHub Secret |
 | Ny extern tjänst/port | Dokumenterar i PR | Lägger till i compose, nätverksregler, health-check |
 | Ny DB-migration | Skriver migration-SQL | Säkerställer att den körs i deploy-flödet (se `RELEASE.md`) |
 | Breaking schema-ändring | Flaggar i PR-beskrivning | Planerar migrationsordning + ev. data-backfill |

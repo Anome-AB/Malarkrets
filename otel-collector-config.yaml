@@ -1,5 +1,5 @@
 # OpenTelemetry Collector config for shipping traces/metrics/logs to Dash0.
-# Consumed by the `otel-collector` service in docker-compose.prod.yml.
+# Consumed by the `otel-collector` service in docker-compose.yml.
 #
 # Environment variables read at container start:
 #   DASH0_AUTH_TOKEN    — Bearer token, ingestion scope. Required.
