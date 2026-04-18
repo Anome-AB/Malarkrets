@@ -5,10 +5,17 @@ import type { NextRequest } from "next/server";
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Public routes that don't require authentication
+  // Public routes that don't require authentication.
+  // /api/images: activity images are served as bytea from the DB via a public
+  //   endpoint (same publicness model as the old MinIO bucket). UUIDs are
+  //   unguessable, so "unlisted public" is fine for this content.
+  // /api/health: container healthcheck and external monitoring — must not
+  //   redirect (a 307 passes `wget --spider` but hides real failures).
   const publicPatterns = [
     /^\/auth(\/|$)/,
     /^\/api\/auth(\/|$)/,
+    /^\/api\/images(\/|$)/,
+    /^\/api\/health(\/|$)/,
     /^\/activity(\/|$)/,
     /^\/$/,
   ];
