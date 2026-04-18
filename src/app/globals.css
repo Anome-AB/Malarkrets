@@ -157,13 +157,22 @@
 }
 
 /* Site banner height is published as a CSS variable via :has() so layouts
-   that hard-code calc(100vh - Xpx) can subtract the banner too. The
-   height matches SiteBanner's actual box (py-2 + text-sm line-height). */
+   can subtract it from their viewport-height calculations. The height
+   matches SiteBanner's actual box (py-2 + text-sm line-height). */
 html {
   --banner-h: 0px;
 }
 html:has([data-site-banner]) {
   --banner-h: 36px;
+}
+
+/* When the banner is present, every `min-h-screen` utility (used on body
+   and each page's root wrapper) needs to subtract the banner from 100vh,
+   otherwise the page insists on ≥100vh on top of the 36px banner and
+   produces a vertical scrollbar. This single rule covers all pages
+   without touching their individual wrappers. */
+html:has([data-site-banner]) .min-h-screen {
+  min-height: calc(100vh - var(--banner-h));
 }
 
 body {
