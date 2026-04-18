@@ -5,6 +5,7 @@ export function SiteBanner() {
     <div
       role="status"
       aria-live="polite"
+      data-site-banner
       className="bg-amber-500 text-black text-sm text-center py-2 px-4 font-medium"
     >
       {text}

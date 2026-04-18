@@ -32,7 +32,9 @@ export function AppShell({
     <div className="min-h-screen bg-background flex flex-col">
       <TopNav unreadCount={unreadCount} userInitials={userInitials} />
 
-      <div className="flex" style={{ height: "calc(100vh - 60px)" }}>
+      {/* 60px = TopNav. --banner-h is 0 unless SiteBanner is rendered;
+          see globals.css. Falls back to 0 if the variable is missing. */}
+      <div className="flex" style={{ height: "calc(100vh - 60px - var(--banner-h, 0px))" }}>
         <Sidebar interests={interests} activeFilters={activeFilters} showAll={showAll} isAdmin={isAdmin} />
 
         <main className="flex-1 overflow-y-auto pb-bottomnav lg:pb-0">
