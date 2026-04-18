@@ -120,13 +120,13 @@ Obs: flera punkter måste påbörjas i god tid före flipp-datum, de är inte ef
 ## Säkerhetshärdning (security review 2026-04-17)
 
 ### HIGH — Seed skapar admin med känt lösenord, körbar i prod
-- **Vad:** `src/db/seed.ts` skapar `testadmin1@malarkrets.se` med lösenord `testm`. Seed-containern finns i `docker-compose.prod.yml` och kan köras mot prod.
+- **Vad:** `src/db/seed.ts` skapar `testadmin1@malarkrets.se` med lösenord `testm`. Seed-containern finns i `docker-compose.yml` och kan köras mot prod.
 - **Fix:** Lägg till miljöguard i seed.ts som vägrar köra när `NODE_ENV=production` eller liknande. Alternativt: kräv en explicit `SEED_CONFIRM=yes` env-variabel.
 - **Insats:** S
 - **Ägs av:** GreenLion (seed.ts) + RedFox (compose)
 
 ### ~~HIGH — Postgres-port exponerad i prod-compose~~ (omvärderad 2026-04-18)
-- **Tidigare oro:** `127.0.0.1:5433:5432` i `docker-compose.prod.yml` med kommentaren "REMOVE before VPS deploy" — kommentar-baserad säkerhet är skört.
+- **Tidigare oro:** `127.0.0.1:5433:5432` i `docker-compose.yml` med kommentaren "REMOVE before VPS deploy" — kommentar-baserad säkerhet är skört.
 - **Nytt beslut:** Bindning kvar men på `127.0.0.1:5432:5432` (explicit loopback). Aldrig internet-exponerad. Används via SSH-tunnel från workstation för DB-klient-åtkomst. Dokumenterat i RELEASE.md. UFW blockerar ändå allt utom 22/80/443, så även om någon råkade byta `127.0.0.1` → `0.0.0.0` skulle brandväggen ta emot.
 
 ### HIGH — Placeholder AUTH_SECRET i staging
@@ -159,7 +159,7 @@ Obs: flera punkter måste påbörjas i god tid före flipp-datum, de är inte ef
 ## Backlog
 
 ### Env-config: en enda källa för alla tjänster
-- **Vad:** `docker-compose.prod.yml` har `env_file: .env.prod` på `app` och `migrate`, men `postgres` läser lösenord via `${VAR:-default}` shell-interpolering. Det gör att `.env.prod`-värden ignoreras av denna tjänst och default-lösenord används istället.
+- **Vad:** `docker-compose.yml` har `env_file: .env.prod` på `app` och `migrate`, men `postgres` läser lösenord via `${VAR:-default}` shell-interpolering. Det gör att `.env.prod`-värden ignoreras av denna tjänst och default-lösenord används istället.
 - **Snabbfix (gjord 2026-04-16):** Lade till `env_file: .env.prod` på `postgres` så alla tjänster läser från samma källa.
 - **Kvar att göra:** Rensa bort `${VAR:-default}` fallbacks i compose `environment:`-blocken så det inte finns två ställen som sätter samma variabel. `.env.prod` ska vara den enda källan.
 - **Insats:** S
@@ -199,12 +199,12 @@ Obs: flera punkter måste påbörjas i god tid före flipp-datum, de är inte ef
   5. Installera Docker + Docker Compose plugin.
   6. Caddy eller Nginx som reverse proxy (Let's Encrypt automatiskt via Caddy).
   7. Klona repot + `.env.prod` (scp:a från säker plats, ligger inte i git).
-  8. `docker compose -f docker-compose.prod.yml up -d` + healthcheck-verifiering.
+  8. `docker compose up -d` + healthcheck-verifiering.
   9. Sätt upp `pg_dump` cron → dumpa till extern plats (Loopia backup-tjänst eller Backblaze B2).
   10. ~~Ta bort `127.0.0.1:5433:5432`-mappningen från compose-filen innan deploy (dev-only).~~ → Se säkerhetshärdning ovan: ta bort postgres ports helt från prod-compose.
 
 - **Automatiska DB-migrationer vid deploy** — KLAR 2026-04-15 (alternativ 2 valt).
-  - Init-container `migrate` i `docker-compose.prod.yml` kör Drizzle-migrationer
+  - Init-container `migrate` i `docker-compose.yml` kör Drizzle-migrationer
     via `scripts/migrate.mjs` (programmatic `migrate()` från
     `drizzle-orm/postgres-js/migrator`) och exit:ar innan app-containern startar.
   - Separat `migrate`-stage i `Dockerfile` + extra build-push-steg i

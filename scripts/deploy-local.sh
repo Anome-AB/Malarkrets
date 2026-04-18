@@ -18,7 +18,7 @@
 
 set -euo pipefail
 
-COMPOSE_FILE="docker-compose.prod.yml"
+# docker-compose.yml is the Docker convention default — no -f flag needed.
 ENV_FILE=".env"
 HEALTH_URL="${HEALTH_URL:-http://localhost:3000/api/health}"
 MAX_HEALTH_RETRIES="${MAX_HEALTH_RETRIES:-30}"
@@ -45,7 +45,7 @@ log "=== Mälarkrets deploy ==="
 command -v docker >/dev/null 2>&1       || fail "docker saknas. Installera Docker."
 docker compose version >/dev/null 2>&1  || fail "docker compose plugin saknas."
 command -v curl >/dev/null 2>&1         || fail "curl saknas."
-[ -f "$COMPOSE_FILE" ]                  || fail "$COMPOSE_FILE saknas — kör från repo-roten."
+[ -f "docker-compose.yml" ]             || fail "docker-compose.yml saknas — kör från repo-roten."
 [ -f "$ENV_FILE" ]                      || fail "$ENV_FILE saknas — kopiera .env.prod.example (eller .env.staging.example) till .env och fyll i värden."
 [ -f "Caddyfile" ]                      || fail "Caddyfile saknas — den ska vara checkad in i git."
 [ -f "otel-collector-config.yaml" ]     || fail "otel-collector-config.yaml saknas — behövs av otel-collector-containern."
@@ -81,7 +81,7 @@ if [ "$SKIP_IMAGE_PULL" = "1" ]; then
   log "[2/5] docker pull hoppas över (SKIP_IMAGE_PULL=1)"
 else
   log "[2/5] docker compose pull"
-  if ! docker compose -f "$COMPOSE_FILE" pull --quiet; then
+  if ! docker compose pull --quiet; then
     fail "docker pull misslyckades — kör 'docker login ghcr.io' med en PAT som har read:packages."
   fi
 fi
@@ -96,8 +96,8 @@ log "       APP_TAG=${APP_TAG:-latest}  MIGRATE_TAG=${MIGRATE_TAG:-migrate-lates
 # polla förrän DB:n accepterar anslutningar. Compose's service_healthy
 # täcker det i teorin, men explicit väntan ger bättre loggutskrift.
 log "[3/5] startar postgres..."
-docker compose -f "$COMPOSE_FILE" up -d postgres
-until docker compose -f "$COMPOSE_FILE" exec -T postgres pg_isready -U malarkrets >/dev/null 2>&1; do
+docker compose up -d postgres
+until docker compose exec -T postgres pg_isready -U malarkrets >/dev/null 2>&1; do
   sleep 1
 done
 log "       postgres redo."
@@ -108,7 +108,7 @@ log "       postgres redo."
 # Idempotent: migrate använder Drizzles journal-tabell och gör ingenting
 # om det inte finns nya migrationer.
 log "[4/5] docker compose up -d (migrate kör, sedan app + caddy)"
-docker compose -f "$COMPOSE_FILE" up -d --remove-orphans
+docker compose up -d --remove-orphans
 
 # ── Steg 5: Healthcheck ──────────────────────────────────────────────────────
 log "[5/5] väntar på /api/health..."
@@ -118,7 +118,7 @@ for i in $(seq 1 "$MAX_HEALTH_RETRIES"); do
     log "=== deploy klar ==="
     curl -s "$HEALTH_URL" | pp_json
     echo ""
-    docker compose -f "$COMPOSE_FILE" ps
+    docker compose ps
     exit 0
   fi
   printf "."
@@ -128,7 +128,7 @@ done
 echo ""
 log "HEALTHCHECK MISSLYCKADES efter $((MAX_HEALTH_RETRIES * HEALTH_RETRY_INTERVAL))s"
 log "Senaste app-loggar:"
-docker compose -f "$COMPOSE_FILE" logs app --tail 50 >&2 || true
+docker compose logs app --tail 50 >&2 || true
 log "Senaste migrate-loggar (om migrationen failade):"
-docker compose -f "$COMPOSE_FILE" logs migrate --tail 30 >&2 || true
+docker compose logs migrate --tail 30 >&2 || true
 exit 1

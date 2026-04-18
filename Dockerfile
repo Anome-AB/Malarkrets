@@ -27,7 +27,7 @@ ENV HOSTNAME="0.0.0.0"
 CMD ["node", "server.js"]
 
 # Separate image for running Drizzle migrations. Used by the `migrate` service
-# in docker-compose.prod.yml. Stays small by installing only prod deps (no
+# in docker-compose.yml. Stays small by installing only prod deps (no
 # Next.js build, no drizzle-kit — the migrator is the runtime one from
 # drizzle-orm/postgres-js/migrator).
 FROM node:22-alpine AS migrate
@@ -43,7 +43,7 @@ USER nextjs
 CMD ["node", "scripts/migrate.mjs"]
 
 # On-demand seed image. Not started automatically — run manually with:
-#   docker compose -f docker-compose.prod.yml run --rm seed
+#   docker compose run --rm seed
 FROM node:22-alpine AS seed
 WORKDIR /app
 RUN addgroup --system --gid 1001 nodejs \

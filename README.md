@@ -73,13 +73,13 @@ Appen körs på `http://localhost:3000`.
 ### Köra migrationer och seed mot prod-databasen
 
 Prod-containerns postgres exponerar inte port 5432 till host. Exponera den
-temporärt i `docker-compose.prod.yml` (`127.0.0.1:5433:5432`), kör migrationer/seed,
+temporärt i `docker-compose.yml` (`127.0.0.1:5433:5432`), kör migrationer/seed,
 och ta sedan bort exponeringen:
 
 ```bash
 # migrationer (från psql i containern)
 for f in src/db/migrations/0*.sql; do
-  docker compose -f docker-compose.prod.yml exec -T postgres \
+  docker compose exec -T postgres \
     psql -U malarkrets -d malarkrets < "$f"
 done
 
@@ -103,7 +103,7 @@ scripts/        # deploy-local.sh
 .github/
   workflows/    # release.yml
 Dockerfile                  # multi-stage build (node:22-alpine)
-docker-compose.prod.yml     # app + postgres + caddy
+docker-compose.yml     # app + postgres + caddy
 ```
 
 ## Designsystem

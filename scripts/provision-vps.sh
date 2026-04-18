@@ -140,7 +140,7 @@ Next steps (run from your workstation):
   git clone https://github.com/Anome-AB/Malarkrets.git ~/malarkrets
   scp <din-lokala-env-fil> $DEPLOY_USER@<host>:~/malarkrets/.env
   ssh $DEPLOY_USER@<host> 'chmod 600 ~/malarkrets/.env'
-  ssh $DEPLOY_USER@<host> 'cd ~/malarkrets && docker compose -f docker-compose.prod.yml up -d'
+  ssh $DEPLOY_USER@<host> 'cd ~/malarkrets && docker compose up -d'
 
 Verify:
   curl -I https://<your-domain>/api/health

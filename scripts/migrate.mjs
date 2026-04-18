@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Runs Drizzle migrations against DATABASE_URL, then exits.
-// Used by the `migrate` service in docker-compose.prod.yml — app waits on this
+// Used by the `migrate` service in docker-compose.yml — app waits on this
 // container exiting 0 before it starts. Keep dependencies minimal so the
 // migrate image stays small (drizzle-orm + postgres only).
 

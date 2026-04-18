@@ -27,7 +27,6 @@
 /Dockerfile             @Anome-AB/redfox
 /.dockerignore          @Anome-AB/redfox
 /docker-compose.yml     @Anome-AB/redfox
-/docker-compose.prod.yml @Anome-AB/redfox
 /scripts/               @Anome-AB/redfox
 /.env.prod.example      @Anome-AB/redfox
 /RELEASE.md             @Anome-AB/redfox

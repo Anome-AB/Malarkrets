@@ -1,22 +1,117 @@
-version: "3.8"
-
 services:
+  migrate:
+    # Runs Drizzle migrations once and exits. App waits for exit 0 before starting.
+    # Image built from the `migrate` stage in Dockerfile — see .github/workflows/release.yml.
+    # MIGRATE_TAG must always match APP_TAG — see RELEASE.md (Rollback).
+    image: ghcr.io/anome-ab/malarkrets:${MIGRATE_TAG:-migrate-latest}
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  app:
+    image: ghcr.io/anome-ab/malarkrets:${APP_TAG:-latest}
+    # Bound to 127.0.0.1 so the app is never reachable directly from the
+    # internet — traffic must go through Caddy. Local debugging on the host
+    # still works via http://localhost:3000.
+    ports:
+      - "127.0.0.1:3000:3000"
+    env_file: .env
+    environment:
+      # OTel: app pushes OTLP over HTTP to the collector on the docker network.
+      # Endpoint + service name are baked here since they never vary across deploys.
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4318"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
+      OTEL_SERVICE_NAME: "malarkrets-app"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"  # HTTP/3
+    env_file: .env
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+    restart: unless-stopped
+    healthcheck:
+      # Hit the app over the docker network — `localhost:3000` from inside
+      # the Caddy container points nowhere (Caddy listens on 80/443). This
+      # verifies the full chain Caddy actually needs to serve traffic.
+      test: ["CMD", "wget", "--spider", "-q", "http://app:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   postgres:
     image: postgres:16-alpine
+    env_file: .env
     ports:
-      - "5432:5432"
+      # Loopback-binding: endast processer på hosten själv kan nå denna port,
+      # aldrig internet. Används för SSH-tunnel från workstation:
+      #   ssh -L 5433:localhost:5432 deploy@malarkrets.se
+      # och anslut DB-klient (DBeaver, VS Code PG-extension, psql) till
+      # localhost:5433 på workstation. Samma setup lokalt på dev-host med
+      # docker compose.
+      - "127.0.0.1:5432:5432"
     environment:
       POSTGRES_DB: malarkrets
       POSTGRES_USER: malarkrets
-      POSTGRES_PASSWORD: malarkrets_dev
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_prod_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U malarkrets"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
-  mailhog:
-    image: mailhog/mailhog:latest
-    ports:
-      - "1025:1025"
-      - "8025:8025"
+  seed:
+    # On-demand only — run with: docker compose run --rm seed
+    image: ghcr.io/anome-ab/malarkrets:${SEED_TAG:-seed-latest}
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    profiles: ["tools"]
+
+  otel-collector:
+    # OpenTelemetry Collector. Receives OTLP from the app + docker_stats from
+    # the socket, ships via OTLP/HTTP to Dash0. Auth: Bearer token från
+    # DASH0_AUTH_TOKEN i .env.
+    #
+    # Imagen är distroless (ingen /etc/passwd), därför använder vi `group_add`
+    # istället för `user:` för att ge access till docker.sock. DOCKER_GID
+    # varierar per host — scripts/provision-vps.sh skriver ut värdet, klistras
+    # in manuellt i .env.
+    image: otel/opentelemetry-collector-contrib:0.114.0
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    env_file: .env
+    group_add:
+      - "${DOCKER_GID}"
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:13133/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
 
 volumes:
-  postgres_data:
+  postgres_prod_data:
+  caddy_data:
+  caddy_config:

@@ -1,7 +1,7 @@
 # VPS-provisioneringsguide
 
 Steg-för-steg för att gå från en blank Ubuntu 24.04-VPS till en körande
-Mälarkrets-stack. Förutsätter att repot, `Caddyfile`, `docker-compose.prod.yml`
+Mälarkrets-stack. Förutsätter att repot, `Caddyfile`, `docker-compose.yml`
 och `scripts/provision-vps.sh` finns på `master`.
 
 ## Innan du börjar (på din workstation)
