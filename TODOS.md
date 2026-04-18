@@ -28,7 +28,11 @@ Obs: flera punkter måste påbörjas i god tid före flipp-datum, de är inte ef
 - [ ] GDPR-rutiner: logg-retention, rätten att bli glömd, personuppgiftsbiträdesavtal med Loopia/B2.
 
 ### POST-GO-LIVE — parking lot (lägg till nya items här efter flippen)
-Tom just nu. När flippen skett läggs nya POST-items direkt här.
+- **Strama till CSP.** Nuvarande policy tillåter `'unsafe-inline'` +
+  `'unsafe-eval'` i `script-src` (Next.js 16-krav) och `https:`-wildcard i
+  `img-src`. Efter go-live: byt till nonce-baserade scripts via Next.js-
+  middleware, och ersätt `https:` i img-src med konkreta domäner användare
+  faktiskt laddar bilder från.
 
 ## Nästa session — Prioritet 1
 
@@ -131,21 +135,21 @@ Tom just nu. När flippen skett läggs nya POST-items direkt här.
 - **Insats:** S
 - **Ägs av:** GreenLion (app-check) + RedFox (env-mall)
 
-### MEDIUM — Migrate/seed kör som root
-- **Vad:** `runner`-stage har non-root user, men `migrate` och `seed` kör som root.
-- **Fix:** Lägg till non-root user i migrate/seed-stages i Dockerfile.
-- **Insats:** S
+### ~~MEDIUM — Migrate/seed kör som root~~ KLAR 2026-04-18
+- Non-root `nextjs:nodejs` (uid/gid 1001) tillagt i både `migrate`- och
+  `seed`-stages i Dockerfile. Matchar `runner`-stagen.
 
-### MEDIUM — Caddy healthcheck pekar fel
-- **Vad:** Healthcheck `wget http://localhost:3000/api/health` — port 3000 finns inte inuti Caddy-containern. Checken misslyckas alltid.
-- **Fix:** Ändra till `wget http://localhost:80/` eller `caddy validate`.
-- **Insats:** S
+### ~~MEDIUM — Caddy healthcheck pekar fel~~ KLAR 2026-04-18
+- Healthcheck pekar nu på `http://app:3000/api/health` via docker-nätverket
+  istället för den omöjliga `localhost:3000` inuti Caddy-containern. Testar
+  faktiskt hela kedjan Caddy behöver för att kunna serva trafik.
 
-### MEDIUM — Saknar Content-Security-Policy och X-Frame-Options
-- **Vad:** Caddyfile har HSTS och X-Content-Type-Options men saknar CSP och frame-skydd.
-- **Fix:** Lägg till `X-Frame-Options DENY` och en CSP-policy anpassad för appen (inkl. Google Maps-origins).
-- **Insats:** S-M
-- **Ägs av:** RedFox (Caddyfile)
+### ~~MEDIUM — Saknar Content-Security-Policy och X-Frame-Options~~ KLAR 2026-04-18
+- `X-Frame-Options: DENY` + CSP tillagt i Caddyfile.
+- **Medveten kompromiss:** CSP tillåter `'unsafe-inline'` + `'unsafe-eval'`
+  på `script-src` (krävs av Next.js 16 runtime) och `https:` wildcard på
+  `img-src`. Härdning via nonces + specifika CDN-origins är en POST-GO-LIVE-
+  uppgift, se parking lot.
 
 ### MEDIUM — Google Maps API-nyckel i image-layer metadata
 - **Vad:** `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` lagras som ARG/ENV i builder-stage. Nåbar via `docker inspect` om imagen är publikt tillgänglig.
