@@ -12,7 +12,7 @@
 #
 # What it does NOT do (deliberately, these are app-deploy concerns):
 #   - Clone the repo
-#   - Write .env.prod (scp that in manually, never put secrets in a script)
+#   - Write .env (scp that in manually, never put secrets in a script)
 #   - Start docker-compose
 #
 # After this finishes, follow the printed next-steps.
@@ -116,9 +116,9 @@ fi
 usermod -aG docker "$DEPLOY_USER"
 systemctl enable --now docker >/dev/null
 
-# Docker-gruppens GID varierar per host (988, 999, ...). Behövs i .env.prod så
+# Docker-gruppens GID varierar per host (988, 999, ...). Behövs i .env så
 # otel-collector-containern kan läsa docker.sock via `group_add`. Vi skriver
-# inte till .env.prod här (scriptet rör aldrig secrets) — vi skriver ut värdet
+# inte till .env här (scriptet rör aldrig secrets) — vi skriver ut värdet
 # så man klistrar in det vid deploy-setup.
 DOCKER_GID_VALUE="$(getent group docker | cut -d: -f3)"
 
@@ -132,14 +132,14 @@ Host state:
   - Firewall:   UFW (22, 80, 443)
   - Auto-patch: unattended-upgrades
   - Docker:     $(docker --version 2>/dev/null | cut -d, -f1)
-  - Docker GID: ${DOCKER_GID_VALUE}     ← lägg till i .env.prod som DOCKER_GID=${DOCKER_GID_VALUE}
+  - Docker GID: ${DOCKER_GID_VALUE}     ← lägg till i .env som DOCKER_GID=${DOCKER_GID_VALUE}
 
 Next steps (run from your workstation):
 
   ssh $DEPLOY_USER@<host>
   git clone https://github.com/Anome-AB/Malarkrets.git ~/malarkrets
-  scp .env.prod $DEPLOY_USER@<host>:~/malarkrets/.env.prod
-  ssh $DEPLOY_USER@<host> 'chmod 600 ~/malarkrets/.env.prod'
+  scp <din-lokala-env-fil> $DEPLOY_USER@<host>:~/malarkrets/.env
+  ssh $DEPLOY_USER@<host> 'chmod 600 ~/malarkrets/.env'
   ssh $DEPLOY_USER@<host> 'cd ~/malarkrets && docker compose -f docker-compose.prod.yml up -d'
 
 Verify:

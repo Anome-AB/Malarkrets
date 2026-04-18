@@ -32,13 +32,14 @@ Scriptet körs som root, är idempotent, och gör:
 - `unattended-upgrades` (security-only) + `fail2ban`.
 - Docker CE + compose-plugin.
 
-Scriptet rör **inte** repot, `.env.prod`, eller compose — det är hostnivå
-enbart. Efter provisioning: git clone + scp `.env.prod` + `docker compose up`.
+Scriptet rör **inte** repot, `.env`, eller compose — det är hostnivå
+enbart. Efter provisioning: git clone + scp `<din-fylld-fil> host:~/malarkrets/.env`
++ `docker compose up`.
 
 ## Reverse proxy (Caddy)
 
 Caddy kör som container i `docker-compose.prod.yml`, terminerar TLS, och
-proxy:ar till app:3000. Konfiguration: `Caddyfile` + två env-vars i `.env.prod`:
+proxy:ar till app:3000. Konfiguration: `Caddyfile` + två env-vars i `.env`:
 
 - `DOMAIN` — `localhost` för lokalt test, riktigt hostnamn i prod.
 - `LETSENCRYPT_EMAIL` — required när DOMAIN är riktigt hostnamn.
@@ -109,11 +110,11 @@ Semver-regler:
 
 ### Rollback
 
-På VPS: pinna image-tag i `.env.prod` (eller `docker-compose.prod.yml`) och
+På VPS: pinna image-tag i `.env` (eller `docker-compose.prod.yml`) och
 kör `docker compose up -d`:
 
 ```bash
-# I .env.prod (eller inline env)
+# I .env (eller inline env)
 APP_TAG=1.2.2
 MIGRATE_TAG=migrate-1.2.2
 docker compose -f docker-compose.prod.yml pull
@@ -140,7 +141,7 @@ app-containern startar. Implementationen:
   schemadrift).
 
 **Rollback vid trasig migration:** pinna både `app`- och `migrate`-imagen
-till föregående gröna sha i `.env.prod` (eller direkt i compose) och kör
+till föregående gröna sha i `.env` (eller direkt i compose) och kör
 `docker compose up -d`. Backup tas via pg_dump-cron (se TODOS).
 
 **Prod-postgres** exponerar inte 5432 mot host. Temporär portmappning
@@ -153,7 +154,7 @@ Se `README.md` för user-facing steg. Internt:
 `scripts/deploy-local.sh` gör pull → postgres-wait → db-probe → app →
 health poll. Läs scriptet innan ändringar.
 
-### Ladda om `.env.prod` efter ändring
+### Ladda om `.env` efter ändring
 
 **Gotcha:** `env_file` i docker-compose läses bara vid **container-skapande**,
 inte vid omstart. Följande *räcker inte* för att nya env-värden ska nå appen:
@@ -163,32 +164,27 @@ inte vid omstart. Följande *räcker inte* för att nya env-värden ska nå appe
 Använd `--force-recreate` (eller full `down` + `up`):
 
 ```bash
-docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --force-recreate app
+docker compose -f docker-compose.prod.yml up -d --force-recreate app
 # Verifiera att nya värdet är inne:
-docker compose --env-file .env.prod -f docker-compose.prod.yml exec app env | grep <VAR_NAME>
+docker compose -f docker-compose.prod.yml exec app env | grep <VAR_NAME>
 ```
 
 Samma gäller när env för postgres/migrate ändras — rekreera motsvarande
 service.
 
-### Varför `--env-file .env.prod` alltid
+### Env-fil-konventionen
 
-Compose har två separata env-mekanismer som är lätt att förväxla:
+Den körande env-filen på varje host heter **`.env`**, inget annat.
 
-1. **`env_file:` i compose** → skickar variablerna *in i containern* vid
-   start. Påverkar inte compose-filens egen `${VAR}`-syntax.
-2. **Variabel-interpolering `${VAR}`** → läses från shell-env eller en
-   `.env`-fil i projekt-roten vid default. Läses *inte* från `env_file:`.
+- På VPS:n: `/home/deploy/malarkrets/.env` — innehåller prod-värden.
+- På staging: motsvarande fil heter `.env` (med staging-värden).
+- I repo:t ligger templates under sina beskrivande namn:
+  `.env.prod.example` och `.env.staging.example`. Kopiera till `.env` på
+  respektive host.
 
-Eftersom vi har vars som `${DOCKER_GID}` i compose-filen själv, måste compose
-veta var de ligger. Lägg alltid till `--env-file .env.prod` i manuella
-kommandon på VPS:n:
-
-```bash
-docker compose --env-file .env.prod -f docker-compose.prod.yml <command>
-```
-
-`scripts/deploy-local.sh` gör detta automatiskt.
+Fördelen är att docker-compose:s default-beteende funkar rakt av —
+`${VAR}`-interpolering i compose-filer + `env_file:`-direktivet läser
+samma fil utan `--env-file`-flagga.
 
 ### Telemetri — Dash0 via OTel Collector
 
@@ -196,7 +192,7 @@ docker compose --env-file .env.prod -f docker-compose.prod.yml <command>
 till Dash0. Instrumentering i appen görs av `@vercel/otel` (se
 `src/instrumentation.ts`) och skickar till collectorn på docker-nätverket.
 
-**Krav i `.env.prod` på VPS:**
+**Krav i `.env` på VPS:**
 - `DASH0_AUTH_TOKEN` — ingestion-scoped token från Dash0-UI:t.
 - `DEPLOYMENT_ENV` — `production` (eller `staging`). Taggar all telemetri.
 - `DOCKER_GID` — docker-gruppens GID på *just den host:en*. Skrivs ut av
@@ -214,7 +210,7 @@ till Dash0. Instrumentering i appen görs av `@vercel/otel` (se
 
 ## Säkerhet
 
-- `.env.prod` committas **aldrig**. `.gitignore` skyddar det.
+- `.env` committas **aldrig** (.gitignore fångar `.env*` utom templates).
 - Postgres exponerar inte port i prod-compose (förutom vid temporär dev-access).
 - Google Maps-nyckel är `NEXT_PUBLIC_*` → exponeras i klient-bundeln.
   Måste restriktioneras i Google Cloud Console (HTTP referrers + API-scope +
