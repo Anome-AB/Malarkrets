@@ -33,19 +33,25 @@ CMD ["node", "server.js"]
 FROM node:22-alpine AS migrate
 WORKDIR /app
 ENV NODE_ENV=production
-COPY package.json package-lock.json* ./
+RUN addgroup --system --gid 1001 nodejs \
+    && adduser --system --uid 1001 nextjs
+COPY --chown=nextjs:nodejs package.json package-lock.json* ./
 RUN npm ci --omit=dev && npm cache clean --force
-COPY src/db/migrations ./src/db/migrations
-COPY scripts/migrate.mjs ./scripts/migrate.mjs
+COPY --chown=nextjs:nodejs src/db/migrations ./src/db/migrations
+COPY --chown=nextjs:nodejs scripts/migrate.mjs ./scripts/migrate.mjs
+USER nextjs
 CMD ["node", "scripts/migrate.mjs"]
 
 # On-demand seed image. Not started automatically — run manually with:
 #   docker compose -f docker-compose.prod.yml run --rm seed
 FROM node:22-alpine AS seed
 WORKDIR /app
-COPY package.json package-lock.json* ./
+RUN addgroup --system --gid 1001 nodejs \
+    && adduser --system --uid 1001 nextjs
+COPY --chown=nextjs:nodejs package.json package-lock.json* ./
 RUN npm ci && npm cache clean --force
-COPY src/db/schema.ts ./src/db/schema.ts
-COPY src/db/seed.ts ./src/db/seed.ts
-COPY tsconfig.json ./
+COPY --chown=nextjs:nodejs src/db/schema.ts ./src/db/schema.ts
+COPY --chown=nextjs:nodejs src/db/seed.ts ./src/db/seed.ts
+COPY --chown=nextjs:nodejs tsconfig.json ./
+USER nextjs
 CMD ["npx", "tsx", "src/db/seed.ts"]

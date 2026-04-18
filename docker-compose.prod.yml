@@ -46,7 +46,10 @@ services:
       - app
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      # Hit the app over the docker network — `localhost:3000` from inside
+      # the Caddy container points nowhere (Caddy listens on 80/443). This
+      # verifies the full chain Caddy actually needs to serve traffic.
+      test: ["CMD", "wget", "--spider", "-q", "http://app:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3

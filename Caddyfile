@@ -16,7 +16,17 @@
     header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains"
         X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
         Referrer-Policy "strict-origin-when-cross-origin"
+        # CSP — tuned to what the app actually uses today:
+        # - Google Maps JS + Static tiles
+        # - Google Fonts (Geist Mono stylesheet + font files)
+        # - Images served from same origin + data:/blob: for upload previews
+        # 'unsafe-inline' / 'unsafe-eval' on script-src are required by Next.js 16
+        # runtime. Switching to nonces is a POST-GO-LIVE hardening task.
+        # Tighten img-src away from `https:` to specific CDNs once we know
+        # which image sources users actually upload from.
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://maps.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://maps.googleapis.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
         -Server
     }
 }
