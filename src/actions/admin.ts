@@ -14,6 +14,7 @@ import {
 } from "@/db/schema";
 import { eq, and, gt, isNull, or, ilike, count, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { log, errMsg } from "@/lib/logger";
 
 async function requireAdmin() {
   const { user } = await requireAdminFromAuth();
@@ -59,7 +60,7 @@ export async function anonymizeUser(userId: string) {
 
     return { success: true };
   } catch (error) {
-    console.error("anonymizeUser error:", error);
+    log.error("anonymizeUser error", { err: errMsg(error) });
     const msg = error instanceof Error ? error.message : "Något gick fel";
     return { success: false, error: msg };
   }
@@ -132,7 +133,7 @@ export async function banUser(userId: string, reason: string) {
     revalidatePath("/admin");
     return { success: true };
   } catch (error) {
-    console.error("banUser error:", error);
+    log.error("banUser error", { err: errMsg(error) });
     const msg = error instanceof Error ? error.message : "Något gick fel";
     return { success: false, error: msg };
   }
@@ -156,7 +157,7 @@ export async function unbanUser(userId: string) {
     revalidatePath("/admin");
     return { success: true };
   } catch (error) {
-    console.error("unbanUser error:", error);
+    log.error("unbanUser error", { err: errMsg(error) });
     const msg = error instanceof Error ? error.message : "Något gick fel";
     return { success: false, error: msg };
   }
@@ -172,7 +173,7 @@ export async function deleteTag(tagId: number) {
 
     return { success: true };
   } catch (error) {
-    console.error("deleteTag error:", error);
+    log.error("deleteTag error", { err: errMsg(error) });
     const msg = error instanceof Error ? error.message : "Något gick fel";
     return { success: false, error: msg };
   }
@@ -229,7 +230,7 @@ export async function searchUsers(query: string, page: number) {
       totalPages: Math.ceil(total / PAGE_SIZE),
     };
   } catch (error) {
-    console.error("searchUsers error:", error);
+    log.error("searchUsers error", { err: errMsg(error) });
     return { users: [], total: 0, page: 1, pageSize: PAGE_SIZE, totalPages: 0 };
   }
 }
@@ -257,7 +258,7 @@ export async function addTag(name: string) {
     revalidatePath("/admin");
     return { success: true };
   } catch (error) {
-    console.error("addTag error:", error);
+    log.error("addTag error", { err: errMsg(error) });
     const msg = error instanceof Error ? error.message : "Något gick fel";
     return { success: false, error: msg };
   }

@@ -64,3 +64,15 @@ export const log = {
   debug: (message: string, attrs?: Attrs) =>
     emit("debug", SeverityNumber.DEBUG, message, attrs),
 };
+
+/**
+ * Unwrap an `unknown` caught error to a searchable string. Use in catch
+ * blocks:
+ *
+ *   try { ... } catch (err) {
+ *     log.error("x failed", { err: errMsg(err) });
+ *   }
+ */
+export function errMsg(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}

@@ -10,6 +10,7 @@ import {
 import { createCommentSchema } from "@/lib/validations/comment";
 import { eq, and, count, gte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { log, errMsg } from "@/lib/logger";
 
 export async function createComment(formData: FormData) {
   try {
@@ -72,7 +73,7 @@ export async function createComment(formData: FormData) {
 
     return { success: true };
   } catch (error) {
-    console.error("createComment error:", error);
+    log.error("createComment error", { err: errMsg(error) });
     const msg = error instanceof Error ? error.message : "Okänt fel";
     return { success: false, error: `Något gick fel: ${msg}` };
   }
@@ -114,7 +115,7 @@ export async function deleteComment(commentId: string) {
 
     return { success: true };
   } catch (error) {
-    console.error("deleteComment error:", error);
+    log.error("deleteComment error", { err: errMsg(error) });
     return { success: false, error: "Något gick fel vid borttagning av kommentar" };
   }
 }
