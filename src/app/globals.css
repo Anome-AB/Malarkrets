@@ -157,8 +157,6 @@
 }
 
 /* Site banner height is published as a CSS variable via :has() so layouts
-   can subtract it from their viewport-height calculations. The height
-   matches SiteBanner's actual box (py-2 + text-sm line-height). */
    that hard-code calc(100vh - Xpx) can subtract the banner too. The
    height matches SiteBanner's actual box (py-2 + text-sm line-height). */
 html {
