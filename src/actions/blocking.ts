@@ -9,7 +9,7 @@ import {
 } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { log, errMsg } from "@/lib/logger";
+import { log, errAttrs } from "@/lib/logger";
 
 export async function blockUser(blockedId: string) {
   try {
@@ -76,7 +76,7 @@ export async function blockUser(blockedId: string) {
         affectedActivities.length > 0 ? affectedActivities : undefined,
     };
   } catch (error) {
-    log.error("blockUser error", { err: errMsg(error) });
+    log.error("blockUser error", errAttrs(error));
     return { success: false, error: "Något gick fel vid blockering" };
   }
 }
@@ -98,7 +98,7 @@ export async function unblockUser(blockedId: string) {
 
     return { success: true };
   } catch (error) {
-    log.error("unblockUser error", { err: errMsg(error) });
+    log.error("unblockUser error", errAttrs(error));
     return { success: false, error: "Något gick fel vid avblockering" };
   }
 }

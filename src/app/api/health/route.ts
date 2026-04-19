@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import postgres from "postgres";
-import { log } from "@/lib/logger";
+import { log, errAttrs } from "@/lib/logger";
 
 export async function GET() {
   try {
@@ -16,9 +16,7 @@ export async function GET() {
     // This endpoint is polled frequently by Caddy's healthcheck — a
     // single failure is noisy but a sustained stream means real DB
     // trouble. Dash0 alerts should fire on >N/minute.
-    log.error("health: db ping failed", {
-      err: err instanceof Error ? err.message : String(err),
-    });
+    log.error("health: db ping failed", errAttrs(err));
     return NextResponse.json({ status: "error" }, { status: 503 });
   }
 }

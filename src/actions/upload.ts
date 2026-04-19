@@ -4,7 +4,7 @@ import { requireAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { images } from "@/db/schema";
 import sharp from "sharp";
-import { log, errMsg } from "@/lib/logger";
+import { log, errAttrs } from "@/lib/logger";
 
 const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -65,7 +65,7 @@ export async function uploadActivityImage(
 
     return { success: true, thumbUrl, mediumUrl, ogUrl };
   } catch (error) {
-    log.error("uploadActivityImage error", { err: errMsg(error) });
+    log.error("uploadActivityImage error", errAttrs(error));
     const msg = error instanceof Error
       ? error.message
       : typeof error === "string"

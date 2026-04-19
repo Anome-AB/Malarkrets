@@ -10,7 +10,7 @@ import {
 } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { log, errMsg } from "@/lib/logger";
+import { log, errAttrs } from "@/lib/logger";
 
 export async function submitFeedback(
   activityId: string,
@@ -73,7 +73,7 @@ export async function submitFeedback(
 
     return { success: true };
   } catch (error) {
-    log.error("submitFeedback error", { err: errMsg(error) });
+    log.error("submitFeedback error", errAttrs(error));
     return {
       success: false,
       error: "Något gick fel vid inlämning av feedback",

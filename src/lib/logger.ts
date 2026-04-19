@@ -38,12 +38,32 @@ function emit(
   message: string,
   attrs?: Attrs,
 ) {
-  // Mirror to stdout so operators with shell access can still see the stream.
-  const line = attrs ? `${message} ${JSON.stringify(attrs)}` : message;
+  // When attrs contains a `stack` field (usually from errAttrs), pull it
+  // out so the stdout mirror can print it on separate lines — JSON-
+  // escaped newlines are unreadable in a dev terminal. The full attrs
+  // object (stack included) is still sent to OTel so Dash0 has it.
+  const stack =
+    attrs && typeof attrs.stack === "string" ? attrs.stack : undefined;
+  const displayAttrs = stack ? { ...attrs, stack: undefined } : attrs;
+  // Strip the now-undefined stack so JSON.stringify doesn't emit
+  // `"stack":undefined` (it wouldn't anyway, but keep the shape tight).
+  const hasOther =
+    displayAttrs &&
+    Object.entries(displayAttrs).some(([, v]) => v !== undefined);
+  const line = hasOther
+    ? `${message} ${JSON.stringify(displayAttrs, (_k, v) => (v === undefined ? undefined : v))}`
+    : message;
+
   if (level === "error") console.error(line);
   else if (level === "warn") console.warn(line);
   else if (level === "debug") console.debug(line);
   else console.log(line);
+
+  // Print the stack on its own lines so it renders as an actual stack.
+  if (stack) {
+    const out = level === "error" ? console.error : console.warn;
+    out(stack);
+  }
 
   // Emit to OTel (no-ops until the global provider is set via instrumentation.ts).
   otelLogger.emit({
@@ -66,13 +86,41 @@ export const log = {
 };
 
 /**
- * Unwrap an `unknown` caught error to a searchable string. Use in catch
- * blocks:
+ * Unwrap an `unknown` caught error to a searchable string. Use when you
+ * only want the message (e.g. user-facing validation errors where the
+ * stack would be noise):
  *
- *   try { ... } catch (err) {
- *     log.error("x failed", { err: errMsg(err) });
- *   }
+ *   log.warn("form validation failed", { err: errMsg(err) });
  */
 export function errMsg(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
+}
+
+/**
+ * Full error context for catch blocks — message, type name, and stack.
+ * The `emit` function pulls the stack out to print it on separate lines
+ * in the stdout mirror so dev terminals show real, readable stack
+ * traces. In Dash0 the stack remains a queryable attribute.
+ *
+ *   try { ... } catch (err) {
+ *     log.error("createActivity failed", errAttrs(err));
+ *   }
+ *
+ * Merge with extra attributes when needed:
+ *
+ *   log.error("email send failed", { ...errAttrs(err), email });
+ */
+export function errAttrs(err: unknown): {
+  err: string;
+  errName?: string;
+  stack?: string;
+} {
+  if (err instanceof Error) {
+    return {
+      err: err.message,
+      errName: err.name,
+      stack: err.stack,
+    };
+  }
+  return { err: String(err) };
 }

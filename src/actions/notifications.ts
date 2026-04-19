@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { notifications } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { log, errMsg } from "@/lib/logger";
+import { log, errAttrs } from "@/lib/logger";
 
 export async function markAllRead() {
   try {
@@ -25,7 +25,7 @@ export async function markAllRead() {
 
     return { success: true };
   } catch (error) {
-    log.error("markAllRead error", { err: errMsg(error) });
+    log.error("markAllRead error", errAttrs(error));
     return {
       success: false,
       error: "Något gick fel vid markering av notiser",
@@ -54,7 +54,7 @@ export async function markRead(notificationId: string) {
 
     return { success: true };
   } catch (error) {
-    log.error("markRead error", { err: errMsg(error) });
+    log.error("markRead error", errAttrs(error));
     return {
       success: false,
       error: "Något gick fel vid markering av notis",
