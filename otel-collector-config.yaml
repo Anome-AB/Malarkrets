@@ -6,8 +6,10 @@
 #   DEPLOYMENT_ENV      — "production" | "staging" | etc. Free-form.
 #
 # Logs: filelog-receivern är medvetet inte påslagen — /var/lib/docker/containers
-# är mode 710 root:root vilket kräver faktisk root-access. App-logs ska istället
-# skickas via OTel SDK direkt från appen (en follow-up).
+# är mode 710 root:root vilket kräver faktisk root-access. App-logs skickas
+# istället via OTel Logs SDK direkt från appen — se src/instrumentation.ts
+# och src/lib/logger.ts. Appen exporterar OTLP HTTP till /v1/logs → denna
+# collector → Dash0 via samma pipeline som traces.
 
 receivers:
   # App pushes OTLP over HTTP (protobuf) from inside the docker network.

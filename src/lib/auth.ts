@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { users } from "@/db/schema";
 import { loginSchema } from "@/lib/validations/auth";
+import { log } from "@/lib/logger";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
@@ -22,7 +23,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
       async authorize(credentials) {
         const parsed = loginSchema.safeParse(credentials);
-        if (!parsed.success) return null;
+        if (!parsed.success) {
+          log.warn("auth: invalid credentials shape");
+          return null;
+        }
 
         const { email, password } = parsed.data;
 
@@ -30,13 +34,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           where: eq(users.email, email),
         });
 
-        if (!user) return null;
-        if (!user.emailVerified) return null;
-        if (user.isBanned) return null;
+        if (!user) {
+          log.info("auth: login failed — unknown email", { email });
+          return null;
+        }
+        if (!user.emailVerified) {
+          log.info("auth: login blocked — email not verified", { email });
+          return null;
+        }
+        if (user.isBanned) {
+          log.warn("auth: login blocked — user is banned", { userId: user.id });
+          return null;
+        }
 
         const passwordMatch = await bcrypt.compare(password, user.passwordHash);
-        if (!passwordMatch) return null;
+        if (!passwordMatch) {
+          log.info("auth: login failed — bad password", { email });
+          return null;
+        }
 
+        log.info("auth: login success", { userId: user.id });
         return {
           id: user.id,
           email: user.email,
