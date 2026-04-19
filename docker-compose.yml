@@ -104,6 +104,12 @@ services:
     volumes:
       - ./otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Host-filsystemet monterat read-only på /hostfs så hostmetrics-
+      # receivern kan läsa host's /proc, /sys, /var istället för
+      # containerns. Non-root kan läsa allt som behövs för
+      # CPU/memory/disk/filesystem/load/network-scrapers — process-level
+      # metrics är medvetet inte med (se otel-collector-config.yaml).
+      - /:/hostfs:ro
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:13133/"]
       interval: 30s
