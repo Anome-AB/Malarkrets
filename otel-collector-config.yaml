@@ -40,12 +40,26 @@ receivers:
     collection_interval: 30s
     root_path: /hostfs
     scrapers:
+      # .utilization-metrics är "optional" i hostmetrics-receivern och
+      # måste aktiveras explicit. Utan dem emitteras bara .usage (rå
+      # bytes/antal med state-attribut) och varje dashboard/alert måste
+      # räkna ut procenten själv. Vi aktiverar .utilization för CPU,
+      # memory och filesystem eftersom det är dessa tre vi vill alerta på.
       cpu:
+        metrics:
+          system.cpu.utilization:
+            enabled: true
       load:
       memory:
+        metrics:
+          system.memory.utilization:
+            enabled: true
       paging:
       disk:
       filesystem:
+        metrics:
+          system.filesystem.utilization:
+            enabled: true
         exclude_mount_points:
           # Skippa Docker overlay/aufs-layers, tmpfs, och andra ephemeral
           # filsystem som spammar metrics utan att ge info om diskutrymme.
