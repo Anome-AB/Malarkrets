@@ -25,6 +25,40 @@ receivers:
     api_version: "1.40"
     collection_interval: 30s
 
+  # VPS-host-nivå: total RAM, swap, CPU load, disk, filesystem, network.
+  # Kompletterar docker_stats — som visar PER container, medan hostmetrics
+  # visar TOTALEN inkl. OS, docker-daemon, Caddy-overhead, swap etc.
+  #
+  # root_path pekar på /hostfs där host's /proc, /sys, /dev är bindmountade
+  # (se docker-compose.yml). Utan det läser receivern containerns /proc
+  # vilket ger vilseledande mätvärden.
+  #
+  # process-scrapern är medvetet inte med: collectorn kör non-root i den
+  # distroless imagen och kan inte läsa andra processers /proc/<pid>/.
+  # Alla andra scrapers fungerar fint non-root via världsläsbara /proc-filer.
+  hostmetrics:
+    collection_interval: 30s
+    root_path: /hostfs
+    scrapers:
+      cpu:
+      load:
+      memory:
+      paging:
+      disk:
+      filesystem:
+        exclude_mount_points:
+          # Skippa Docker overlay/aufs-layers, tmpfs, och andra ephemeral
+          # filsystem som spammar metrics utan att ge info om diskutrymme.
+          mount_points:
+            - /hostfs/dev/*
+            - /hostfs/proc/*
+            - /hostfs/sys/*
+            - /hostfs/run/*
+            - /hostfs/var/lib/docker/*
+            - /hostfs/var/lib/kubelet/*
+          match_type: regexp
+      network:
+
 processors:
   batch:
     timeout: 5s
@@ -56,7 +90,7 @@ service:
       processors: [resource, batch]
       exporters: [otlphttp/dash0]
     metrics:
-      receivers: [otlp, docker_stats]
+      receivers: [otlp, docker_stats, hostmetrics]
       processors: [resource, batch]
       exporters: [otlphttp/dash0]
     logs:
