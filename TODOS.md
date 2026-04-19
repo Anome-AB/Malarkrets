@@ -169,6 +169,25 @@ Obs: flera punkter måste påbörjas i god tid före flipp-datum, de är inte ef
 - ~~Health check endpoint `/api/health`~~ KLAR (b69a227, 2026-04-14)
 - Strukturerad loggning (pino eller winston) — S
 
+### Secrets management (tillagt efter /plan-eng-review 2026-04-19)
+**Kontext:** Runtime-secrets (DATABASE_URL, AUTH_SECRET, RESEND_API_KEY, DASH0_AUTH_TOKEN m.fl.) ligger idag i `.env` på VPS:n, mode 0600, läst via `env_file:` i compose. Det är rätt hem för runtime-secrets — de ska inte till GitHub Secrets där de skulle blanda sig med CI-flödet och hamna i image-metadata. Build-time-secrets som `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` ligger redan korrekt i GitHub Secrets. Men nuvarande setup har tre svagheter som behöver adresseras innan go-live:
+
+- **Krypterad backup av `.env` tillsammans med pg_dump** — S. POST-GO-LIVE-förberedelse.
+  - Idag: `.env` på VPS är skyddad av filpermissions, men om/när backup-strategin (ovan, Observability) landar måste `.env`-kopian också skyddas — en klartext-backup av `.env` på B2 är en läcka.
+  - Lösning: kryptera med `age --encrypt -r <public-key> .env > env-backup.age` i backup-scriptet. Privata nyckeln förvaras utanför VPS:n (password manager + offline-kopia).
+  - Beror på: backup-strategin.
+
+- **Rotations-runbook i RELEASE.md** — S. POST-GO-LIVE-dokumentation.
+  - Idag finns ingen dokumenterad process för att rotera AUTH_SECRET (alla sessioner invalideras), POSTGRES_PASSWORD (kräver DB-side update + env-update + restart), RESEND_API_KEY (ny key i Resend UI → .env → restart app).
+  - Värt att skriva innan behovet uppstår — en engångs-operation på tre rader skapar ett prejudikat. Tar 30 minuter när det görs som förberedelse, flera timmar i panikläge under ett äkta incident.
+
+- **Synka `.env`-värdena till en password manager** — XS. Gör nu.
+  - Idag: värdena finns bara på VPS:n. Om VPS:en dör oåterkalleligt och backup är korrupt finns ingen kopia.
+  - Kopiera till 1Password/Bitwarden/liknande med tydlig naming (`mälarkrets-prod-env-YYYY-MM-DD`). Uppdatera vid varje rotation.
+
+- **(Framtida)** SOPS + age för version-kontroll av `.env` — M. Inte akut.
+  - Om/när ni har flera miljöer (staging + prod + dev-per-person) eller flera personer hanterar secrets kan `sops` ge er krypterat-i-git med diff-historik. Overkill nu, värt att ta fram när ni har 2+ miljöer.
+
 ### Docker
 - ~~Docker Desktop på Windows har en bugg med inference manager socket.~~ LÖST: Docker Desktop v28.4.0 fungerar (verifierat 2026-04-14).
 
@@ -183,7 +202,7 @@ Obs: flera punkter måste påbörjas i god tid före flipp-datum, de är inte ef
 
 ### Release Pipeline (tillagt av /plan-eng-review 2026-04-14)
 - ~~**Semver image-tagging**~~ KLAR 2026-04-15. `git tag vX.Y.Z && git push --tags` genererar `:X.Y.Z`, `:X.Y`, `:X` + migrate-motsvarigheter. `:latest` flyttas bara av master-push. Compose stödjer `APP_TAG` / `MIGRATE_TAG` env-override för rollback.
-- **VPS-deploy i pipeline:** Lägg till SSH-deploy-steg i release.yml som kör docker compose pull + up på extern server. 15 rader YAML + 3 GitHub Secrets (VPS_HOST, VPS_USER, VPS_SSH_KEY). Insats: S. Beror på: pipeline + VPS finns.
+- **VPS-deploy i pipeline:** Lägg till SSH-deploy-steg i release.yml som kör docker compose pull + up på extern server. 15 rader YAML + 3 GitHub Secrets (VPS_HOST, VPS_USER, VPS_SSH_KEY) — dessa är deploy-time-secrets och hör hemma i GitHub Secrets (inte .env), se "Secrets management"-sektionen för distinktion. Insats: S. Beror på: pipeline + VPS finns.
 
 ### VPS-leverantör: Loopia (beslut 2026-04-15)
 - 2 GB RAM / 50 GB HDD, 460 kr/mån ex moms.
