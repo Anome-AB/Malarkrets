@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
@@ -56,25 +57,41 @@ function LandingPage({
 }) {
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-primary text-white">
-        <div className="max-w-5xl mx-auto px-6 py-12 text-center">
-          <h1 className="text-4xl font-bold mb-2">Mälarkrets</h1>
-          <p className="text-lg text-white/80 mb-2">
+      <header className="relative overflow-hidden text-white">
+        {/* Background image with Ken Burns animation. `fill` lets it cover
+            the hero regardless of viewport size; `priority` tells Next.js
+            to preload it so LCP stays fast. Image is decorative (alt=""). */}
+        <div className="absolute inset-0 ken-burns">
+          <Image
+            src="/hero/landing.jpg"
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
+          />
+        </div>
+        {/* Dark gradient overlay — darker at top and bottom so white text
+            stays legible regardless of what part of the image shows through. */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/60" />
+        <div className="relative max-w-5xl mx-auto px-6 py-20 md:py-28 text-center">
+          <h1 className="text-5xl md:text-6xl font-bold mb-3 drop-shadow-lg">Mälarkrets</h1>
+          <p className="text-xl text-white/95 mb-2 drop-shadow">
             Hitta ditt sammanhang
           </p>
-          <p className="text-sm text-white/60 mb-8">
+          <p className="text-sm text-white/85 mb-8 drop-shadow">
             Aktiviteter, träffar och upplevelser i Västerås
           </p>
           <div className="flex gap-4 justify-center">
             <Link
               href="/auth/login"
-              className="inline-flex items-center justify-center px-6 py-3 bg-white text-primary font-semibold rounded-lg hover:bg-white/90 transition-colors"
+              className="inline-flex items-center justify-center px-6 py-3 bg-white text-primary font-semibold rounded-lg hover:bg-white/90 transition-colors shadow-lg"
             >
               Logga in
             </Link>
             <Link
               href="/auth/register"
-              className="inline-flex items-center justify-center px-6 py-3 border-2 border-white text-white font-semibold rounded-lg hover:bg-white/10 transition-colors"
+              className="inline-flex items-center justify-center px-6 py-3 border-2 border-white text-white font-semibold rounded-lg hover:bg-white/10 transition-colors backdrop-blur-sm"
             >
               Registrera dig
             </Link>
