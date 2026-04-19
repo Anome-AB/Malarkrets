@@ -21,7 +21,7 @@ import {
 } from "@/lib/validations/activity";
 import { eq, and, count, sql, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { log, errMsg } from "@/lib/logger";
+import { log, errAttrs } from "@/lib/logger";
 
 export async function createActivity(formData: FormData) {
   try {
@@ -177,7 +177,7 @@ export async function createActivity(formData: FormData) {
 
     return { success: true, activityId: newActivity.id };
   } catch (error) {
-    log.error("createActivity error", { err: errMsg(error) });
+    log.error("createActivity error", errAttrs(error));
     const msg = error instanceof Error ? error.message : String(error);
     return { success: false, error: `Fel: ${msg}` };
   }
@@ -426,7 +426,7 @@ export async function updateActivity(formData: FormData) {
 
     return { success: true };
   } catch (error) {
-    log.error("updateActivity error", { err: errMsg(error) });
+    log.error("updateActivity error", errAttrs(error));
     return { success: false, error: "Något gick fel vid uppdatering av aktivitet" };
   }
 }
@@ -467,7 +467,7 @@ export async function deleteActivity(activityId: string) {
 
     return { success: true };
   } catch (error) {
-    log.error("deleteActivity error", { err: errMsg(error) });
+    log.error("deleteActivity error", errAttrs(error));
     return { success: false, error: "Något gick fel vid borttagning av aktivitet" };
   }
 }
@@ -546,7 +546,7 @@ export async function cancelOrDeleteActivity(
     revalidatePath("/");
     return { success: true, cancelled: true };
   } catch (error) {
-    log.error("cancelOrDeleteActivity error", { err: errMsg(error) });
+    log.error("cancelOrDeleteActivity error", errAttrs(error));
     return { success: false, error: "Något gick fel" };
   }
 }
@@ -686,7 +686,7 @@ export async function joinActivity(
 
     return { success: true, blockedWarning };
   } catch (error) {
-    log.error("joinActivity error", { err: errMsg(error) });
+    log.error("joinActivity error", errAttrs(error));
     const msg = error instanceof Error ? error.message : String(error);
     return { success: false, error: `Fel: ${msg}` };
   }
@@ -735,7 +735,7 @@ export async function leaveActivity(activityId: string) {
 
     return { success: true };
   } catch (error) {
-    log.error("leaveActivity error", { err: errMsg(error) });
+    log.error("leaveActivity error", errAttrs(error));
     return { success: false, error: "Något gick fel vid avregistrering" };
   }
 }

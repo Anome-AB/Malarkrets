@@ -9,7 +9,7 @@ import { db } from "@/lib/db";
 import { users } from "@/db/schema";
 import { registerSchema } from "@/lib/validations/auth";
 import { sendVerificationEmail } from "@/lib/email";
-import { log, errMsg } from "@/lib/logger";
+import { log, errAttrs } from "@/lib/logger";
 
 export async function register(formData: FormData) {
   const raw = {
@@ -46,7 +46,7 @@ export async function register(formData: FormData) {
   try {
     await sendVerificationEmail(email, emailVerificationToken);
   } catch (err) {
-    log.error("sendVerificationEmail failed", { err: errMsg(err), email });
+    log.error("sendVerificationEmail failed", { ...errAttrs(err), email });
   }
 
   return { success: true };
