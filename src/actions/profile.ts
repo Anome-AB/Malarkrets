@@ -17,6 +17,7 @@ import {
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { log, errMsg } from "@/lib/logger";
 
 export async function updateProfile(formData: FormData) {
   try {
@@ -51,7 +52,7 @@ export async function updateProfile(formData: FormData) {
 
     return { success: true };
   } catch (error) {
-    console.error("updateProfile error:", error);
+    log.error("updateProfile error", { err: errMsg(error) });
     return { success: false, error: "Något gick fel vid uppdatering av profil" };
   }
 }
@@ -88,7 +89,7 @@ export async function updateInterests(formData: FormData) {
 
     return { success: true };
   } catch (error) {
-    console.error("updateInterests error:", error);
+    log.error("updateInterests error", { err: errMsg(error) });
     return {
       success: false,
       error: "Något gick fel vid uppdatering av intressen",
@@ -125,7 +126,7 @@ export async function deleteAccount() {
     // Sign out and redirect
     await signOut({ redirectTo: "/" });
   } catch (error) {
-    console.error("deleteAccount error:", error);
+    log.error("deleteAccount error", { err: errMsg(error) });
     return {
       success: false,
       error: "Något gick fel vid radering av konto",

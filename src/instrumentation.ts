@@ -24,6 +24,8 @@ export async function register() {
   const endpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
   if (!endpoint) return;
 
+  const serviceName = process.env.OTEL_SERVICE_NAME ?? "malarkrets-app";
+
   // Dynamic imports so these heavy SDK modules only load in the Node runtime
   // (Next.js instrumentation also runs in edge runtime where they'd fail).
   const { logs } = await import("@opentelemetry/api-logs");
@@ -33,8 +35,20 @@ export async function register() {
   const { OTLPLogExporter } = await import(
     "@opentelemetry/exporter-logs-otlp-http"
   );
+  const { resourceFromAttributes } = await import(
+    "@opentelemetry/resources"
+  );
+
+  // Without this, Dash0 shows logs with resource=`unknown_service:node`.
+  // service.name must match what @vercel/otel sets for traces so logs +
+  // traces correlate per request in the Dash0 UI.
+  const resource = resourceFromAttributes({
+    "service.name": serviceName,
+    "service.namespace": "malarkrets",
+  });
 
   const provider = new LoggerProvider({
+    resource,
     processors: [
       new BatchLogRecordProcessor(
         new OTLPLogExporter({ url: `${endpoint}/v1/logs` }),
