@@ -65,7 +65,10 @@ else
   BRANCH=$(git branch --show-current)
   git fetch --prune origin
   LOCAL=$(git rev-parse HEAD)
-  REMOTE=$(git rev-parse "origin/$BRANCH" 2>/dev/null || echo "")
+  # --verify --quiet skriver inget till stdout vid okänd ref (till skillnad
+  # från ren `git rev-parse`, som ekar strängen och ändå exit:ar 0/128 udda).
+  # refs/remotes/origin/... undviker disambiguerings-gissningar.
+  REMOTE=$(git rev-parse --verify --quiet "refs/remotes/origin/$BRANCH" || true)
   if [ -z "$REMOTE" ]; then
     log "       $BRANCH har ingen upstream — hoppar över merge"
   elif [ "$LOCAL" = "$REMOTE" ]; then
