@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { PlacesAutocomplete } from "@/components/ui/places-autocomplete";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { createActivity } from "@/actions/activities";
+import { randomCourageMessage, randomFromList } from "@/lib/courage-messages";
 
 interface InterestTag {
   id: number;
@@ -56,6 +57,19 @@ export default function CreateActivityPage() {
     ogUrl: string | null;
   }>({ thumbUrl: null, mediumUrl: null, ogUrl: null });
   const [colorTheme, setColorTheme] = useState<string | null>(null);
+  const [courageEnabled, setCourageEnabled] = useState(false);
+  const [courageText, setCourageText] = useState("");
+  const [couragePool, setCouragePool] = useState<string[]>([]);
+
+  const fetchCourageMessages = useCallback(async (aud: string) => {
+    try {
+      const res = await fetch(`/api/courage-messages?audience=${aud}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCouragePool(data.messages ?? []);
+      }
+    } catch { /* fallback to hardcoded */ }
+  }, []);
 
   const {
     register,
@@ -132,6 +146,7 @@ export default function CreateActivityPage() {
       formData.set("genderRestriction", restriction);
       if (values.minAge) formData.set("minAge", values.minAge);
       formData.set("tags", JSON.stringify(selectedTags));
+      const courageMessage = courageEnabled && courageText.trim() ? courageText.trim() : undefined;
       formData.set(
         "whatToExpect",
         JSON.stringify({
@@ -139,6 +154,7 @@ export default function CreateActivityPage() {
           experienceLevel: values.experienceLevel,
           whoComes: values.whoComes || undefined,
           latePolicy: values.latePolicy || undefined,
+          ...(courageMessage ? { courageMessage } : {}),
         }),
       );
 
@@ -224,7 +240,61 @@ export default function CreateActivityPage() {
 
               {/* What to expect */}
               <Card title="Vad kan deltagare förvänta sig?" className="space-y-4">
+                {/* Courage message — top of card since it shows at top of CourageSection */}
                 <div>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={courageEnabled}
+                      onChange={async (e) => {
+                        const enabled = e.target.checked;
+                        setCourageEnabled(enabled);
+                        if (enabled && !courageText) {
+                          await fetchCourageMessages(audience);
+                          // Pool may not be set yet in this render, use fallback
+                          setCourageText(randomCourageMessage(audience));
+                        }
+                      }}
+                      className="accent-primary w-4 h-4"
+                    />
+                    <span className="text-sm font-medium text-heading">Lägg till välkomstmeddelande</span>
+                  </label>
+                  <p className="text-xs text-dimmed mt-1 ml-6">
+                    Visas för deltagare i aktivitetens informationsruta
+                  </p>
+
+                  {courageEnabled && (
+                    <div className="mt-3 ml-6">
+                      <div className="relative">
+                        <textarea
+                          rows={2}
+                          maxLength={200}
+                          value={courageText}
+                          onChange={(e) => setCourageText(e.target.value)}
+                          placeholder="Skriv ett välkomstmeddelande..."
+                          className="w-full px-3 py-2 pr-10 rounded-control border border-courage-border bg-courage-bg text-heading placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y text-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={async () => {
+                          if (couragePool.length === 0) await fetchCourageMessages(audience);
+                          setCourageText(randomFromList(couragePool, audience));
+                        }}
+                          className="absolute top-2 right-2 p-1 rounded-md text-dimmed hover:text-primary hover:bg-white/80 transition-colors"
+                          title="Nytt förslag"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="23 4 23 10 17 10" />
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                          </svg>
+                        </button>
+                      </div>
+                      <p className="text-xs text-dimmed mt-1">{courageText.length}/200 tecken</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t border-border pt-4">
                   <label className="text-sm font-medium text-heading mb-1 block">
                     Vem passar aktiviteten för?
                   </label>

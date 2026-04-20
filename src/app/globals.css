@@ -64,10 +64,10 @@
 
 /* Activity grids — auto-fill responsive grids tuned to the card and form widths */
 @utility grid-cols-activity-feed {
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 375px), 1fr));
 }
 @utility grid-cols-activity-form {
-  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
 }
 
 /* Sticky footer shadow — subtle top-shadow used on form action bars */

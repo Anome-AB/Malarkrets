@@ -66,12 +66,7 @@ export async function uploadActivityImage(
     return { success: true, thumbUrl, mediumUrl, ogUrl };
   } catch (error) {
     log.error("uploadActivityImage error", errAttrs(error));
-    const msg = error instanceof Error
-      ? error.message
-      : typeof error === "string"
-        ? error
-        : "Okänt fel";
-    const fullMsg = msg || "Kunde inte bearbeta bilden";
-    return { success: false, error: `Uppladdning misslyckades: ${fullMsg}` };
+    // Never leak raw DB error messages (may contain binary data) to the client
+    return { success: false, error: "Uppladdning misslyckades. Försök igen eller välj en annan bild." };
   }
 }

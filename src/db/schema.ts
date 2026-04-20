@@ -92,6 +92,14 @@ const bytea = customType<{ data: Buffer; driverData: Buffer }>({
 
 // ─── Tables ──────────────────────────────────────────────────────────────────
 
+export const courageMessages = pgTable("courage_messages", {
+  id: serial("id").primaryKey(),
+  audience: varchar("audience", { length: 20 }).notNull(), // alla, par, familj
+  message: text("message").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const images = pgTable("images", {
   id: uuid().defaultRandom().primaryKey(),
   data: bytea("data").notNull(),

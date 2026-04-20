@@ -8,6 +8,7 @@ interface WhatToExpect {
   whoComes?: string;
   latePolicy?: string;
   groupSize?: string;
+  courageMessage?: string;
 }
 
 interface Tag {
@@ -167,11 +168,30 @@ export function ActivityCard({ activity, isCreator = false, userStatus, onClick 
         </div>
       )}
 
-      <div className="mt-auto pt-3 border-t border-border">
+      <div className="mt-auto pt-3 border-t border-border flex items-center justify-between">
         <ParticipantDots
           count={activity.participantCount}
           max={activity.maxParticipants}
         />
+        {wte?.courageMessage && (
+          <span className="shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-white/80">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-primary"
+              role="img"
+              aria-label="Välkomstmeddelande från arrangören"
+            >
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
+          </span>
+        )}
       </div>
       </div>
     </article>

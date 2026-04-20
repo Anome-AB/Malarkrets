@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { users, interestTags } from "@/db/schema";
+import { users, interestTags, courageMessages } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { AdminClient } from "./admin-client";
 import { searchUsers } from "@/actions/admin";
@@ -33,12 +33,19 @@ export default async function AdminPage() {
     .from(interestTags)
     .orderBy(interestTags.name);
 
+  // Get all courage messages
+  const allCourageMessages = await db
+    .select()
+    .from(courageMessages)
+    .orderBy(courageMessages.audience, courageMessages.id);
+
   return (
     <div className="px-6 py-8">
       <h1 className="text-2xl font-bold text-heading mb-6">Adminpanel</h1>
       <AdminClient
         initialUsers={initialUsers}
         tags={allTags}
+        courageMessages={allCourageMessages}
       />
     </div>
   );

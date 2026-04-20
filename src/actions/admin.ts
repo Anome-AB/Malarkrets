@@ -11,6 +11,7 @@ import {
   interestTags,
   activities,
   activityParticipants,
+  courageMessages,
 } from "@/db/schema";
 import { eq, and, gt, isNull, or, ilike, count, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -259,6 +260,73 @@ export async function addTag(name: string) {
     return { success: true };
   } catch (error) {
     log.error("addTag error", errAttrs(error));
+    const msg = error instanceof Error ? error.message : "Något gick fel";
+    return { success: false, error: msg };
+  }
+}
+
+// ─── Courage messages ────────────────────────────────────────────────────
+
+export async function getCourageMessages() {
+  try {
+    await requireAdmin();
+    const rows = await db
+      .select()
+      .from(courageMessages)
+      .orderBy(courageMessages.audience, courageMessages.id);
+    return { success: true as const, messages: rows };
+  } catch (error) {
+    log.error("getCourageMessages error", errAttrs(error));
+    return { success: false as const, messages: [] };
+  }
+}
+
+export async function addCourageMessage(audience: string, message: string) {
+  try {
+    await requireAdmin();
+    const trimmed = message.trim();
+    if (!trimmed) return { success: false, error: "Meddelandet får inte vara tomt" };
+    if (!["alla", "par", "familj"].includes(audience)) {
+      return { success: false, error: "Ogiltig målgrupp" };
+    }
+
+    await db.insert(courageMessages).values({ audience, message: trimmed });
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error) {
+    log.error("addCourageMessage error", errAttrs(error));
+    const msg = error instanceof Error ? error.message : "Något gick fel";
+    return { success: false, error: msg };
+  }
+}
+
+export async function updateCourageMessage(id: number, message: string) {
+  try {
+    await requireAdmin();
+    const trimmed = message.trim();
+    if (!trimmed) return { success: false, error: "Meddelandet får inte vara tomt" };
+
+    await db
+      .update(courageMessages)
+      .set({ message: trimmed, updatedAt: new Date() })
+      .where(eq(courageMessages.id, id));
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error) {
+    log.error("updateCourageMessage error", errAttrs(error));
+    const msg = error instanceof Error ? error.message : "Något gick fel";
+    return { success: false, error: msg };
+  }
+}
+
+export async function deleteCourageMessage(id: number) {
+  try {
+    await requireAdmin();
+    await db.delete(courageMessages).where(eq(courageMessages.id, id));
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error) {
+    log.error("deleteCourageMessage error", errAttrs(error));
     const msg = error instanceof Error ? error.message : "Något gick fel";
     return { success: false, error: msg };
   }

@@ -14,6 +14,9 @@ import {
   banUser,
   unbanUser,
   searchUsers,
+  addCourageMessage,
+  updateCourageMessage,
+  deleteCourageMessage,
 } from "@/actions/admin";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
@@ -43,18 +46,25 @@ interface TagRow {
   slug: string;
 }
 
+interface CourageMessageRow {
+  id: number;
+  audience: string;
+  message: string;
+}
+
 interface AdminClientProps {
   initialUsers: UsersResult;
   tags: TagRow[];
+  courageMessages: CourageMessageRow[];
 }
 
 // ─── Component ─────────────────────────────────────────────────────────────
 
-export function AdminClient({ initialUsers, tags }: AdminClientProps) {
+export function AdminClient({ initialUsers, tags, courageMessages: initialCourage }: AdminClientProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
-  const [activeTab, setActiveTab] = useState<"users" | "tags">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "tags" | "courage">("users");
 
   // ─── User state ────────────────────────────────────────────────────────
   const [usersData, setUsersData] = useState<UsersResult>(initialUsers);
@@ -232,9 +242,67 @@ export function AdminClient({ initialUsers, tags }: AdminClientProps) {
 
   // ─── Render ────────────────────────────────────────────────────────────
 
+  // ─── Courage message state ──────────────────────────────────────────────
+  const [courageList, setCourageList] = useState(initialCourage);
+  const [newCourageAudience, setNewCourageAudience] = useState<string>("alla");
+  const [newCourageText, setNewCourageText] = useState("");
+  const [editingCourage, setEditingCourage] = useState<{ id: number; message: string } | null>(null);
+
+  const AUDIENCE_LABELS: Record<string, string> = { alla: "Alla", par: "Par", familj: "Familjer" };
+
+  function handleAddCourage() {
+    const trimmed = newCourageText.trim();
+    if (!trimmed) { toast("Skriv ett meddelande", "error"); return; }
+    startTransition(async () => {
+      const result = await addCourageMessage(newCourageAudience, trimmed);
+      if (result.success) {
+        toast("Meddelande tillagt", "success");
+        setNewCourageText("");
+        router.refresh();
+        // Optimistic: re-fetch not needed, revalidatePath triggers
+      } else {
+        toast(result.error ?? "Något gick fel", "error");
+      }
+    });
+  }
+
+  function handleSaveCourage(id: number, message: string) {
+    startTransition(async () => {
+      const result = await updateCourageMessage(id, message);
+      if (result.success) {
+        toast("Meddelande uppdaterat", "success");
+        setEditingCourage(null);
+        setCourageList((prev) => prev.map((m) => m.id === id ? { ...m, message: message.trim() } : m));
+      } else {
+        toast(result.error ?? "Något gick fel", "error");
+      }
+    });
+  }
+
+  function handleDeleteCourage(id: number) {
+    showConfirm({
+      title: "Ta bort meddelande",
+      message: "Vill du ta bort detta välkomstmeddelande?",
+      confirmLabel: "Ta bort",
+      onConfirm: () => {
+        setConfirmOpen(false);
+        startTransition(async () => {
+          const result = await deleteCourageMessage(id);
+          if (result.success) {
+            toast("Meddelande borttaget", "success");
+            setCourageList((prev) => prev.filter((m) => m.id !== id));
+          } else {
+            toast(result.error ?? "Något gick fel", "error");
+          }
+        });
+      },
+    });
+  }
+
   const tabs = [
     { id: "users" as const, label: "Användare", count: usersData.total },
     { id: "tags" as const, label: "Intressetaggar", count: tags.length },
+    { id: "courage" as const, label: "Välkomstmeddelanden", count: courageList.length },
   ];
 
   return (
@@ -478,6 +546,106 @@ export function AdminClient({ initialUsers, tags }: AdminClientProps) {
             )}
           </div>
         </Card>
+      )}
+
+      {activeTab === "courage" && (
+        <div className="space-y-6">
+          {/* Add new message */}
+          <Card title="Lägg till meddelande" className="space-y-3">
+            <div>
+              <label className="text-sm font-medium text-heading mb-1 block">Målgrupp</label>
+              <div className="inline-flex rounded-control border border-border overflow-hidden">
+                {(["alla", "par", "familj"] as const).map((aud, i) => (
+                  <button
+                    key={aud}
+                    type="button"
+                    onClick={() => setNewCourageAudience(aud)}
+                    className={`px-4 py-2 text-sm font-medium transition-colors ${i > 0 ? "border-l border-border" : ""} ${
+                      newCourageAudience === aud
+                        ? "bg-primary text-white"
+                        : "bg-white text-secondary hover:bg-background"
+                    }`}
+                  >
+                    {AUDIENCE_LABELS[aud]}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <textarea
+              rows={2}
+              maxLength={200}
+              value={newCourageText}
+              onChange={(e) => setNewCourageText(e.target.value)}
+              placeholder="Skriv ett välkomstmeddelande..."
+              className="w-full px-3 py-2 rounded-control border border-border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y text-sm"
+            />
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-dimmed">{newCourageText.length}/200 tecken</span>
+              <Button variant="primary" size="sm" loading={isPending} onClick={handleAddCourage}>
+                Lägg till
+              </Button>
+            </div>
+          </Card>
+
+          {/* Messages for selected audience */}
+          {(() => {
+            const msgs = courageList.filter((m) => m.audience === newCourageAudience);
+            if (msgs.length === 0) return (
+              <Card title={`${AUDIENCE_LABELS[newCourageAudience]} (0)`}>
+                <p className="text-sm text-dimmed">Inga meddelanden för denna målgrupp ännu.</p>
+              </Card>
+            );
+            return (
+              <Card title={`${AUDIENCE_LABELS[newCourageAudience]} (${msgs.length})`}>
+                <div className="space-y-3">
+                  {msgs.map((msg) => (
+                    <div key={msg.id} className="flex items-start gap-3 group">
+                      {editingCourage?.id === msg.id ? (
+                        <div className="flex-1 flex flex-col gap-2">
+                          <textarea
+                            rows={2}
+                            maxLength={200}
+                            value={editingCourage.message}
+                            onChange={(e) => setEditingCourage({ ...editingCourage, message: e.target.value })}
+                            className="w-full px-3 py-2 rounded-control border border-primary text-heading bg-white focus:outline-none focus:ring-1 focus:ring-primary resize-y text-sm"
+                          />
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="primary" loading={isPending} onClick={() => handleSaveCourage(msg.id, editingCourage.message)}>
+                              Spara
+                            </Button>
+                            <Button size="sm" variant="secondary" onClick={() => setEditingCourage(null)}>
+                              Avbryt
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="flex-1 text-sm text-heading">{msg.message}</p>
+                          <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                            <button
+                              onClick={() => setEditingCourage({ id: msg.id, message: msg.message })}
+                              disabled={isPending}
+                              className="text-xs text-primary hover:underline disabled:opacity-50"
+                            >
+                              Redigera
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCourage(msg.id)}
+                              disabled={isPending}
+                              className="text-xs text-error hover:underline disabled:opacity-50"
+                            >
+                              Ta bort
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            );
+          })()}
+        </div>
       )}
     </>
   );

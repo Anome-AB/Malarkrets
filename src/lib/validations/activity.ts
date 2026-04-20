@@ -21,6 +21,7 @@ const baseActivitySchema = z.object({
     experienceLevel: z.enum(["nyborjare", "medel", "avancerad", "alla"]),
     whoComes: z.string().max(500).optional(),
     latePolicy: z.string().max(200).optional(),
+    courageMessage: z.string().max(200).optional(),
   }),
 });
 
@@ -44,6 +45,9 @@ export const updateActivitySchema = baseActivitySchema
       .max(500, "Max 500 tecken")
       .optional(),
   });
+
+export const whatToExpectSchema = baseActivitySchema.shape.whatToExpect;
+export type WhatToExpect = z.infer<typeof whatToExpectSchema>;
 
 export type CreateActivityInput = z.infer<typeof createActivitySchema>;
 export type UpdateActivityInput = z.infer<typeof updateActivitySchema>;
