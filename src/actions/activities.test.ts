@@ -191,8 +191,7 @@ describe("Own activity (creator perspective)", () => {
   // ── Create ──────────────────────────────────────────
 
   describe("createActivity", () => {
-    it.skip("creates activity with valid data", async () => {
-      // TODO(issue #11): fix selectQueue-fixture för count() i createActivity.
+    it("creates activity with valid data", async () => {
       mockDbQueryUsersFindFirst.mockResolvedValue(makeCreatorProfile());
       // Rate limit check: 0 activities today
       selectQueue.push([{ count: 0 }]);
@@ -209,8 +208,9 @@ describe("Own activity (creator perspective)", () => {
         startTime: "2026-04-20T09:00:00Z",
         maxParticipants: "15",
         genderRestriction: "alla",
+        colorTheme: "sage",
         tags: JSON.stringify([1, 2]),
-        whatToExpect: JSON.stringify({ okAlone: true, experienceLevel: "alla" }),
+        whatToExpect: JSON.stringify({ audience: "alla", experienceLevel: "alla" }),
       });
 
       const result = await createActivity(fd);
@@ -268,8 +268,7 @@ describe("Own activity (creator perspective)", () => {
       expect(result.success).toBe(false);
     });
 
-    it.skip("rejects man creating kvinnor-only activity", async () => {
-      // TODO(issue #11): assertion matchar raw Zod-text istället för svensk-wrappat fel.
+    it("rejects man creating kvinnor-only activity", async () => {
       mockRequireAuth.mockResolvedValue(OTHER_USER);
       mockDbQueryUsersFindFirst.mockResolvedValue(makeOtherProfile({ gender: "man" }));
       selectQueue.push([{ count: 0 }]);
@@ -280,8 +279,9 @@ describe("Own activity (creator perspective)", () => {
         location: "Västerås",
         startTime: "2026-04-20T09:00:00Z",
         genderRestriction: "kvinnor",
+        colorTheme: "sage",
         tags: JSON.stringify([1]),
-        whatToExpect: JSON.stringify({ okAlone: true, experienceLevel: "alla" }),
+        whatToExpect: JSON.stringify({ audience: "alla", experienceLevel: "alla" }),
       });
 
       const result = await createActivity(fd);
@@ -295,12 +295,11 @@ describe("Own activity (creator perspective)", () => {
   // ── Update ──────────────────────────────────────────
 
   describe("updateActivity", () => {
-    it.skip("allows creator to update their activity", async () => {
-      // TODO(issue #11): fix selectQueue-fixture för count() i updateActivity.
+    it("allows creator to update their activity", async () => {
       mockDbQueryActivitiesFindFirst.mockResolvedValue(makeActivity());
       mockDbQueryUsersFindFirst.mockResolvedValue(makeCreatorProfile());
-      // Push enough empty results for the multiple selects in update flow
-      for (let i = 0; i < 5; i++) selectQueue.push([]);
+      // updateActivity selects participants for notifications
+      selectQueue.push([]);
 
       const fd = makeFormData({
         id: ACTIVITY_ID,
@@ -309,15 +308,14 @@ describe("Own activity (creator perspective)", () => {
         location: "Djäkneberget, Västerås",
         startTime: "2026-04-20T09:00:00Z",
         tags: JSON.stringify([1]),
-        whatToExpect: JSON.stringify({ okAlone: true, experienceLevel: "alla" }),
+        whatToExpect: JSON.stringify({ audience: "alla", experienceLevel: "alla" }),
       });
 
       const result = await updateActivity(fd);
       expect(result.success).toBe(true);
     });
 
-    it.skip("rejects non-creator trying to update", async () => {
-      // TODO(issue #11): assertion matchar raw Zod-text istället för svensk-wrappat fel.
+    it("rejects non-creator trying to update", async () => {
       mockRequireAuth.mockResolvedValue(OTHER_USER);
       mockDbQueryActivitiesFindFirst.mockResolvedValue(makeActivity({ creatorId: CREATOR.id }));
       mockDbQueryUsersFindFirst.mockResolvedValue(makeOtherProfile());
@@ -329,7 +327,7 @@ describe("Own activity (creator perspective)", () => {
         location: "Djäkneberget, Västerås",
         startTime: "2026-04-20T09:00:00Z",
         tags: JSON.stringify([1]),
-        whatToExpect: JSON.stringify({ okAlone: true, experienceLevel: "alla" }),
+        whatToExpect: JSON.stringify({ audience: "alla", experienceLevel: "alla" }),
       });
 
       const result = await updateActivity(fd);
@@ -609,14 +607,14 @@ describe("Other's activity (non-creator perspective)", () => {
   // ── Get detail ──────────────────────────────────────
 
   describe("getActivityDetail", () => {
-    it.skip("returns activity detail for non-creator", async () => {
-      // TODO(issue #11): fix selectQueue-fixture för count() i getActivityDetail.
+    it("returns activity detail for non-creator", async () => {
       mockDbQueryActivitiesFindFirst.mockResolvedValue(makeActivity());
       mockDbQueryUsersFindFirst.mockResolvedValue(makeCreatorProfile());
       mockDbQueryParticipantsFindFirst.mockResolvedValue(null);
-      // Tags, participants count, comments, feedback
+      // 5 selects: tags, attending count, interested count, comments, feedback
       selectQueue.push([]);              // tags
-      selectQueue.push([{ count: 5 }]); // participant count
+      selectQueue.push([{ count: 5 }]); // attending count
+      selectQueue.push([{ count: 2 }]); // interested count
       selectQueue.push([]);              // comments
       selectQueue.push([]);              // feedback
 
@@ -635,8 +633,7 @@ describe("Other's activity (non-creator perspective)", () => {
       expect(result).toBeNull();
     });
 
-    it.skip("shows participation status when user is interested", async () => {
-      // TODO(issue #11): fix selectQueue-fixture för count() i getActivityDetail.
+    it("shows participation status when user is interested", async () => {
       mockDbQueryActivitiesFindFirst.mockResolvedValue(makeActivity());
       mockDbQueryUsersFindFirst.mockResolvedValue(makeCreatorProfile());
       mockDbQueryParticipantsFindFirst.mockResolvedValue({
@@ -644,8 +641,10 @@ describe("Other's activity (non-creator perspective)", () => {
         userId: OTHER_USER.id,
         status: "interested",
       });
+      // 5 selects: tags, attending count, interested count, comments, feedback
       selectQueue.push([]);              // tags
-      selectQueue.push([{ count: 5 }]); // participant count
+      selectQueue.push([{ count: 5 }]); // attending count
+      selectQueue.push([{ count: 2 }]); // interested count
       selectQueue.push([]);              // comments
       selectQueue.push([]);              // feedback
 
