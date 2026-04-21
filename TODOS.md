@@ -34,6 +34,20 @@ Obs: flera punkter måste påbörjas i god tid före flipp-datum, de är inte ef
   middleware, och ersätt `https:` i img-src med konkreta domäner användare
   faktiskt laddar bilder från.
 
+- **Normalisera migrations-journalens tidsstämplar.** idx 4, 5 och 7 i
+  `src/db/migrations/meta/_journal.json` har hand-editerade framtida
+  timestamps (juni 2026) från tidigare merge-konflikter. 0008 fick
+  manuellt bumpas för att passera dem. CI-checken (`scripts/check-migration-journal.mjs`)
+  förhindrar återfall för nya migrationer, men den "high-water mark"
+  på 1781942400000 (2026-06-20) kommer följa med fram till dess real-tid
+  catchar upp — varje ny migration genererad med `Date.now()` innan dess
+  kommer CI-failar tills man manuellt bumpar `when`. Fix är tvåstegs:
+  (1) normalisera _journal.json till plausibla naturliga timestamps,
+  (2) kör DB-surgery på varje miljö (lokal, staging, VPS, GreenLions maskin)
+  för att uppdatera `drizzle.__drizzle_migrations.created_at` till
+  matchande värden. Cosmetisk men gör att framtida migrationer "bara
+  funkar" utan bump-danser.
+
 ## Nästa session — Prioritet 1
 
 ### Design-genomgång av aktivitetsdetaljsidan — KLAR
