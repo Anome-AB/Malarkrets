@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 function storageKey(text: string) {
   let h = 0;
@@ -10,18 +10,28 @@ function storageKey(text: string) {
   return `site-banner-dismissed:${h}`;
 }
 
-export function SiteBannerDismissible({ text }: { text: string }) {
-  const [dismissed, setDismissed] = useState(false);
+const CHANGE_EVENT = "site-banner-dismiss-change";
 
-  useEffect(() => {
-    try {
-      if (sessionStorage.getItem(storageKey(text)) === "1") {
-        setDismissed(true);
-      }
-    } catch {
-      // sessionStorage unavailable (private mode etc.) — show banner.
-    }
-  }, [text]);
+function subscribe(cb: () => void) {
+  window.addEventListener(CHANGE_EVENT, cb);
+  return () => window.removeEventListener(CHANGE_EVENT, cb);
+}
+
+function readDismissed(key: string) {
+  try {
+    return sessionStorage.getItem(key) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function SiteBannerDismissible({ text }: { text: string }) {
+  const key = storageKey(text);
+  const dismissed = useSyncExternalStore(
+    subscribe,
+    () => readDismissed(key),
+    () => false,
+  );
 
   if (dismissed) return null;
 
@@ -38,11 +48,12 @@ export function SiteBannerDismissible({ text }: { text: string }) {
         aria-label="Stäng banner"
         onClick={() => {
           try {
-            sessionStorage.setItem(storageKey(text), "1");
+            sessionStorage.setItem(key, "1");
           } catch {
-            // ignore — still dismiss for this render
+            // sessionStorage unavailable — fall back to dispatching the event
+            // so any other same-page subscribers still react.
           }
-          setDismissed(true);
+          window.dispatchEvent(new Event(CHANGE_EVENT));
         }}
         className="absolute right-3 top-1/2 -translate-y-1/2 text-black/70 hover:text-black text-base leading-none px-1"
       >
