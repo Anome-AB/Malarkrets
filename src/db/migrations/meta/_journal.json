@@ -57,6 +57,13 @@
       "when": 1781942400000,
       "tag": "0007_images_in_database",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1776777380703,
+      "tag": "0008_wakeful_vulcan",
+      "breakpoints": true
     }
   ]
 }
