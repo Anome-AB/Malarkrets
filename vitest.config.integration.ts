@@ -18,12 +18,10 @@ export default defineConfig({
     globalSetup: "src/test/integration/global-setup.ts",
     testTimeout: 30_000,
     hookTimeout: 30_000,
-    // Run all integration test files in a single process so they share
-    // the already-migrated DB state predictably.
-    pool: "forks",
-    forks: {
-      singleFork: true,
-    },
+    // Run integration test files sequentially (not in parallel forks)
+    // so they don't race on the shared test DB. Tests WITHIN a file still
+    // run sequentially by default in vitest.
+    fileParallelism: false,
   },
   resolve: {
     alias: {
