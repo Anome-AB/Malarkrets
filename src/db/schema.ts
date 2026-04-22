@@ -85,13 +85,21 @@ const bytea = customType<{ data: Buffer; driverData: Buffer }>({
 
 // ─── Tables ──────────────────────────────────────────────────────────────────
 
-export const courageMessages = pgTable("courage_messages", {
-  id: serial("id").primaryKey(),
-  audience: varchar("audience", { length: 20 }).notNull(), // alla, par, familj
-  message: text("message").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+export const courageMessages = pgTable(
+  "courage_messages",
+  {
+    id: serial("id").primaryKey(),
+    audience: varchar("audience", { length: 20 }).notNull(), // alla, par, familj
+    message: text("message").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [
+    // Unique key enables ON CONFLICT DO NOTHING in seed-data migrations
+    // so the same message can be re-asserted safely across deploys.
+    unique().on(table.audience, table.message),
+  ],
+);
 
 export const images = pgTable("images", {
   id: uuid().defaultRandom().primaryKey(),

@@ -1,6 +1,6 @@
 {
-  "id": "d539b128-44f8-4d91-9212-4a663ef5e88b",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "d4fed66e-d899-4a2b-9154-425ff9ebf7c5",
+  "prevId": "d977674f-ee88-4f27-a668-f5d1a5dcdfe1",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -39,18 +39,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "latitude": {
-          "name": "latitude",
-          "type": "double precision",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "longitude": {
-          "name": "longitude",
-          "type": "double precision",
-          "primaryKey": false,
-          "notNull": false
-        },
         "start_time": {
           "name": "start_time",
           "type": "timestamp",
@@ -81,18 +69,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "image_accent_color": {
-          "name": "image_accent_color",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "color_theme": {
-          "name": "color_theme",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "max_participants": {
           "name": "max_participants",
           "type": "integer",
@@ -119,35 +95,12 @@
           "primaryKey": false,
           "notNull": false
         },
-        "cancelled_at": {
-          "name": "cancelled_at",
-          "type": "timestamp",
+        "municipality_id": {
+          "name": "municipality_id",
+          "type": "varchar(100)",
           "primaryKey": false,
-          "notNull": false
-        },
-        "cancelled_reason": {
-          "name": "cancelled_reason",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "deleted_at": {
-          "name": "deleted_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "deleted_by": {
-          "name": "deleted_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "deleted_reason": {
-          "name": "deleted_reason",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "default": "'vasteras'"
         },
         "created_at": {
           "name": "created_at",
@@ -206,21 +159,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "activities_deleted_at_idx": {
-          "name": "activities_deleted_at_idx",
-          "columns": [
-            {
-              "expression": "deleted_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
@@ -235,19 +173,6 @@
             "id"
           ],
           "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "activities_deleted_by_users_id_fk": {
-          "name": "activities_deleted_by_users_id_fk",
-          "tableFrom": "activities",
-          "tableTo": "users",
-          "columnsFrom": [
-            "deleted_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "restrict",
           "onUpdate": "no action"
         }
       },
@@ -545,193 +470,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.admin_actions": {
-      "name": "admin_actions",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "admin_id": {
-          "name": "admin_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "action_type": {
-          "name": "action_type",
-          "type": "admin_action_type",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "target_activity_id": {
-          "name": "target_activity_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "target_user_id": {
-          "name": "target_user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "source_report_id": {
-          "name": "source_report_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "reason": {
-          "name": "reason",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "diff": {
-          "name": "diff",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "admin_actions_admin_idx": {
-          "name": "admin_actions_admin_idx",
-          "columns": [
-            {
-              "expression": "admin_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "admin_actions_activity_idx": {
-          "name": "admin_actions_activity_idx",
-          "columns": [
-            {
-              "expression": "target_activity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "admin_actions_user_idx": {
-          "name": "admin_actions_user_idx",
-          "columns": [
-            {
-              "expression": "target_user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "admin_actions_admin_id_users_id_fk": {
-          "name": "admin_actions_admin_id_users_id_fk",
-          "tableFrom": "admin_actions",
-          "tableTo": "users",
-          "columnsFrom": [
-            "admin_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
-        },
-        "admin_actions_target_activity_id_activities_id_fk": {
-          "name": "admin_actions_target_activity_id_activities_id_fk",
-          "tableFrom": "admin_actions",
-          "tableTo": "activities",
-          "columnsFrom": [
-            "target_activity_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "admin_actions_target_user_id_users_id_fk": {
-          "name": "admin_actions_target_user_id_users_id_fk",
-          "tableFrom": "admin_actions",
-          "tableTo": "users",
-          "columnsFrom": [
-            "target_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "admin_actions_source_report_id_reports_id_fk": {
-          "name": "admin_actions_source_report_id_reports_id_fk",
-          "tableFrom": "admin_actions",
-          "tableTo": "reports",
-          "columnsFrom": [
-            "source_report_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.analytics_events": {
       "name": "analytics_events",
       "schema": "",
@@ -813,99 +551,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.courage_messages": {
-      "name": "courage_messages",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "audience": {
-          "name": "audience",
-          "type": "varchar(20)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "message": {
-          "name": "message",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "courage_messages_audience_message_unique": {
-          "name": "courage_messages_audience_message_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "audience",
-            "message"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.images": {
-      "name": "images",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "data": {
-          "name": "data",
-          "type": "bytea",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "content_type": {
-          "name": "content_type",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.interest_tags": {
       "name": "interest_tags",
       "schema": "",
@@ -927,6 +572,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -1359,18 +1010,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "first_name": {
-          "name": "first_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "last_name": {
-          "name": "last_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "display_name": {
           "name": "display_name",
           "type": "text",
@@ -1397,6 +1036,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "location": {
+          "name": "location",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "is_admin": {
           "name": "is_admin",
           "type": "boolean",
@@ -1404,30 +1049,12 @@
           "notNull": true,
           "default": false
         },
-        "is_banned": {
-          "name": "is_banned",
-          "type": "boolean",
+        "municipality_id": {
+          "name": "municipality_id",
+          "type": "varchar(100)",
           "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "banned_at": {
-          "name": "banned_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "ban_reason": {
-          "name": "ban_reason",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "banned_by": {
-          "name": "banned_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "default": "'vasteras'"
         },
         "created_at": {
           "name": "created_at",
@@ -1462,16 +1089,14 @@
     }
   },
   "enums": {
-    "public.admin_action_type": {
-      "name": "admin_action_type",
+    "public.experience_level": {
+      "name": "experience_level",
       "schema": "public",
       "values": [
-        "activity_edited",
-        "activity_cancelled",
-        "activity_deleted",
-        "activity_restored",
-        "user_banned",
-        "user_unbanned"
+        "nybörjare",
+        "medel",
+        "avancerad",
+        "alla"
       ]
     },
     "public.feedback_rating": {
@@ -1508,9 +1133,7 @@
         "activity_updated",
         "participant_joined",
         "participant_left",
-        "activity_deleted",
-        "activity_cancelled",
-        "activity_edited_by_admin"
+        "activity_deleted"
       ]
     },
     "public.participant_status": {

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isInVasteras } from "@/lib/geo";
 
 const baseActivitySchema = z.object({
   title: z.string().min(3).max(200),
@@ -30,13 +31,31 @@ const baseActivitySchema = z.object({
   }),
 });
 
-export const createActivitySchema = baseActivitySchema.refine(
-  (data) => !!data.imageThumbUrl || !!data.colorTheme,
-  {
-    message: "Välj en bild eller en bakgrundsfärg för aktiviteten",
-    path: ["colorTheme"],
-  },
-);
+// Activities must sit inside Västerås kommun. We enforce this in two layers:
+// the client shows an inline error when the autocomplete pick is outside,
+// and the server rejects any submission without coordinates or with
+// coordinates outside the bbox. Coordinates must be present (a typed-only
+// location with no place pick is not enough to verify anchoring).
+const vasterasLocationCheck = {
+  message: "Platsen måste ligga i Västerås kommun",
+  path: ["location"],
+};
+
+export const createActivitySchema = baseActivitySchema
+  .refine(
+    (data) => !!data.imageThumbUrl || !!data.colorTheme,
+    {
+      message: "Välj en bild eller en bakgrundsfärg för aktiviteten",
+      path: ["colorTheme"],
+    },
+  )
+  .refine(
+    (data) =>
+      typeof data.latitude === "number" &&
+      typeof data.longitude === "number" &&
+      isInVasteras(data.latitude, data.longitude),
+    vasterasLocationCheck,
+  );
 
 export const updateActivitySchema = baseActivitySchema
   .partial()
@@ -49,7 +68,17 @@ export const updateActivitySchema = baseActivitySchema
       .min(10, "Ange en anledning (minst 10 tecken)")
       .max(500, "Max 500 tecken")
       .optional(),
-  });
+  })
+  .refine(
+    (data) => {
+      // On update, only validate when both coordinates are explicitly provided.
+      // Partial updates that don't touch location skip this check.
+      if (data.latitude === undefined && data.longitude === undefined) return true;
+      if (typeof data.latitude !== "number" || typeof data.longitude !== "number") return false;
+      return isInVasteras(data.latitude, data.longitude);
+    },
+    vasterasLocationCheck,
+  );
 
 export const whatToExpectSchema = baseActivitySchema.shape.whatToExpect;
 export type WhatToExpect = z.infer<typeof whatToExpectSchema>;
