@@ -22,8 +22,11 @@ interface ActivityItem {
   description: string;
   location: string;
   startTime: Date | string;
+  endTime?: Date | string | null;
   imageThumbUrl: string | null;
+  imageAccentColor?: string | null;
   colorTheme?: string | null;
+  genderRestriction?: "alla" | "kvinnor" | "man" | null;
   maxParticipants: number | null;
   whatToExpect: unknown;
   tags: Array<{ id: number; name: string; slug: string }>;
@@ -44,6 +47,8 @@ interface ActivityFeedProps {
   activeFilters: string[];
   nextCursor: string | null;
   userId?: string;
+  isAdmin?: boolean;
+  showAll?: boolean;
 }
 
 function useIsDesktop() {
@@ -65,13 +70,15 @@ export function ActivityFeed({
   activeFilters,
   nextCursor,
   userId,
+  isAdmin = false,
+  showAll = false,
 }: ActivityFeedProps) {
   const router = useRouter();
   const isDesktop = useIsDesktop();
   const [searchText, setSearchText] = useState("");
   const [loadingMore, setLoadingMore] = useState(false);
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
-  const [filtersExpanded, setFiltersExpanded] = useState(activeFilters.length > 0);
+  const [filtersExpanded, setFiltersExpanded] = useState(activeFilters.length > 0 || showAll);
 
   const filteredActivities = useMemo(() => {
     if (!searchText.trim()) return initialActivities;
@@ -146,6 +153,11 @@ export function ActivityFeed({
               {activeFilters.length}
             </span>
           )}
+          {showAll && (
+            <span className="inline-flex items-center h-5 px-2 rounded-full bg-accent-light text-accent text-xs font-semibold">
+              Visar alla
+            </span>
+          )}
           <svg
             width="14"
             height="14"
@@ -161,15 +173,44 @@ export function ActivityFeed({
           </svg>
         </button>
         {filtersExpanded && (
-          <div className="flex flex-wrap gap-2 mt-2">
-            {userInterests.map((interest) => (
-              <Tag
-                key={interest.id}
-                label={interest.name}
-                active={activeFilters.includes(interest.slug)}
-                onClick={() => handleFilterClick(interest.slug)}
-              />
-            ))}
+          <div className="mt-2 space-y-2">
+            {/* Admin: mirror the sidebar's "Visa alla" / "Mina intressen" toggle */}
+            {isAdmin && (
+              <div className="inline-flex rounded-control border border-border overflow-hidden text-xs">
+                <button
+                  type="button"
+                  onClick={() => router.push("/?alla=1")}
+                  className={`px-3 py-1.5 font-medium transition-colors ${
+                    showAll
+                      ? "bg-primary text-white"
+                      : "bg-white text-secondary hover:bg-background"
+                  }`}
+                >
+                  Visa alla
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push("/")}
+                  className={`px-3 py-1.5 font-medium border-l border-border transition-colors ${
+                    !showAll
+                      ? "bg-primary text-white"
+                      : "bg-white text-secondary hover:bg-background"
+                  }`}
+                >
+                  Mina intressen
+                </button>
+              </div>
+            )}
+            <div className="flex flex-wrap gap-2">
+              {userInterests.map((interest) => (
+                <Tag
+                  key={interest.id}
+                  label={interest.name}
+                  active={activeFilters.includes(interest.slug)}
+                  onClick={() => handleFilterClick(interest.slug)}
+                />
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -226,12 +267,15 @@ export function ActivityFeed({
                   description: activity.description,
                   location: activity.location,
                   startTime: activity.startTime,
+                  endTime: activity.endTime,
                   tags: activity.tags,
                   participantCount: activity.participantCount,
                   maxParticipants: activity.maxParticipants,
                   whatToExpect: activity.whatToExpect as WhatToExpect | null,
                   imageThumbUrl: activity.imageThumbUrl,
+                  imageAccentColor: activity.imageAccentColor,
                   colorTheme: activity.colorTheme,
+                  genderRestriction: activity.genderRestriction,
                 }}
                 isCreator={!!userId && activity.creatorId === userId}
                 userStatus={activity.userStatus}

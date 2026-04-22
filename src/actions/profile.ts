@@ -24,10 +24,11 @@ export async function updateProfile(formData: FormData) {
     const user = await requireAuth();
 
     const raw = {
+      firstName: formData.get("firstName") || undefined,
+      lastName: formData.get("lastName") || undefined,
       displayName: formData.get("displayName") || undefined,
       birthDate: formData.get("birthDate") || undefined,
       gender: formData.get("gender") || undefined,
-      location: formData.get("location") || undefined,
     };
 
     const parsed = updateProfileSchema.safeParse(raw);
@@ -106,10 +107,11 @@ export async function deleteAccount() {
     await db
       .update(users)
       .set({
+        firstName: null,
+        lastName: null,
         displayName: "Borttagen användare",
         birthDate: null,
         gender: null,
-        location: null,
         avatarUrl: null,
         updatedAt: new Date(),
       })

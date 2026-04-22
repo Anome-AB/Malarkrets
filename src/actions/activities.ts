@@ -64,6 +64,7 @@ export async function createActivity(formData: FormData) {
       imageThumbUrl: (formData.get("imageThumbUrl") as string) || undefined,
       imageMediumUrl: (formData.get("imageMediumUrl") as string) || undefined,
       imageOgUrl: (formData.get("imageOgUrl") as string) || undefined,
+      imageAccentColor: (formData.get("imageAccentColor") as string) || undefined,
       colorTheme: (formData.get("colorTheme") as string) || undefined,
       tags: JSON.parse((formData.get("tags") as string) || "[]"),
       whatToExpect: JSON.parse(
@@ -127,7 +128,7 @@ export async function createActivity(formData: FormData) {
       }
     }
 
-    const { tags, whatToExpect, startTime, endTime, genderRestriction, latitude, longitude, imageThumbUrl, imageMediumUrl, imageOgUrl, colorTheme, ...rest } = data;
+    const { tags, whatToExpect, startTime, endTime, genderRestriction, latitude, longitude, imageThumbUrl, imageMediumUrl, imageOgUrl, imageAccentColor, colorTheme, ...rest } = data;
 
     const [newActivity] = await db
       .insert(activities)
@@ -140,6 +141,7 @@ export async function createActivity(formData: FormData) {
         imageThumbUrl: imageThumbUrl ?? null,
         imageMediumUrl: imageMediumUrl ?? null,
         imageOgUrl: imageOgUrl ?? null,
+        imageAccentColor: imageAccentColor ?? null,
         colorTheme: colorTheme ?? null,
         maxParticipants: rest.maxParticipants,
         minAge: rest.minAge,
@@ -197,6 +199,7 @@ export async function updateActivity(formData: FormData) {
       imageThumbUrl: formData.has("imageThumbUrl") ? (formData.get("imageThumbUrl") as string) || null : undefined,
       imageMediumUrl: formData.has("imageMediumUrl") ? (formData.get("imageMediumUrl") as string) || null : undefined,
       imageOgUrl: formData.has("imageOgUrl") ? (formData.get("imageOgUrl") as string) || null : undefined,
+      imageAccentColor: formData.has("imageAccentColor") ? (formData.get("imageAccentColor") as string) || null : undefined,
       colorTheme: formData.has("colorTheme") ? (formData.get("colorTheme") as string) || null : undefined,
       startTime: formData.get("startTime") || undefined,
       endTime: formData.get("endTime") || undefined,
@@ -294,6 +297,7 @@ export async function updateActivity(formData: FormData) {
       imageThumbUrl,
       imageMediumUrl,
       imageOgUrl,
+      imageAccentColor,
       colorTheme,
       adminReason,
       genderRestriction,
@@ -344,6 +348,7 @@ export async function updateActivity(formData: FormData) {
         ...(imageThumbUrl !== undefined && { imageThumbUrl }),
         ...(imageMediumUrl !== undefined && { imageMediumUrl }),
         ...(imageOgUrl !== undefined && { imageOgUrl }),
+        ...(imageAccentColor !== undefined && { imageAccentColor }),
         ...(colorTheme !== undefined && { colorTheme }),
         ...(whatToExpect !== undefined && { whatToExpect }),
         ...(startTime !== undefined && { startTime: new Date(startTime) }),
@@ -828,6 +833,7 @@ export async function getActivityDetail(activityId: string) {
     maxParticipants: activity.maxParticipants,
     cancelledAt: activity.cancelledAt,
     imageMediumUrl: activity.imageMediumUrl,
+    imageAccentColor: activity.imageAccentColor,
     colorTheme: activity.colorTheme,
     whatToExpect: wte,
     creatorId: activity.creatorId,

@@ -239,7 +239,10 @@ async function AuthenticatedFeed({
     description: string;
     location: string;
     startTime: Date;
+    endTime: Date | null;
     imageThumbUrl: string | null;
+    imageAccentColor: string | null;
+    genderRestriction: "alla" | "kvinnor" | "man" | null;
     maxParticipants: number | null;
     whatToExpect: unknown;
     tags: Array<{ id: number; name: string; slug: string }>;
@@ -309,7 +312,10 @@ async function AuthenticatedFeed({
       description: a.description,
       location: a.location,
       startTime: a.startTime,
+      endTime: a.endTime,
       imageThumbUrl: a.imageThumbUrl,
+      imageAccentColor: a.imageAccentColor,
+      genderRestriction: a.genderRestriction,
       colorTheme: a.colorTheme,
       maxParticipants: a.maxParticipants,
       whatToExpect: a.whatToExpect,
@@ -349,6 +355,8 @@ async function AuthenticatedFeed({
         activeFilters={activeFilters}
         nextCursor={enrichedActivities.length === 20 ? lastId : null}
         userId={userId}
+        isAdmin={userProfile.isAdmin}
+        showAll={showAll}
       />
     </AppShell>
   );

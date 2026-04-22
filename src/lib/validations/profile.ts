@@ -1,10 +1,11 @@
 import { z } from "zod";
 
 export const updateProfileSchema = z.object({
+  firstName: z.string().max(100).optional(),
+  lastName: z.string().max(100).optional(),
   displayName: z.string().max(100).optional(),
   birthDate: z.string().pipe(z.coerce.date()).optional(),
   gender: z.enum(["man", "kvinna", "ej_angett"]).optional(),
-  location: z.string().max(500).optional(),
 });
 
 export const updateInterestsSchema = z.object({

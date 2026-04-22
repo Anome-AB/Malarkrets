@@ -12,6 +12,7 @@ import { PlacesAutocomplete } from "@/components/ui/places-autocomplete";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { createActivity } from "@/actions/activities";
 import { randomCourageMessage, randomFromList } from "@/lib/courage-messages";
+import { COLOR_PRESETS } from "@/lib/color-themes";
 
 interface InterestTag {
   id: number;
@@ -55,8 +56,14 @@ export default function CreateActivityPage() {
     thumbUrl: string | null;
     mediumUrl: string | null;
     ogUrl: string | null;
-  }>({ thumbUrl: null, mediumUrl: null, ogUrl: null });
-  const [colorTheme, setColorTheme] = useState<string | null>(null);
+    accentColor: string | null;
+  }>({ thumbUrl: null, mediumUrl: null, ogUrl: null, accentColor: null });
+  // Pre-seed a random preset so the user always has a valid background even
+  // if they skip image upload and never touch the colour picker. Lazy init
+  // so the pick happens once on mount, not on every render.
+  const [colorTheme, setColorTheme] = useState<string | null>(
+    () => COLOR_PRESETS[Math.floor(Math.random() * COLOR_PRESETS.length)].value,
+  );
   const [courageEnabled, setCourageEnabled] = useState(false);
   const [courageText, setCourageText] = useState("");
   const [couragePool, setCouragePool] = useState<string[]>([]);
@@ -135,6 +142,7 @@ export default function CreateActivityPage() {
       if (image.thumbUrl) formData.set("imageThumbUrl", image.thumbUrl);
       if (image.mediumUrl) formData.set("imageMediumUrl", image.mediumUrl);
       if (image.ogUrl) formData.set("imageOgUrl", image.ogUrl);
+      if (image.accentColor) formData.set("imageAccentColor", image.accentColor);
       if (colorTheme) formData.set("colorTheme", colorTheme);
       formData.set("startTime", values.startTime);
       if (values.endTime) formData.set("endTime", values.endTime);

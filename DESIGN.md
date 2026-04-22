@@ -104,6 +104,49 @@ Card renders: `rounded-card p-6 border`. Variants:
 
 ALWAYS use Card component. Never write `bg-white border border-border rounded-card p-6` inline.
 
+## Activity Card
+
+The activity card uses a **split layout**: a date-block on the left and an info-block on the right. The date-block is the visual anchor; the date is what users scan for when choosing an activity.
+
+### Desktop layout (md and up)
+- Card: `rounded-card` (10px), 200px tall, 40 % date-block + 60 % info-block.
+- Date block: weekday (13px, tracking), day number (60px, weight 900), month (13px, tracking). All white.
+- Info block: Satoshi title 18px, then time, location, pill tags, and a footer row (participant dots + count, heart or welcome-message icon).
+
+### Mobile layout (below md)
+- Card: 96px tall, 88px date-block + fill info-block.
+- Same structure, smaller type: day number 30px, titles 14px.
+- Tags collapse to plain text with ` · ` separators.
+
+### Date-block background
+The date block shows the same image used in the activity's hero position, overlaid with a **tinted gradient in the image's extracted accent color**:
+
+```css
+background-image:
+  linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent-color) 35%, transparent),
+    color-mix(in srgb, var(--accent-color) 52%, transparent)
+  ),
+  var(--hero-img);
+```
+
+Tint strength 35–52 % is calibrated to keep the image visible while guaranteeing white-text contrast across uploaded images. Do not go above 60 % (image disappears) or below 25 % (white text can fail on light uploads).
+
+If the activity has no image (color-theme-only activity): date-block uses the `colorTheme` hex as a flat fill with the same 135° lightness gradient.
+
+If no accent color and no theme (legacy data): date-block falls back to `#7a8088` (neutral stone) until the image pipeline backfills an accent.
+
+### Accent color pipeline
+When an image is uploaded via `uploadActivityImage`:
+1. Sharp resizes to 80×80.
+2. Pixels quantized to 32×32×32 RGB bins.
+3. Each bin scored `saturation × 2 + lightness-band(0.18–0.52)`: dark enough for white text, not muddy.
+4. Winning hex stored as `activities.image_accent_color`.
+5. Passed to the client via the CSS variable `--accent-color` on the card.
+
+Cost: ~15 ms per upload. No runtime cost on render.
+
 ## Page Layouts
 
 ### Detail pages (profile, activity, admin, my activities)

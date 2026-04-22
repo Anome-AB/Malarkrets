@@ -82,7 +82,8 @@ export default function EditActivityPage() {
     thumbUrl: string | null;
     mediumUrl: string | null;
     ogUrl: string | null;
-  }>({ thumbUrl: null, mediumUrl: null, ogUrl: null });
+    accentColor: string | null;
+  }>({ thumbUrl: null, mediumUrl: null, ogUrl: null, accentColor: null });
   const [colorTheme, setColorTheme] = useState<string | null>(null);
 
   // Courage message state
@@ -129,7 +130,13 @@ export default function EditActivityPage() {
         setIsAdminEdit(adminEditing);
         setCreatorDisplayName(activity.creatorDisplayName ?? null);
 
-        setUserInterests(intData.interests ?? []);
+        // Tag picker must show the creator's interests when an admin edits,
+        // not the admin's own — otherwise the admin's tags would leak in and
+        // the creator's existing tags could disappear from the picker.
+        const interestsForPicker = adminEditing
+          ? (activity.creatorInterests ?? [])
+          : (intData.interests ?? []);
+        setUserInterests(interestsForPicker);
         // Gender toggle UI reflects the creator's gender when an admin is editing —
         // otherwise gender semantics would be incorrect (toggle would read "Endast kvinnor"
         // based on the admin's gender, not the creator's).
@@ -147,6 +154,7 @@ export default function EditActivityPage() {
           thumbUrl: activity.imageThumbUrl ?? null,
           mediumUrl: activity.imageMediumUrl ?? null,
           ogUrl: activity.imageOgUrl ?? null,
+          accentColor: activity.imageAccentColor ?? null,
         });
         setColorTheme(activity.colorTheme ?? null);
         setGenderOpen(activity.genderRestriction !== "alla");
@@ -244,6 +252,7 @@ export default function EditActivityPage() {
       formData.set("imageThumbUrl", image.thumbUrl ?? "");
       formData.set("imageMediumUrl", image.mediumUrl ?? "");
       formData.set("imageOgUrl", image.ogUrl ?? "");
+      formData.set("imageAccentColor", image.accentColor ?? "");
       formData.set("colorTheme", colorTheme ?? "");
       formData.set("startTime", values.startTime);
       if (values.endTime) formData.set("endTime", values.endTime);

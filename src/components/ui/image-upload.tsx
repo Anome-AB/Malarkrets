@@ -15,6 +15,7 @@ interface ImageUploadProps {
     thumbUrl: string | null;
     mediumUrl: string | null;
     ogUrl: string | null;
+    accentColor: string | null;
   }) => void;
   onColorChange: (colorTheme: string | null) => void;
 }
@@ -49,6 +50,7 @@ export function ImageUpload({ thumbUrl, mediumUrl, ogUrl, colorTheme, onChange, 
           thumbUrl: result.thumbUrl,
           mediumUrl: result.mediumUrl,
           ogUrl: result.ogUrl,
+          accentColor: result.accentColor,
         });
         toast("Bilden har laddats upp", "success");
         return true;
@@ -93,7 +95,7 @@ export function ImageUpload({ thumbUrl, mediumUrl, ogUrl, colorTheme, onChange, 
   }
 
   function handleRemove() {
-    onChange({ thumbUrl: null, mediumUrl: null, ogUrl: null });
+    onChange({ thumbUrl: null, mediumUrl: null, ogUrl: null, accentColor: null });
   }
 
   function handleChangeImage() {

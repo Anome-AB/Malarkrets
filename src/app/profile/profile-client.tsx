@@ -12,12 +12,13 @@ import { updateProfile, updateInterests, deleteAccount } from "@/actions/profile
 import { unblockUser } from "@/actions/blocking";
 
 interface ProfileData {
+  firstName: string;
+  lastName: string;
   displayName: string;
   email: string;
   emailVerified: boolean;
   birthDate: string;
   gender: string;
-  location: string;
 }
 
 interface TagItem {
@@ -49,11 +50,49 @@ export function ProfileClient({
   const [isPending, startTransition] = useTransition();
 
   // Profile form state
+  const [firstName, setFirstName] = useState(profile.firstName);
+  const [lastName, setLastName] = useState(profile.lastName);
   const [displayName, setDisplayName] = useState(profile.displayName);
   const [birthDate, setBirthDate] = useState(profile.birthDate);
   const [gender, setGender] = useState(profile.gender);
-  const [location, setLocation] = useState(profile.location);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Auto-suggest displayName from firstName + first letter of lastName
+  // ("Fredrik I"). Tracks the last auto-filled value so continued typing
+  // in firstName keeps refreshing the suggestion ("F I" → "Fr I" → "Fre I"),
+  // but any manual edit in the displayName field detaches the link and from
+  // then on firstName/lastName changes leave displayName alone. Clearing the
+  // field (back to empty) reattaches the auto-fill.
+  const [lastAutoFill, setLastAutoFill] = useState<string | null>(null);
+
+  function suggestDisplayName(first: string, last: string): string {
+    const f = first.trim();
+    const l = last.trim();
+    if (f && l) return `${f} ${l[0].toUpperCase()}`;
+    return "";
+  }
+  function maybeAutoFillDisplayName(first: string, last: string) {
+    const isAutoManaged = displayName === "" || displayName === lastAutoFill;
+    if (!isAutoManaged) return;
+    const suggested = suggestDisplayName(first, last);
+    if (!suggested) return;
+    setDisplayName(suggested);
+    setLastAutoFill(suggested);
+  }
+  function handleFirstNameChange(value: string) {
+    setFirstName(value);
+    maybeAutoFillDisplayName(value, lastName);
+  }
+  function handleLastNameChange(value: string) {
+    setLastName(value);
+    maybeAutoFillDisplayName(firstName, value);
+  }
+  function handleDisplayNameChange(value: string) {
+    setDisplayName(value);
+    // Any manual edit (including clearing) detaches auto-fill. If the user
+    // empties the field, reattach so first/last changes can fill it again.
+    setLastAutoFill(value === "" ? null : value === lastAutoFill ? lastAutoFill : null);
+  }
 
   // Interest state
   const [selectedTags, setSelectedTags] = useState<number[]>(currentInterestIds);
@@ -73,10 +112,11 @@ export function ProfileClient({
     e.preventDefault();
     startTransition(async () => {
       const formData = new FormData();
+      if (firstName) formData.set("firstName", firstName);
+      if (lastName) formData.set("lastName", lastName);
       if (displayName) formData.set("displayName", displayName);
       if (birthDate) formData.set("birthDate", birthDate);
       if (gender) formData.set("gender", gender);
-      if (location) formData.set("location", location);
 
       const result = await updateProfile(formData);
       if (result.success) {
@@ -131,12 +171,30 @@ export function ProfileClient({
       {/* Personal info */}
       <Card title="Personlig information" className="space-y-4">
         <form onSubmit={handleProfileSubmit} className="space-y-4">
-          <Input
-            label="Visningsnamn"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Ditt namn"
-          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Förnamn"
+              value={firstName}
+              onChange={(e) => handleFirstNameChange(e.target.value)}
+            />
+            <Input
+              label="Efternamn"
+              value={lastName}
+              onChange={(e) => handleLastNameChange(e.target.value)}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <Input
+              label="Visningsnamn"
+              value={displayName}
+              onChange={(e) => handleDisplayNameChange(e.target.value)}
+              placeholder={suggestDisplayName(firstName, lastName) || "Ditt namn"}
+            />
+            <p className="text-xs text-dimmed">
+              Föreslås automatiskt från förnamn och första bokstaven i efternamnet. Du kan ändra det.
+            </p>
+          </div>
+
 
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-heading">
@@ -181,13 +239,6 @@ export function ProfileClient({
               <option value="man">Man</option>
             </select>
           </div>
-
-          <Input
-            label="Ort"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder="T.ex. Västerås"
-          />
 
           <div className="flex justify-end">
             <Button type="submit" loading={isPending}>

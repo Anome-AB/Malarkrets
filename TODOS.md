@@ -131,6 +131,65 @@ Obs: flera punkter måste påbörjas i god tid före flipp-datum, de är inte ef
 
 **v2 — per-instans-override:** Lägg till `modified_from_series` boolean på `activities`. Edit av en enskild instans sätter flaggan och slutar följa serieändringar. Edit av serien hoppar över modifierade instanser. Cancel av en instans = bara den raden. Ingen ny schema-ändring krävs utöver den flaggan.
 
+### "Visa alla" för vanliga användare (feed-filtrering)
+**Vad:** Idag har bara admins en "Visa alla"-toggle som bypassar intresse-matchningen. Vanliga användare ska också få välja "Visa alla", men deras vy ska fortfarande respektera hårda begränsningar.
+
+**Regler för vanlig "Visa alla":**
+- Filtrera bort aktiviteter som är könsbegränsade till ett kön användaren inte matchar (t.ex. man eller ej_angett ser inte "endast kvinnor"-aktiviteter).
+- Filtrera bort aktiviteter med `minAge` satt om användarens `birthDate` saknas, eller användaren är yngre än `minAge`.
+- Admin-toggeln ska fortsätta visa allt (inklusive det som filtreras för vanliga användare).
+
+**Insats:** S (bara query-predikat i `getMatchedActivities`, UI-toggeln speglas från admin-varianten).
+
+### Populära aktiviteter på startsidan: filtrera könsbegränsade
+**Vad:** "Populära aktiviteter"-sektionen på landningssidan (för icke-inloggade) visar alla aktiviteter. Exkludera könsbegränsade så att den anonyma vyn inte exponerar "endast kvinnor"/"endast män"-aktiviteter för folk vi inte vet vilka är.
+
+**Insats:** XS (en rad i den query som bygger populära).
+
+### Glömt lösenord (inloggningssidan)
+**Vad:** Länk "Glömt lösenord?" på login. Klick öppnar ett formulär för e-post. Vid submit: om adressen finns, skicka återställnings-mail med en token (giltig en timme). Länken i mailet leder till `/reset-password?token=...` där användaren sätter nytt lösenord.
+
+**Standardflöde:**
+- Ny kolumn `password_reset_token` + `password_reset_expires_at` på `users` (eller återanvänd `email_verification_token`-mönstret i separat tabell).
+- Server action: ingen information om e-posten finns eller ej i responsen (läckage-förebyggande).
+- Mail via samma pipeline som `email_verification_token` använder idag.
+- Token hashas i databasen (inte klartext).
+
+**Frågor innan bygget:**
+- Använder vi nuvarande mail-avsändare (SMTP via env-vars?) eller ska vi byta? RedFox-synk om extern tjänst.
+- Ska vi återanvända `email_verification_token`-kolumnen eller ha separata? Separata är tydligare men en kolumn till per user.
+- Rate-limit på submit (undvik att skicka 1000 mail / minut till samma adress)?
+
+**Insats:** M (schema + migration + action + mail-template + två sidor + token-TTL-hantering).
+
+### Profil-layout: tomt utrymme under "Spara ändringar"
+**Vad:** I "Personlig information"-kortet blir det mycket vertikal tomyta under Spara-knappen. Grid-kolumnen ("Mina intressen") till höger är längre.
+
+**Förslag:** Antingen flytta upp några av Mina intressen-delarna på vänster sida (avatar-upload, om den kommer in), eller låt personlig-info-kortet växa genom att lägga till ytterligare fält (t.ex. "Om mig"-bio för framtiden). Alternativt grid-collapse med `items-start` så korten inte tvingas ha samma höjd, vilket redan är default, så det är snarare en längd-obalans.
+
+**Insats:** XS (CSS/design-beslut).
+
+### Blockera användare (behöver eng review innan bygget)
+Ramverket i schema:t finns redan (`user_blocks`-tabell), men den används inte. Den här feature:n rör feed-filtrering, kommentarsvyn, aktivitetskort, och kräver ett designbeslut för varje touchpoint.
+
+**Funktionella krav:**
+1. **Deltagarlista på aktivitetssidan** med möjlighet att blockera en deltagare därifrån.
+2. **Blockera från kommentarsfält:** menyåtgärd på varje kommentar (tre-punkts-meny) med "Blockera användare".
+3. **Bekräftelse före blockering:** modal med förklaring av konsekvenserna (se listan nedan) innan blockeringen effektueras. Inte tyst klick-och-klart.
+4. **Kommentarer från blockerad användare:** visa att en kommentar existerar men sudda ut innehållet ("Kommentar från blockerad användare" + grå bakgrund), inte helt dolt så tråden inte ser trasig ut.
+5. **Blockerad ser inte mina aktiviteter:** filtrera i feed-query för blockeraren.
+6. **Jag ser inte deras aktiviteter:** symmetriskt filter.
+7. **Aktivitet där blockerad anmält sig:** tydlig visuell indikering på aktivitetskortet (röd ram, varningsikon, eller ett badge i stil med könsrestriktionsikonen men i varningsfärg). Designval öppet.
+
+**Öppna frågor till eng/design review:**
+- Ska blockerade användare få en notis om att de blockerats? (Default: nej, tyst.)
+- Vad händer om en blockerad användare redan är med i en aktivitet som jag skapar? Kick-ut vid blockeringstillfället, eller bara dölj från min vy? Konsekvens för dem: de får ingen notis om att aktiviteten ställs in, men kan inte interagera.
+- Ska blockeringen vara permanent eller tidsbegränsad? Default permanent, med "avblockera"-knapp i profilen (redan wire:at i schema:t).
+- Hur hanterar vi en situation där två användare blockerar varandra (ingen av dem ser den andra)? Förmodligen ingen special-logik behövs, bara transitiv filtrering.
+- Admin-undantag: ska admins kunna se blockerade användare för moderationsändamål? Troligt ja.
+
+**Insats:** L (multi-touchpoint: feed-query, comment-rendering, activity-card-prop, ny modal, ny deltagarlista-UI, card-flagga för blockerad-deltagare, audit-trail?).
+
 ## Säkerhetshärdning (security review 2026-04-17)
 
 ### HIGH — Seed skapar admin med känt lösenord, körbar i prod

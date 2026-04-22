@@ -69,13 +69,6 @@ export const feedbackRatingEnum = pgEnum("feedback_rating", [
   "negative",
 ]);
 
-export const experienceLevelEnum = pgEnum("experience_level", [
-  "nybörjare",
-  "medel",
-  "avancerad",
-  "alla",
-]);
-
 // ─── Custom types ───────────────────────────────────────────────────────────
 
 const bytea = customType<{ data: Buffer; driverData: Buffer }>({
@@ -113,19 +106,17 @@ export const users = pgTable("users", {
   emailVerified: boolean("email_verified").default(false),
   emailVerificationToken: text("email_verification_token"),
   passwordHash: text("password_hash").notNull(),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
   displayName: text("display_name"),
   birthDate: date("birth_date"),
   gender: genderEnum().default("ej_angett"),
   avatarUrl: text("avatar_url"),
-  location: text(),
   isAdmin: boolean("is_admin").default(false).notNull(),
   isBanned: boolean("is_banned").default(false).notNull(),
   bannedAt: timestamp("banned_at"),
   banReason: text("ban_reason"),
   bannedBy: uuid("banned_by"),
-  municipalityId: varchar("municipality_id", { length: 100 }).default(
-    "vasteras",
-  ),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -184,6 +175,7 @@ export const activities = pgTable(
     imageThumbUrl: text("image_thumb_url"),
     imageMediumUrl: text("image_medium_url"),
     imageOgUrl: text("image_og_url"),
+    imageAccentColor: text("image_accent_color"),
     colorTheme: text("color_theme"),
     maxParticipants: integer("max_participants"),
     genderRestriction: genderRestrictionEnum("gender_restriction").default(
@@ -191,9 +183,6 @@ export const activities = pgTable(
     ),
     minAge: integer("min_age"),
     whatToExpect: jsonb("what_to_expect"),
-    municipalityId: varchar("municipality_id", { length: 100 }).default(
-      "vasteras",
-    ),
     cancelledAt: timestamp("cancelled_at"),
     cancelledReason: text("cancelled_reason"),
     deletedAt: timestamp("deleted_at"),

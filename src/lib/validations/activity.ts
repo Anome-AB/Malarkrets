@@ -9,6 +9,11 @@ const baseActivitySchema = z.object({
   imageThumbUrl: z.string().max(1000).optional().nullable(),
   imageMediumUrl: z.string().max(1000).optional().nullable(),
   imageOgUrl: z.string().max(1000).optional().nullable(),
+  imageAccentColor: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .optional()
+    .nullable(),
   colorTheme: z.string().max(20).optional().nullable(),
   startTime: z.string().min(1, "Starttid krävs"),
   endTime: z.string().optional(),

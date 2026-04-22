@@ -112,7 +112,6 @@ function makeActivity(overrides: Record<string, unknown> = {}) {
     imageThumbUrl: null,
     imageMediumUrl: null,
     imageOgUrl: null,
-    municipalityId: "vasteras",
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
@@ -122,7 +121,9 @@ function makeActivity(overrides: Record<string, unknown> = {}) {
 function makeCreatorProfile(overrides: Record<string, unknown> = {}) {
   return {
     id: CREATOR.id,
-    displayName: "Anna Karlsson",
+    firstName: "Anna",
+    lastName: "Karlsson",
+    displayName: "Anna K",
     gender: "kvinna",
     birthDate: "1985-04-12",
     isAdmin: false,
@@ -133,7 +134,9 @@ function makeCreatorProfile(overrides: Record<string, unknown> = {}) {
 function makeOtherProfile(overrides: Record<string, unknown> = {}) {
   return {
     id: OTHER_USER.id,
-    displayName: "Erik Persson",
+    firstName: "Erik",
+    lastName: "Persson",
+    displayName: "Erik P",
     gender: "man",
     birthDate: "1990-08-23",
     isAdmin: false,

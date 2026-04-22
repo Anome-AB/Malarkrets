@@ -301,7 +301,24 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
                           </>
                         )}
                       </p>
-                      <p>{detail.location}</p>
+                      {(() => {
+                        // Split "Name, address, city" so the place name gets its
+                        // own line with emphasis and "address, city" sits below.
+                        // Two-part locations render as a single line unchanged.
+                        const parts = detail.location
+                          .split(",")
+                          .map((s) => s.trim())
+                          .filter(Boolean);
+                        if (parts.length >= 3) {
+                          return (
+                            <>
+                              <p className="font-medium text-heading">{parts[0]}</p>
+                              <p>{parts.slice(1).join(", ")}</p>
+                            </>
+                          );
+                        }
+                        return <p>{detail.location}</p>;
+                      })()}
                       <p>
                         Skapad av{" "}
                         <span className="font-medium text-heading">{detail.creatorName}</span>

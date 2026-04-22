@@ -41,10 +41,11 @@ export async function anonymizeUser(userId: string) {
     await db
       .update(users)
       .set({
+        firstName: null,
+        lastName: null,
         displayName: "Borttagen användare",
         birthDate: null,
         gender: null,
-        location: null,
         avatarUrl: null,
         updatedAt: new Date(),
       })

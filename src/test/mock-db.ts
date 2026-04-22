@@ -4,13 +4,14 @@ import { vi } from "vitest";
 export interface MockUser {
   id: string;
   email: string;
+  firstName: string | null;
+  lastName: string | null;
   displayName: string | null;
   gender: "man" | "kvinna" | "ej_angett";
   birthDate: string | null;
   isAdmin: boolean;
   passwordHash: string;
   emailVerified: boolean;
-  municipalityId: string | null;
 }
 
 export interface MockActivity {
@@ -30,7 +31,6 @@ export interface MockActivity {
   imageThumbUrl: string | null;
   imageMediumUrl: string | null;
   imageOgUrl: string | null;
-  municipalityId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -127,13 +127,14 @@ export function getCurrentUserId() {
 // Seed helpers
 export function addUser(overrides: Partial<MockUser> & { id: string; email: string }): MockUser {
   const user: MockUser = {
+    firstName: null,
+    lastName: null,
     displayName: null,
     gender: "ej_angett",
     birthDate: null,
     isAdmin: false,
     passwordHash: "hashed",
     emailVerified: true,
-    municipalityId: "vasteras",
     ...overrides,
   };
   store.users.push(user);
@@ -155,7 +156,6 @@ export function addActivity(overrides: Partial<MockActivity> & { id: string; tit
     imageThumbUrl: null,
     imageMediumUrl: null,
     imageOgUrl: null,
-    municipalityId: "vasteras",
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,

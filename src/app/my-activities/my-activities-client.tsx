@@ -26,8 +26,11 @@ interface Activity {
   description: string;
   location: string;
   startTime: Date | string;
+  endTime?: Date | string | null;
   imageThumbUrl: string | null;
+  imageAccentColor?: string | null;
   colorTheme?: string | null;
+  genderRestriction?: "alla" | "kvinnor" | "man" | null;
   maxParticipants: number | null;
   whatToExpect: WhatToExpect | null;
   tags: Tag[];

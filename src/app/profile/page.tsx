@@ -74,12 +74,13 @@ export default async function ProfilePage() {
         <h1 className="text-2xl font-bold text-heading mb-6">Min profil</h1>
         <ProfileClient
           profile={{
+            firstName: profile.firstName ?? "",
+            lastName: profile.lastName ?? "",
             displayName: profile.displayName ?? "",
             email: profile.email,
             emailVerified: profile.emailVerified ?? false,
             birthDate: profile.birthDate ?? "",
             gender: profile.gender ?? "ej_angett",
-            location: profile.location ?? "",
           }}
           currentInterestIds={interests.map((i) => i.id)}
           allTags={allTags}

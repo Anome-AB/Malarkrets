@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { images } from "@/db/schema";
 import sharp from "sharp";
 import { log, errAttrs } from "@/lib/logger";
+import { extractAccentColor } from "@/lib/accent-color";
 
 const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -14,6 +15,7 @@ interface UploadResult {
   thumbUrl: string;
   mediumUrl: string;
   ogUrl: string;
+  accentColor: string | null;
 }
 
 interface UploadError {
@@ -50,11 +52,17 @@ export async function uploadActivityImage(
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Generate 3 sizes with Sharp — cover crop, 16:9 aspect
-    const [thumbBuffer, mediumBuffer, ogBuffer] = await Promise.all([
+    // Generate 3 sizes with Sharp (cover crop, 16:9 aspect).
+    // Accent-colour extraction runs in parallel off the same source buffer;
+    // a failure there must not break the upload (fall back to null).
+    const [thumbBuffer, mediumBuffer, ogBuffer, accentColor] = await Promise.all([
       sharp(buffer).resize(400, 225, { fit: "cover" }).webp({ quality: 80 }).toBuffer(),
       sharp(buffer).resize(800, 450, { fit: "cover" }).webp({ quality: 85 }).toBuffer(),
       sharp(buffer).resize(1200, 675, { fit: "cover" }).webp({ quality: 85 }).toBuffer(),
+      extractAccentColor(buffer).catch((err) => {
+        log.warn("accent color extraction failed", errAttrs(err));
+        return null;
+      }),
     ]);
 
     const [thumbUrl, mediumUrl, ogUrl] = await Promise.all([
@@ -63,7 +71,7 @@ export async function uploadActivityImage(
       saveToDb(ogBuffer, "image/webp"),
     ]);
 
-    return { success: true, thumbUrl, mediumUrl, ogUrl };
+    return { success: true, thumbUrl, mediumUrl, ogUrl, accentColor };
   } catch (error) {
     log.error("uploadActivityImage error", errAttrs(error));
     // Never leak raw DB error messages (may contain binary data) to the client
