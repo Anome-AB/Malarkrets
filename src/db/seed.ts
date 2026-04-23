@@ -4,7 +4,26 @@ import { hash } from "bcryptjs";
 import { eq, sql } from "drizzle-orm";
 import * as schema from "./schema";
 
-// ─── Database connection ────────────────────────────────────────────────────
+// ─── Demo/fixture seed (dev only) ───────────────────────────────────────────
+//
+// This script inserts demo users + demo activities + demo participants +
+// demo comments against a database that has already been migrated. Reference
+// data (interest tags, courage messages) is NOT inserted here — those live
+// in migrations (see 0001_seed_baseline_data.sql and any follow-up data
+// migrations). That separation lets reference data evolve safely in prod
+// while demo data stays a local-only convenience.
+//
+// Usage:
+//   bun run db:migrate   # apply migrations first (creates tags + courage)
+//   bun run db:seed      # insert demo users and activities on top
+//
+// This script refuses to run against NODE_ENV=production. Belt-and-braces:
+// it also bails out if a demo user (anna@example.com) already exists.
+
+if (process.env.NODE_ENV === "production") {
+  console.error("seed (demo fixtures) is never allowed in production");
+  process.exit(1);
+}
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -17,18 +36,6 @@ const db = drizzle(client, { schema });
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/å/g, "a")
-    .replace(/ä/g, "a")
-    .replace(/ö/g, "o")
-    .replace(/é/g, "e")
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "")
-    .replace(/-+/g, "-");
-}
-
 /** Return a Date that is `daysFromNow` days in the future at the given hour:minute */
 function futureDate(daysFromNow: number, hour: number, minute: number): Date {
   const d = new Date();
@@ -37,58 +44,37 @@ function futureDate(daysFromNow: number, hour: number, minute: number): Date {
   return d;
 }
 
-// ─── Interest tags (flat list) ─────────────────────────────────────────────
-
-const allTagNames = [
-  // Utomhus & natur
-  "Vandring", "Fågelskådning", "Trädgård", "Fiske", "Jakt", "Paddling", "Camping", "Geocaching", "Paddleboard", "Ridning", "Promenad",
-  // Motion & sport
-  "Löpning", "Cykling", "Simning", "Yoga", "Dans", "Kampsport", "Styrketräning", "Klättring",
-  "Padel", "Tennis", "Golf", "Bowling", "Skridskoåkning", "Pilates", "Meditation",
-  "Fotboll", "Innebandy", "Hockey", "Bandy", "Basket", "Handboll", "Volleyboll",
-  "Badminton", "Bordtennis", "Frisbee", "Skateboard", "Parkour", "Crossfit",
-  "Längdskidor", "Snowboard", "Utförsåkning",
-  "Extremsport", "Gymnastik", "Paintball", "Airsoft", "Sportskytte",
-  // Kreativt
-  "Fotografi", "Målning", "Keramik", "Sticka / Virka", "Brodyr", "Matlagning", "Bakning", "Musik", "Skrivande", "Snickeri", "Design",
-  // Motor
-  "Bilar", "Motorcykel", "Mekande", "Cruising", "Motorsport", "EPA & A-traktor", "Flyg",
-  // Spel & hobby
-  "Brädspel", "Rollspel", "Schack", "E-sport", "Modellbygge", "Lajv", "Figurspel", "Datorspel",
-  // Socialt
-  "Bokcirkel", "Film", "Vinprovning", "Språk", "Sportevent", "Frivilligarbete",
-  "Fika", "Picknick", "Quiz", "Karaoke", "Ölprovning", "Restaurangbesök", "Resor",
-  // Kultur & underhållning
-  "Teater", "Konst", "Historia", "Stand-up", "Utställning",
-  // Tech
-  "Programmering",
-  // Djur
-  "Husdjur",
-];
-
 // ─── Seed logic ─────────────────────────────────────────────────────────────
 
 async function seed() {
-  console.log("Checking if database is already seeded...");
+  console.log("Checking preconditions...");
 
-  const existingTags = await db.select().from(schema.interestTags).limit(1);
-  if (existingTags.length > 0) {
-    console.log("Database already has interest tags — skipping seed.");
+  const [existingDemo] = await db
+    .select({ id: schema.users.id })
+    .from(schema.users)
+    .where(eq(schema.users.email, "anna@example.com"))
+    .limit(1);
+  if (existingDemo) {
+    console.log("Demo user anna@example.com already present, skipping demo seed.");
     await client.end();
     return;
   }
 
-  console.log("Seeding interest tags...");
-
-  // ── 1. Interest tags ────────────────────────────────────────────────────
-
-  const insertedTags = await db
-    .insert(schema.interestTags)
-    .values(allTagNames.map((name) => ({ name, slug: slugify(name) })))
-    .returning();
-
-  const tagMap = new Map(insertedTags.map((t) => [t.name, t.id]));
-  console.log(`  Inserted ${insertedTags.length} interest tags.`);
+  // Reference data (interest tags, courage messages) is expected to exist
+  // already because migrations must have been applied before running seed.
+  // Load the tag catalogue so we can look up IDs by canonical name below.
+  const allTags = await db
+    .select({ id: schema.interestTags.id, name: schema.interestTags.name })
+    .from(schema.interestTags);
+  if (allTags.length === 0) {
+    console.error(
+      "No interest tags found. Run `bun run db:migrate` first so the baseline data migration populates them.",
+    );
+    await client.end();
+    process.exit(1);
+  }
+  const tagMap = new Map(allTags.map((t) => [t.name, t.id]));
+  console.log(`  Loaded ${allTags.length} interest tags from DB.`);
 
   // ── 2. Demo users ──────────────────────────────────────────────────────
 
@@ -152,7 +138,7 @@ async function seed() {
   console.log(`  Inserted ${insertedTestUsers.length} test users.`);
 
   // Assign random interests to test users
-  const tagNames = insertedTags.map((t) => t.name);
+  const tagNames: string[] = allTags.map((t) => t.name);
   function pickRandom<T>(arr: T[], n: number): T[] {
     const shuffled = [...arr].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, n);
@@ -573,34 +559,8 @@ async function seed() {
 
   console.log(`  Added ${comments.length} comments.`);
 
-  // ── 7. Courage messages ────────────────────────────────────────────────
-
-  console.log("Seeding courage messages...");
-
-  const courageMessageDefs = [
-    // Alla
-    { audience: "alla", message: "Du behöver inte känna någon för att komma — många som dyker upp gör det för första gången." },
-    { audience: "alla", message: "Alla är välkomna oavsett erfarenhet. Vi ses där!" },
-    { audience: "alla", message: "Kom som du är. Det spelar ingen roll om du är nybörjare eller inte känner någon." },
-    { audience: "alla", message: "Jag startade den här aktiviteten just för att det ska vara lätt att hänga med — välkommen!" },
-    { audience: "alla", message: "Ingen förväntar sig att du redan kan allt. Kom och testa!" },
-    { audience: "alla", message: "De flesta som kommer kände ingen första gången heller. Nu är de stammisar." },
-    // Par
-    { audience: "par", message: "Kom med en partner, en vän, en kollega — alla sorts par är välkomna!" },
-    { audience: "par", message: "Ni behöver inte ha provat detta förut. Kom som ni är!" },
-    { audience: "par", message: "Perfekt att göra något nytt ihop, oavsett om ni är bästisar eller partners." },
-    { audience: "par", message: "Andra par som kommer är i samma sits — nyfikna och redo att testa." },
-    { audience: "par", message: "Ta med dig någon du tycker om. Kompis, partner, syskon — spelar ingen roll." },
-    // Familjer
-    { audience: "familj", message: "Alla familjer är välkomna — stora som små, en förälder eller två." },
-    { audience: "familj", message: "Barn i alla åldrar är välkomna. Vi anpassar efter gruppen!" },
-    { audience: "familj", message: "Perfekt för familjer som vill prova något nytt ihop. Ensamstående föräldrar lika välkomna!" },
-    { audience: "familj", message: "Andra familjer kommer också — barnen brukar hitta kompisar snabbt." },
-    { audience: "familj", message: "Kom som er familj ser ut. Det enda som krävs är att ni vill ha kul tillsammans." },
-  ];
-
-  await db.insert(schema.courageMessages).values(courageMessageDefs);
-  console.log(`  Inserted ${courageMessageDefs.length} courage messages.`);
+  // Courage messages now live in migrations (see 0001_seed_baseline_data.sql).
+  // Demo seed intentionally doesn't touch them.
 
   // ── Done ───────────────────────────────────────────────────────────────
 

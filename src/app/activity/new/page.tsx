@@ -59,24 +59,51 @@ export default function CreateActivityPage() {
     accentColor: string | null;
   }>({ thumbUrl: null, mediumUrl: null, ogUrl: null, accentColor: null });
   // Pre-seed a random preset so the user always has a valid background even
-  // if they skip image upload and never touch the colour picker. Lazy init
-  // so the pick happens once on mount, not on every render.
-  const [colorTheme, setColorTheme] = useState<string | null>(
-    () => COLOR_PRESETS[Math.floor(Math.random() * COLOR_PRESETS.length)].value,
-  );
+  // if they skip image upload and never touch the colour picker. Done in a
+  // client-only effect so server and client render the same (null) initial
+  // state; picking during useState would cause a hydration mismatch because
+  // Math.random() would disagree between the two.
+  const [colorTheme, setColorTheme] = useState<string | null>(null);
+  useEffect(() => {
+    setColorTheme((current) =>
+      current ?? COLOR_PRESETS[Math.floor(Math.random() * COLOR_PRESETS.length)].value,
+    );
+  }, []);
   const [courageEnabled, setCourageEnabled] = useState(false);
   const [courageText, setCourageText] = useState("");
-  const [couragePool, setCouragePool] = useState<string[]>([]);
+  // Tracks the last auto-suggested courage message so we know whether the
+  // user has manually edited the field. If yes (text != lastAutoCourage),
+  // changing audience leaves the text alone. If no, switching audience
+  // re-rolls a suggestion from the new audience's pool.
+  const [lastAutoCourage, setLastAutoCourage] = useState<string | null>(null);
 
-  const fetchCourageMessages = useCallback(async (aud: string) => {
+  const fetchCourageMessagesFor = useCallback(async (aud: string): Promise<string[]> => {
     try {
       const res = await fetch(`/api/courage-messages?audience=${aud}`);
       if (res.ok) {
         const data = await res.json();
-        setCouragePool(data.messages ?? []);
+        return data.messages ?? [];
       }
-    } catch { /* fallback to hardcoded */ }
+    } catch { /* fall through to fallback */ }
+    return [];
   }, []);
+
+  const applyCourageSuggestion = useCallback(async (aud: string) => {
+    const list = await fetchCourageMessagesFor(aud);
+    const message = list.length > 0 ? randomFromList(list, aud) : randomCourageMessage(aud);
+    setCourageText(message);
+    setLastAutoCourage(message);
+  }, [fetchCourageMessagesFor]);
+
+  const handleAudienceChange = useCallback(async (value: string) => {
+    setAudience(value);
+    // Re-roll the suggestion if courage is on AND the field still holds the
+    // last auto-suggestion (user hasn't typed their own message). Otherwise
+    // respect the manual edit.
+    if (courageEnabled && courageText === lastAutoCourage) {
+      await applyCourageSuggestion(value);
+    }
+  }, [courageEnabled, courageText, lastAutoCourage, applyCourageSuggestion]);
 
   const {
     register,
@@ -258,9 +285,7 @@ export default function CreateActivityPage() {
                         const enabled = e.target.checked;
                         setCourageEnabled(enabled);
                         if (enabled && !courageText) {
-                          await fetchCourageMessages(audience);
-                          // Pool may not be set yet in this render, use fallback
-                          setCourageText(randomCourageMessage(audience));
+                          await applyCourageSuggestion(audience);
                         }
                       }}
                       className="accent-primary w-4 h-4"
@@ -284,10 +309,7 @@ export default function CreateActivityPage() {
                         />
                         <button
                           type="button"
-                          onClick={async () => {
-                          if (couragePool.length === 0) await fetchCourageMessages(audience);
-                          setCourageText(randomFromList(couragePool, audience));
-                        }}
+                          onClick={() => applyCourageSuggestion(audience)}
                           className="absolute top-2 right-2 p-1 rounded-md text-dimmed hover:text-primary hover:bg-white/80 transition-colors"
                           title="Nytt förslag"
                         >
@@ -313,7 +335,7 @@ export default function CreateActivityPage() {
                         <button
                           key={opt.value}
                           type="button"
-                          onClick={() => setAudience(opt.value)}
+                          onClick={() => handleAudienceChange(opt.value)}
                           className={`px-4 py-2 text-sm font-medium transition-colors ${i > 0 ? "border-l border-border" : ""} ${
                             active
                               ? "bg-primary text-white"
