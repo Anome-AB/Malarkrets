@@ -8,6 +8,7 @@ import { ActivityPanel } from "@/components/activity/activity-panel";
 import { Tag } from "@/components/ui/tag";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { saveFeedFilter } from "@/components/layout/feed-link";
 
 interface WhatToExpect {
   okAlone?: boolean;
@@ -77,6 +78,15 @@ export function ActivityFeed({
   const [loadingMore, setLoadingMore] = useState(false);
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
   const [filtersExpanded, setFiltersExpanded] = useState(activeFilters.length > 0 || showAll);
+
+  // Persist the user's current feed filter so "Utforska" + logo-links
+  // restore it on return, rather than snapping back to "Mina intressen".
+  useEffect(() => {
+    const qs = new URLSearchParams();
+    if (showAll) qs.set("alla", "1");
+    if (activeFilters.length > 0) qs.set("intresse", activeFilters.join(","));
+    saveFeedFilter(qs.toString());
+  }, [showAll, activeFilters]);
 
   const filteredActivities = useMemo(() => {
     if (!searchText.trim()) return initialActivities;
