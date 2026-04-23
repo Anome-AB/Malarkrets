@@ -34,10 +34,13 @@ docker compose version >/dev/null 2>&1  || fail "docker compose plugin saknas"
 [ -f "docker-compose.yml" ]             || fail "docker-compose.yml saknas — kör från repo-roten"
 [ -f "$ENV_FILE" ]                      || fail "$ENV_FILE saknas"
 
-# ── Läs DB-namn från DATABASE_URL ──────────────────────────────────────────
+# ── Läs DB-namn + user från DATABASE_URL ───────────────────────────────────
 # Format: postgresql://user:pass@host:port/dbname
-DB_NAME=$(grep -E '^DATABASE_URL=' "$ENV_FILE" 2>/dev/null | sed -E 's|.*/([^/?]+)$|\1|' | head -1)
+DATABASE_URL_LINE=$(grep -E '^DATABASE_URL=' "$ENV_FILE" 2>/dev/null | head -1 || echo "")
+DB_NAME=$(echo "$DATABASE_URL_LINE" | sed -E 's|.*/([^/?]+)$|\1|')
+DB_USER=$(echo "$DATABASE_URL_LINE" | sed -E 's|^DATABASE_URL=postgresql://([^:]+):.*|\1|')
 [ -n "$DB_NAME" ] || DB_NAME="$DEFAULT_DB"
+[ -n "$DB_USER" ] || DB_USER="malarkrets"
 
 # ── Varning + bekräftelse ──────────────────────────────────────────────────
 
@@ -72,7 +75,7 @@ echo ""
 if docker compose ps postgres --format '{{.Status}}' 2>/dev/null | grep -q "Up"; then
   BACKUP_FILE="$HOME/backup-pre-wipe-$(date +%Y%m%d-%H%M%S).sql.gz"
   log "backup till $BACKUP_FILE"
-  docker compose exec -T postgres pg_dumpall -U malarkrets | gzip > "$BACKUP_FILE"
+  docker compose exec -T postgres pg_dumpall -U "$DB_USER" | gzip > "$BACKUP_FILE"
   log "       sparat ($(du -h "$BACKUP_FILE" | cut -f1))"
 else
   log "postgres kör inte — hoppar över backup"
@@ -93,7 +96,7 @@ docker compose --profile tools pull --quiet 2>/dev/null || true
 
 log "startar postgres..."
 docker compose up -d postgres
-until docker compose exec -T postgres pg_isready -U malarkrets >/dev/null 2>&1; do
+until docker compose exec -T postgres pg_isready -U "$DB_USER" >/dev/null 2>&1; do
   sleep 1
 done
 log "       postgres redo"
@@ -102,7 +105,7 @@ log "       postgres redo"
 
 if [ "$DB_NAME" != "$DEFAULT_DB" ]; then
   log "skapar $DB_NAME (postgres auto-initierar bara $DEFAULT_DB)"
-  docker compose exec -T postgres psql -U malarkrets -d postgres \
+  docker compose exec -T postgres psql -U "$DB_USER" -d postgres \
     -c "CREATE DATABASE $DB_NAME;" 2>&1 | tail -3
 fi
 
