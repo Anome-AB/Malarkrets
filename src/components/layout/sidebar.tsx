@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { FeedLink } from "@/components/layout/feed-link";
 import { logOut } from "@/actions/auth";
 
 interface Interest {
@@ -75,16 +76,26 @@ export function Sidebar({ interests, activeFilters = [], showAll = false, isAdmi
         <ul className="space-y-1">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
+            const className = `flex items-center gap-3 px-4 py-3 text-sm transition-colors ${
+              isActive
+                ? "bg-primary-light text-primary font-semibold"
+                : "text-heading hover:bg-background"
+            }`;
+            // "Utforska" restores the user's last feed filter state
+            // (sessionStorage) rather than resetting to "Mina intressen".
+            if (item.href === "/") {
+              return (
+                <li key={item.label}>
+                  <FeedLink className={className}>
+                    {item.icon}
+                    {item.label}
+                  </FeedLink>
+                </li>
+              );
+            }
             return (
               <li key={item.label}>
-                <Link
-                  href={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 text-sm transition-colors ${
-                    isActive
-                      ? "bg-primary-light text-primary font-semibold"
-                      : "text-heading hover:bg-background"
-                  }`}
-                >
+                <Link href={item.href} className={className}>
                   {item.icon}
                   {item.label}
                 </Link>
@@ -118,18 +129,16 @@ export function Sidebar({ interests, activeFilters = [], showAll = false, isAdmi
             Intressen
           </h3>
           <div className="space-y-1 mb-3">
-            {isAdmin && (
-              <Link
-                href="/?alla=1"
-                className={`block px-3 py-1.5 text-xs rounded-md transition-colors ${
-                  showAll
-                    ? "bg-primary-light text-primary font-bold"
-                    : "text-secondary hover:bg-background hover:text-heading"
-                }`}
-              >
-                Visa alla
-              </Link>
-            )}
+            <Link
+              href="/?alla=1"
+              className={`block px-3 py-1.5 text-xs rounded-md transition-colors ${
+                showAll
+                  ? "bg-primary-light text-primary font-bold"
+                  : "text-secondary hover:bg-background hover:text-heading"
+              }`}
+            >
+              Visa alla
+            </Link>
             <Link
               href="/"
               className={`block px-3 py-1.5 text-xs rounded-md transition-colors ${

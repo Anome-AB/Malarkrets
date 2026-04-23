@@ -61,30 +61,7 @@ Obs: flera punkter måste påbörjas i god tid före flipp-datum, de är inte ef
 - Formulär-labels använder nu Satoshi
 - Aktivitetsdetaljens sidebar nu sticky på desktop
 
-### Hierarkiska intressetaggar (Stor feature)
-**Vad:** Träd-struktur för intressen med kategorier och undertaggar.
-**Varför:** Lång platt lista i sidomenyn är svårnavigerad. Användare vill kunna välja "Friluftsliv" och automatiskt matcha alla undertaggar.
-**Schema-ändring:**
-- `interest_tags` behöver: `parent_id` (FK self-referencing, nullable), `depth` (integer)
-- Toppnivå: Friluftsliv, Sport, Kreativt, Spel & Hobby, Motion & Hälsa, Socialt, Kultur
-- Undernivå: Vandring → Stadsvandring, Fjällvandring. Jakt → Pilbågsjakt, Storviltsjakt, etc.
-**UI-ändring:**
-- Sidebar: kollapsibla kategorier istället för platt lista
-- Onboarding: välja kategori → expandera undertaggar
-- Feed-matchning: välja en kategori matchar alla dess undertaggar
-**Insats:** M-L (schema-migration, seed-omskrivning, 3-4 UI-komponenter)
-
 ## Nästa session — Prioritet 2
-
-### Sliding panel / overlay för aktivitetsdetalj (Desktop UX)
-**Vad:** Aktivitetsdetalj öppnas som en glidande panel från höger på desktop, istället för full-page navigation.
-**Varför:** Wireframe specificerade detta. Bättre UX — användaren behåller feedkontexten.
-**Implementation:**
-- Client-side state i feed-sidan: `selectedActivityId`
-- Klick på kort → sätter selectedActivityId → panelen glider in
-- Panel: 420px bredd, overlay med bakgrundsblur
-- Kräver: focus trap, Escape stänger, animering
-**Insats:** M (primärt frontend, ingen schema-ändring)
 
 ### Datum/tid-picker för desktop
 **Vad:** Native `datetime-local` input fungerar dåligt på desktop. Scroll-baserad tid-väljare är mobiloptimerad.
@@ -96,11 +73,6 @@ Obs: flera punkter måste påbörjas i god tid före flipp-datum, de är inte ef
 **Vad:** Profilen saknar uppladdning av profilbild.
 **Varför:** Sharp redan konfigurerat för aktivitetsbilder, samma pipeline kan återanvändas.
 **Insats:** S
-
-### Flervals-intressefilter
-**Vad:** Sidebar tillåter bara ett intresse åt gången som filter. Borde stödja flera.
-**Varför:** "Visa vandring OCH fotografi" är ett naturligt användningsmönster.
-**Insats:** S (query stödjer redan tagFilter, behöver bara multi-select UI)
 
 ### Återkommande aktiviteter (MVP + framtida per-instans-override)
 **Vad:** Låt skapare markera en aktivitet som återkommande (dagligen / veckovis / månadsvis) med start- och slutdatum. Systemet genererar alla instanser upfront. Feeden visar bara nästa kommande instans per serie.
@@ -146,22 +118,6 @@ Obs: flera punkter måste påbörjas i god tid före flipp-datum, de är inte ef
 
 **Insats:** XS (en rad i den query som bygger populära).
 
-### Glömt lösenord (inloggningssidan)
-**Vad:** Länk "Glömt lösenord?" på login. Klick öppnar ett formulär för e-post. Vid submit: om adressen finns, skicka återställnings-mail med en token (giltig en timme). Länken i mailet leder till `/reset-password?token=...` där användaren sätter nytt lösenord.
-
-**Standardflöde:**
-- Ny kolumn `password_reset_token` + `password_reset_expires_at` på `users` (eller återanvänd `email_verification_token`-mönstret i separat tabell).
-- Server action: ingen information om e-posten finns eller ej i responsen (läckage-förebyggande).
-- Mail via samma pipeline som `email_verification_token` använder idag.
-- Token hashas i databasen (inte klartext).
-
-**Frågor innan bygget:**
-- Använder vi nuvarande mail-avsändare (SMTP via env-vars?) eller ska vi byta? RedFox-synk om extern tjänst.
-- Ska vi återanvända `email_verification_token`-kolumnen eller ha separata? Separata är tydligare men en kolumn till per user.
-- Rate-limit på submit (undvik att skicka 1000 mail / minut till samma adress)?
-
-**Insats:** M (schema + migration + action + mail-template + två sidor + token-TTL-hantering).
-
 ### Profil-layout: tomt utrymme under "Spara ändringar"
 **Vad:** I "Personlig information"-kortet blir det mycket vertikal tomyta under Spara-knappen. Grid-kolumnen ("Mina intressen") till höger är längre.
 
@@ -191,12 +147,6 @@ Ramverket i schema:t finns redan (`user_blocks`-tabell), men den används inte. 
 **Insats:** L (multi-touchpoint: feed-query, comment-rendering, activity-card-prop, ny modal, ny deltagarlista-UI, card-flagga för blockerad-deltagare, audit-trail?).
 
 ## Säkerhetshärdning (security review 2026-04-17)
-
-### HIGH — Seed skapar admin med känt lösenord, körbar i prod
-- **Vad:** `src/db/seed.ts` skapar `testadmin1@malarkrets.se` med lösenord `testm`. Seed-containern finns i `docker-compose.yml` och kan köras mot prod.
-- **Fix:** Lägg till miljöguard i seed.ts som vägrar köra när `NODE_ENV=production` eller liknande. Alternativt: kräv en explicit `SEED_CONFIRM=yes` env-variabel.
-- **Insats:** S
-- **Ägs av:** GreenLion (seed.ts) + RedFox (compose)
 
 ### ~~HIGH — Postgres-port exponerad i prod-compose~~ (omvärderad 2026-04-18)
 - **Tidigare oro:** `127.0.0.1:5433:5432` i `docker-compose.yml` med kommentaren "REMOVE before VPS deploy" — kommentar-baserad säkerhet är skört.

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
+import { FeedLink } from "@/components/layout/feed-link";
 import { getUserShellData } from "@/lib/queries/user-shell-data";
 import { db } from "@/lib/db";
 import {
@@ -217,12 +218,9 @@ export default async function ActivityDetailPage({
               Kontakta en administratör om du har frågor om beslutet.
             </p>
             <div className="mt-4">
-              <Link
-                href="/"
-                className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-              >
+              <FeedLink className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
                 Tillbaka till start
-              </Link>
+              </FeedLink>
             </div>
           </Card>
         </div>
@@ -248,11 +246,7 @@ export default async function ActivityDetailPage({
       {!currentUserId && (
         <header className="bg-primary text-white">
           <div className="max-w-3xl mx-auto px-6 py-4 flex items-center gap-4">
-            <Link
-              href="/"
-              className="text-white/80 hover:text-white transition-colors"
-              aria-label="Tillbaka"
-            >
+            <FeedLink className="text-white/80 hover:text-white transition-colors">
               <svg
                 width="24"
                 height="24"
@@ -262,10 +256,11 @@ export default async function ActivityDetailPage({
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                aria-label="Tillbaka"
               >
                 <polyline points="15 18 9 12 15 6" />
               </svg>
-            </Link>
+            </FeedLink>
             <h1 className="text-lg font-semibold truncate">
               {activity.title}
             </h1>
@@ -305,15 +300,12 @@ export default async function ActivityDetailPage({
 
         {/* Back link for authenticated users */}
         {currentUserId && (
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline mb-6"
-          >
+          <FeedLink className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline mb-6">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 18 9 12 15 6" />
             </svg>
             Tillbaka
-          </Link>
+          </FeedLink>
         )}
 
         <div className="max-w-5xl space-y-6">

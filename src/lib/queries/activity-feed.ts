@@ -34,6 +34,7 @@ export async function getMatchedActivities(
   offset: number = 0,
   tagFilter?: number[],
   showAll?: boolean,
+  isAdmin?: boolean,
 ) {
   const now = new Date();
   const viewerRestriction = genderToRestriction(viewerGender);
@@ -88,24 +89,41 @@ export async function getMatchedActivities(
     sql`NOT EXISTS (SELECT 1 FROM ${users} WHERE ${users.id} = ${activities.creatorId} AND ${users.isBanned} = true)`,
   ];
 
+  // "Visa alla" modes:
+  //  - Admin: bypass interest matching AND gender/age restrictions (moderation view).
+  //  - Regular user: bypass interest matching only; gender/age are still enforced
+  //    so a man does not see kvinnor-only activities and under-age viewers do not
+  //    see minAge-gated activities.
   // Always sort chronologically by startTime so newly-created activities in
   // the future land where their date actually is, not at the top. Offset-based
-  // pagination keeps this correct across lazy-loaded pages: each batch is the
-  // next 50 rows in the same stable ordering. Activities are typically not
-  // edited in a way that reshuffles pages, so the minor UX risk of a
-  // duplicated row near a page boundary is acceptable.
-
-  // When showAll (admin mode), skip interest matching and gender/age restrictions
+  // pagination keeps this correct across lazy-loaded pages.
   if (showAll) {
     const tagFilterConditions = tagFilter
       ? [inArray(activityTags.tagId, tagFilter)]
       : [];
 
+    const restrictionConditions = isAdmin
+      ? []
+      : [
+          viewerRestriction
+            ? or(
+                eq(activities.genderRestriction, "alla"),
+                eq(activities.genderRestriction, viewerRestriction),
+              )
+            : eq(activities.genderRestriction, "alla"),
+          viewerAge !== null
+            ? or(
+                isNull(activities.minAge),
+                sql`${activities.minAge} <= ${viewerAge}`,
+              )
+            : isNull(activities.minAge),
+        ];
+
     return db
       .select(selectFields)
       .from(activities)
       .innerJoin(activityTags, eq(activityTags.activityId, activities.id))
-      .where(and(...baseConditions, ...tagFilterConditions))
+      .where(and(...baseConditions, ...restrictionConditions, ...tagFilterConditions))
       .groupBy(activities.id)
       .orderBy(asc(activities.startTime), asc(activities.id))
       .limit(FEED_PAGE_SIZE)

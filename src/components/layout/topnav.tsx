@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { FeedLink } from "@/components/layout/feed-link";
 import { NotificationDropdown } from "@/components/notifications/notification-dropdown";
 import { logOut } from "@/actions/auth";
 
@@ -31,9 +32,7 @@ export function TopNav({ unreadCount, userInitials }: TopNavProps) {
 
   return (
     <nav className="bg-primary text-white h-topnav flex justify-between items-center px-6">
-      <Link href="/" className="text-xl font-semibold">
-        Mälarkrets
-      </Link>
+      <FeedLink className="text-xl font-semibold">Mälarkrets</FeedLink>
 
       <div className="flex items-center gap-4">
         <NotificationDropdown initialUnreadCount={unreadCount} />

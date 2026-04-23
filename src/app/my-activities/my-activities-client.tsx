@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ActivityCard } from "@/components/activity/activity-card";
+import { FeedLink } from "@/components/layout/feed-link";
 
 interface WhatToExpect {
   okAlone?: boolean;
@@ -129,9 +130,9 @@ export function MyActivitiesClient({
             <p className="text-secondary mb-3">
               Du har inte anmält dig till några aktiviteter.
             </p>
-            <Link href="/">
+            <FeedLink>
               <Button>Utforska aktiviteter</Button>
-            </Link>
+            </FeedLink>
           </Card>
         ) : (
           <div className="grid grid-cols-activity-feed gap-5">

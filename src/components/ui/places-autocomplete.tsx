@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { setOptions, importLibrary } from "@googlemaps/js-api-loader";
+import { isInVasteras } from "@/lib/geo";
 
 interface PlaceResult {
   address: string;
@@ -32,6 +33,7 @@ export function PlacesAutocomplete({
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState<PlaceResult | null>(null);
+  const [outOfBoundsError, setOutOfBoundsError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!optionsSet) {
@@ -64,6 +66,18 @@ export function PlacesAutocomplete({
     autocomplete.addListener("place_changed", () => {
       const place = autocomplete.getPlace();
       if (place.geometry?.location) {
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+
+        // Reject picks outside Västerås kommun before showing them as selected.
+        // Clears any prior valid pick so the form can't submit with stale
+        // Västerås coordinates under a non-Västerås address string.
+        if (!isInVasteras(lat, lng)) {
+          setOutOfBoundsError("Platsen måste ligga i Västerås kommun");
+          setSelectedPlace(null);
+          return;
+        }
+
         // Build a local-focused address: street + city, skip postal code + country
         const components = place.address_components ?? [];
         const streetNumber = components.find((c) => c.types.includes("street_number"))?.long_name;
@@ -84,9 +98,10 @@ export function PlacesAutocomplete({
 
         const result: PlaceResult = {
           address,
-          lat: place.geometry.location.lat(),
-          lng: place.geometry.location.lng(),
+          lat,
+          lng,
         };
+        setOutOfBoundsError(null);
         setSelectedPlace(result);
         onChange(result.address);
         onPlaceSelect?.(result);
@@ -102,8 +117,9 @@ export function PlacesAutocomplete({
       if (selectedPlace && e.target.value !== selectedPlace.address) {
         setSelectedPlace(null);
       }
+      if (outOfBoundsError) setOutOfBoundsError(null);
     },
-    [onChange, selectedPlace],
+    [onChange, selectedPlace, outOfBoundsError],
   );
 
   return (
@@ -131,13 +147,15 @@ export function PlacesAutocomplete({
           onChange={handleInputChange}
           placeholder={placeholder}
           className={`w-full pl-9 pr-3 py-2 min-h-touch-target rounded-control border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 transition-colors ${
-            error
+            error || outOfBoundsError
               ? "border-error focus:border-error focus:ring-error"
               : "border-border focus:border-primary focus:ring-primary"
           }`}
         />
       </div>
-      {error && <p className="text-sm text-error">{error}</p>}
+      {(error || outOfBoundsError) && (
+        <p className="text-sm text-error">{error ?? outOfBoundsError}</p>
+      )}
 
       {selectedPlace && (
         <div className="mt-2 rounded-control overflow-hidden border border-border">

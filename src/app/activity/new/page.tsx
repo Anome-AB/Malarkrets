@@ -13,6 +13,7 @@ import { ImageUpload } from "@/components/ui/image-upload";
 import { createActivity } from "@/actions/activities";
 import { randomCourageMessage, randomFromList } from "@/lib/courage-messages";
 import { COLOR_PRESETS } from "@/lib/color-themes";
+import { combineDateTime, combineEndDateTime, toDateInput } from "@/lib/datetime";
 
 interface InterestTag {
   id: number;
@@ -24,8 +25,9 @@ interface FormValues {
   title: string;
   description: string;
   location: string;
-  startTime: string;
-  endTime: string;
+  date: string;
+  startTimeOfDay: string;
+  endTimeOfDay: string;
   maxParticipants: string;
   genderRestriction: string;
   minAge: string;
@@ -59,24 +61,51 @@ export default function CreateActivityPage() {
     accentColor: string | null;
   }>({ thumbUrl: null, mediumUrl: null, ogUrl: null, accentColor: null });
   // Pre-seed a random preset so the user always has a valid background even
-  // if they skip image upload and never touch the colour picker. Lazy init
-  // so the pick happens once on mount, not on every render.
-  const [colorTheme, setColorTheme] = useState<string | null>(
-    () => COLOR_PRESETS[Math.floor(Math.random() * COLOR_PRESETS.length)].value,
-  );
+  // if they skip image upload and never touch the colour picker. Done in a
+  // client-only effect so server and client render the same (null) initial
+  // state; picking during useState would cause a hydration mismatch because
+  // Math.random() would disagree between the two.
+  const [colorTheme, setColorTheme] = useState<string | null>(null);
+  useEffect(() => {
+    setColorTheme((current) =>
+      current ?? COLOR_PRESETS[Math.floor(Math.random() * COLOR_PRESETS.length)].value,
+    );
+  }, []);
   const [courageEnabled, setCourageEnabled] = useState(false);
   const [courageText, setCourageText] = useState("");
-  const [couragePool, setCouragePool] = useState<string[]>([]);
+  // Tracks the last auto-suggested courage message so we know whether the
+  // user has manually edited the field. If yes (text != lastAutoCourage),
+  // changing audience leaves the text alone. If no, switching audience
+  // re-rolls a suggestion from the new audience's pool.
+  const [lastAutoCourage, setLastAutoCourage] = useState<string | null>(null);
 
-  const fetchCourageMessages = useCallback(async (aud: string) => {
+  const fetchCourageMessagesFor = useCallback(async (aud: string): Promise<string[]> => {
     try {
       const res = await fetch(`/api/courage-messages?audience=${aud}`);
       if (res.ok) {
         const data = await res.json();
-        setCouragePool(data.messages ?? []);
+        return data.messages ?? [];
       }
-    } catch { /* fallback to hardcoded */ }
+    } catch { /* fall through to fallback */ }
+    return [];
   }, []);
+
+  const applyCourageSuggestion = useCallback(async (aud: string) => {
+    const list = await fetchCourageMessagesFor(aud);
+    const message = list.length > 0 ? randomFromList(list, aud) : randomCourageMessage(aud);
+    setCourageText(message);
+    setLastAutoCourage(message);
+  }, [fetchCourageMessagesFor]);
+
+  const handleAudienceChange = useCallback(async (value: string) => {
+    setAudience(value);
+    // Re-roll the suggestion if courage is on AND the field still holds the
+    // last auto-suggestion (user hasn't typed their own message). Otherwise
+    // respect the manual edit.
+    if (courageEnabled && courageText === lastAutoCourage) {
+      await applyCourageSuggestion(value);
+    }
+  }, [courageEnabled, courageText, lastAutoCourage, applyCourageSuggestion]);
 
   const {
     register,
@@ -86,6 +115,8 @@ export default function CreateActivityPage() {
     defaultValues: {
       genderRestriction: "alla",
       experienceLevel: "alla",
+      // Default to today so the date picker shows something useful on mount.
+      date: toDateInput(new Date()),
     },
   });
 
@@ -130,6 +161,17 @@ export default function CreateActivityPage() {
       return;
     }
 
+    const startCombined = combineDateTime(values.date, values.startTimeOfDay);
+    if (!startCombined) {
+      toast("Ange datum och starttid", "error");
+      return;
+    }
+    const endCombined = combineEndDateTime(
+      values.date,
+      values.startTimeOfDay,
+      values.endTimeOfDay,
+    );
+
     startTransition(async () => {
       const formData = new FormData();
       formData.set("title", values.title);
@@ -144,8 +186,8 @@ export default function CreateActivityPage() {
       if (image.ogUrl) formData.set("imageOgUrl", image.ogUrl);
       if (image.accentColor) formData.set("imageAccentColor", image.accentColor);
       if (colorTheme) formData.set("colorTheme", colorTheme);
-      formData.set("startTime", values.startTime);
-      if (values.endTime) formData.set("endTime", values.endTime);
+      formData.set("startTime", startCombined);
+      if (endCombined) formData.set("endTime", endCombined);
       if (values.maxParticipants)
         formData.set("maxParticipants", values.maxParticipants);
       const restriction = genderOpen
@@ -219,17 +261,25 @@ export default function CreateActivityPage() {
                   }}
                   placeholder="Var ska det hållas?"
                 />
+                <Input
+                  label="Datum"
+                  type="date"
+                  {...register("date", { required: "Datum krävs" })}
+                  error={errors.date?.message}
+                />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
                     label="Starttid"
-                    type="datetime-local"
-                    {...register("startTime", { required: "Starttid krävs" })}
-                    error={errors.startTime?.message}
+                    type="time"
+                    {...register("startTimeOfDay", {
+                      required: "Starttid krävs",
+                    })}
+                    error={errors.startTimeOfDay?.message}
                   />
                   <Input
                     label="Sluttid (valfritt)"
-                    type="datetime-local"
-                    {...register("endTime")}
+                    type="time"
+                    {...register("endTimeOfDay")}
                   />
                 </div>
               </Card>
@@ -258,9 +308,7 @@ export default function CreateActivityPage() {
                         const enabled = e.target.checked;
                         setCourageEnabled(enabled);
                         if (enabled && !courageText) {
-                          await fetchCourageMessages(audience);
-                          // Pool may not be set yet in this render, use fallback
-                          setCourageText(randomCourageMessage(audience));
+                          await applyCourageSuggestion(audience);
                         }
                       }}
                       className="accent-primary w-4 h-4"
@@ -284,10 +332,7 @@ export default function CreateActivityPage() {
                         />
                         <button
                           type="button"
-                          onClick={async () => {
-                          if (couragePool.length === 0) await fetchCourageMessages(audience);
-                          setCourageText(randomFromList(couragePool, audience));
-                        }}
+                          onClick={() => applyCourageSuggestion(audience)}
                           className="absolute top-2 right-2 p-1 rounded-md text-dimmed hover:text-primary hover:bg-white/80 transition-colors"
                           title="Nytt förslag"
                         >
@@ -313,7 +358,7 @@ export default function CreateActivityPage() {
                         <button
                           key={opt.value}
                           type="button"
-                          onClick={() => setAudience(opt.value)}
+                          onClick={() => handleAudienceChange(opt.value)}
                           className={`px-4 py-2 text-sm font-medium transition-colors ${i > 0 ? "border-l border-border" : ""} ${
                             active
                               ? "bg-primary text-white"

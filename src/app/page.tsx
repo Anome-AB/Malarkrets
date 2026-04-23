@@ -211,8 +211,9 @@ async function AuthenticatedFeed({
     .innerJoin(interestTags, eq(interestTags.id, userInterests.tagId))
     .where(eq(userInterests.userId, userId));
 
-  // Admin "show all" mode
-  const showAll = userProfile.isAdmin && params.alla === "1";
+  // "Visa alla" mode: available to all users; admins get full bypass,
+  // regular users still respect gender and minAge constraints.
+  const showAll = params.alla === "1";
 
   // Determine active tag filters (comma-separated slugs)
   const interestParam = typeof params.intresse === "string" ? params.intresse : null;
@@ -230,6 +231,7 @@ async function AuthenticatedFeed({
     0,
     tagFilterIds.length > 0 ? tagFilterIds : undefined,
     showAll,
+    userProfile.isAdmin,
   );
 
   const enrichedActivities = await enrichFeedActivities(
@@ -263,7 +265,6 @@ async function AuthenticatedFeed({
         activeFilters={activeFilters}
         initialHasMore={hasMore}
         userId={userId}
-        isAdmin={userProfile.isAdmin}
         showAll={showAll}
       />
     </AppShell>
