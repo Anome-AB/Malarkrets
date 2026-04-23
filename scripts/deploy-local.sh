@@ -80,6 +80,9 @@ else
 fi
 
 # ── Steg 2: Docker pull (hämtar nya images från ghcr.io + stock-uppdateringar) ─
+# Obs: `docker compose pull` utan args hoppar över services med `profiles:`
+# (t.ex. `seed`). Vi pullar dem explicit också för att inte hamna med en 5-
+# dagar-gammal seed-image när någon senare kör `docker compose run --rm seed`.
 if [ "$SKIP_IMAGE_PULL" = "1" ]; then
   log "[2/5] docker pull hoppas över (SKIP_IMAGE_PULL=1)"
 else
@@ -87,6 +90,8 @@ else
   if ! docker compose pull --quiet; then
     fail "docker pull misslyckades — kör 'docker login ghcr.io' med en PAT som har read:packages."
   fi
+  # Profile-tools-services (seed) — måste pullas separat.
+  docker compose --profile tools pull --quiet 2>/dev/null || true
 fi
 
 # Logga vilken tag som faktiskt körs (användbart vid rollback-verifiering).
