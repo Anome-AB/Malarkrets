@@ -13,6 +13,7 @@ import { ImageUpload } from "@/components/ui/image-upload";
 import { createActivity } from "@/actions/activities";
 import { randomCourageMessage, randomFromList } from "@/lib/courage-messages";
 import { COLOR_PRESETS } from "@/lib/color-themes";
+import { combineDateTime, combineEndDateTime, toDateInput } from "@/lib/datetime";
 
 interface InterestTag {
   id: number;
@@ -24,8 +25,9 @@ interface FormValues {
   title: string;
   description: string;
   location: string;
-  startTime: string;
-  endTime: string;
+  date: string;
+  startTimeOfDay: string;
+  endTimeOfDay: string;
   maxParticipants: string;
   genderRestriction: string;
   minAge: string;
@@ -86,6 +88,8 @@ export default function CreateActivityPage() {
     defaultValues: {
       genderRestriction: "alla",
       experienceLevel: "alla",
+      // Default to today so the date picker shows something useful on mount.
+      date: toDateInput(new Date()),
     },
   });
 
@@ -130,6 +134,17 @@ export default function CreateActivityPage() {
       return;
     }
 
+    const startCombined = combineDateTime(values.date, values.startTimeOfDay);
+    if (!startCombined) {
+      toast("Ange datum och starttid", "error");
+      return;
+    }
+    const endCombined = combineEndDateTime(
+      values.date,
+      values.startTimeOfDay,
+      values.endTimeOfDay,
+    );
+
     startTransition(async () => {
       const formData = new FormData();
       formData.set("title", values.title);
@@ -144,8 +159,8 @@ export default function CreateActivityPage() {
       if (image.ogUrl) formData.set("imageOgUrl", image.ogUrl);
       if (image.accentColor) formData.set("imageAccentColor", image.accentColor);
       if (colorTheme) formData.set("colorTheme", colorTheme);
-      formData.set("startTime", values.startTime);
-      if (values.endTime) formData.set("endTime", values.endTime);
+      formData.set("startTime", startCombined);
+      if (endCombined) formData.set("endTime", endCombined);
       if (values.maxParticipants)
         formData.set("maxParticipants", values.maxParticipants);
       const restriction = genderOpen
@@ -219,17 +234,25 @@ export default function CreateActivityPage() {
                   }}
                   placeholder="Var ska det hållas?"
                 />
+                <Input
+                  label="Datum"
+                  type="date"
+                  {...register("date", { required: "Datum krävs" })}
+                  error={errors.date?.message}
+                />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
                     label="Starttid"
-                    type="datetime-local"
-                    {...register("startTime", { required: "Starttid krävs" })}
-                    error={errors.startTime?.message}
+                    type="time"
+                    {...register("startTimeOfDay", {
+                      required: "Starttid krävs",
+                    })}
+                    error={errors.startTimeOfDay?.message}
                   />
                   <Input
                     label="Sluttid (valfritt)"
-                    type="datetime-local"
-                    {...register("endTime")}
+                    type="time"
+                    {...register("endTimeOfDay")}
                   />
                 </div>
               </Card>

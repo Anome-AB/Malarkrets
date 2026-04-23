@@ -13,6 +13,12 @@ import { PlacesAutocomplete } from "@/components/ui/places-autocomplete";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { CancelActivityModal } from "@/components/activity/cancel-activity-modal";
 import { randomCourageMessage, randomFromList } from "@/lib/courage-messages";
+import {
+  combineDateTime,
+  combineEndDateTime,
+  toDateInput,
+  toTimeInput,
+} from "@/lib/datetime";
 import Link from "next/link";
 
 interface InterestTag {
@@ -24,8 +30,9 @@ interface InterestTag {
 interface FormValues {
   title: string;
   description: string;
-  startTime: string;
-  endTime: string;
+  date: string;
+  startTimeOfDay: string;
+  endTimeOfDay: string;
   maxParticipants: string;
   minAge: string;
   experienceLevel: string;
@@ -39,14 +46,6 @@ const AUDIENCE_OPTIONS = [
   { value: "par", label: "Par" },
   { value: "familj", label: "Familjer" },
 ] as const;
-
-function toLocalDatetimeString(date: string | Date | null): string {
-  if (!date) return "";
-  const d = typeof date === "string" ? new Date(date) : date;
-  if (isNaN(d.getTime())) return "";
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
 
 export default function EditActivityPage() {
   const router = useRouter();
@@ -177,8 +176,9 @@ export default function EditActivityPage() {
         reset({
           title: activity.title ?? "",
           description: activity.description ?? "",
-          startTime: toLocalDatetimeString(activity.startTime),
-          endTime: toLocalDatetimeString(activity.endTime),
+          date: toDateInput(activity.startTime),
+          startTimeOfDay: toTimeInput(activity.startTime),
+          endTimeOfDay: toTimeInput(activity.endTime),
           maxParticipants: activity.maxParticipants?.toString() ?? "",
           minAge: activity.minAge?.toString() ?? "",
           experienceLevel: wte.experienceLevel ?? "alla",
@@ -254,8 +254,21 @@ export default function EditActivityPage() {
       formData.set("imageOgUrl", image.ogUrl ?? "");
       formData.set("imageAccentColor", image.accentColor ?? "");
       formData.set("colorTheme", colorTheme ?? "");
-      formData.set("startTime", values.startTime);
-      if (values.endTime) formData.set("endTime", values.endTime);
+      const startCombined = combineDateTime(
+        values.date,
+        values.startTimeOfDay,
+      );
+      if (!startCombined) {
+        toast("Ange datum och starttid", "error");
+        return;
+      }
+      const endCombined = combineEndDateTime(
+        values.date,
+        values.startTimeOfDay,
+        values.endTimeOfDay,
+      );
+      formData.set("startTime", startCombined);
+      if (endCombined) formData.set("endTime", endCombined);
       if (values.maxParticipants) formData.set("maxParticipants", values.maxParticipants);
       const restriction = genderOpen
         ? (userGender === "kvinna" ? "kvinnor" : userGender === "man" ? "man" : "alla")
@@ -387,17 +400,25 @@ export default function EditActivityPage() {
                 onPlaceSelect={handlePlaceSelect}
                 placeholder="Var ska det hållas?"
               />
+              <Input
+                label="Datum"
+                type="date"
+                {...register("date", { required: "Datum krävs" })}
+                error={errors.date?.message}
+              />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="Starttid"
-                  type="datetime-local"
-                  {...register("startTime", { required: "Starttid krävs" })}
-                  error={errors.startTime?.message}
+                  type="time"
+                  {...register("startTimeOfDay", {
+                    required: "Starttid krävs",
+                  })}
+                  error={errors.startTimeOfDay?.message}
                 />
                 <Input
                   label="Sluttid (valfritt)"
-                  type="datetime-local"
-                  {...register("endTime")}
+                  type="time"
+                  {...register("endTimeOfDay")}
                 />
               </div>
             </Card>
