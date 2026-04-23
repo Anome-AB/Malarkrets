@@ -118,18 +118,16 @@ export function Sidebar({ interests, activeFilters = [], showAll = false, isAdmi
             Intressen
           </h3>
           <div className="space-y-1 mb-3">
-            {isAdmin && (
-              <Link
-                href="/?alla=1"
-                className={`block px-3 py-1.5 text-xs rounded-md transition-colors ${
-                  showAll
-                    ? "bg-primary-light text-primary font-bold"
-                    : "text-secondary hover:bg-background hover:text-heading"
-                }`}
-              >
-                Visa alla
-              </Link>
-            )}
+            <Link
+              href="/?alla=1"
+              className={`block px-3 py-1.5 text-xs rounded-md transition-colors ${
+                showAll
+                  ? "bg-primary-light text-primary font-bold"
+                  : "text-secondary hover:bg-background hover:text-heading"
+              }`}
+            >
+              Visa alla
+            </Link>
             <Link
               href="/"
               className={`block px-3 py-1.5 text-xs rounded-md transition-colors ${

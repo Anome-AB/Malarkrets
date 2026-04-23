@@ -47,7 +47,6 @@ interface ActivityFeedProps {
   activeFilters: string[];
   nextCursor: string | null;
   userId?: string;
-  isAdmin?: boolean;
   showAll?: boolean;
 }
 
@@ -70,7 +69,6 @@ export function ActivityFeed({
   activeFilters,
   nextCursor,
   userId,
-  isAdmin = false,
   showAll = false,
 }: ActivityFeedProps) {
   const router = useRouter();
@@ -174,33 +172,31 @@ export function ActivityFeed({
         </button>
         {filtersExpanded && (
           <div className="mt-2 space-y-2">
-            {/* Admin: mirror the sidebar's "Visa alla" / "Mina intressen" toggle */}
-            {isAdmin && (
-              <div className="inline-flex rounded-control border border-border overflow-hidden text-xs">
-                <button
-                  type="button"
-                  onClick={() => router.push("/?alla=1")}
-                  className={`px-3 py-1.5 font-medium transition-colors ${
-                    showAll
-                      ? "bg-primary text-white"
-                      : "bg-white text-secondary hover:bg-background"
-                  }`}
-                >
-                  Visa alla
-                </button>
-                <button
-                  type="button"
-                  onClick={() => router.push("/")}
-                  className={`px-3 py-1.5 font-medium border-l border-border transition-colors ${
-                    !showAll
-                      ? "bg-primary text-white"
-                      : "bg-white text-secondary hover:bg-background"
-                  }`}
-                >
-                  Mina intressen
-                </button>
-              </div>
-            )}
+            {/* Mirror the sidebar's "Visa alla" / "Mina intressen" toggle. */}
+            <div className="inline-flex rounded-control border border-border overflow-hidden text-xs">
+              <button
+                type="button"
+                onClick={() => router.push("/?alla=1")}
+                className={`px-3 py-1.5 font-medium transition-colors ${
+                  showAll
+                    ? "bg-primary text-white"
+                    : "bg-white text-secondary hover:bg-background"
+                }`}
+              >
+                Visa alla
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push("/")}
+                className={`px-3 py-1.5 font-medium border-l border-border transition-colors ${
+                  !showAll
+                    ? "bg-primary text-white"
+                    : "bg-white text-secondary hover:bg-background"
+                }`}
+              >
+                Mina intressen
+              </button>
+            </div>
             <div className="flex flex-wrap gap-2">
               {userInterests.map((interest) => (
                 <Tag
