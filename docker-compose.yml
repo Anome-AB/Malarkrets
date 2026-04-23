@@ -66,12 +66,15 @@ services:
       # docker compose.
       - "127.0.0.1:5432:5432"
     environment:
-      POSTGRES_DB: malarkrets
-      POSTGRES_USER: malarkrets
+      # Defaults matchar tidigare hardcoded värden, så befintliga miljöer
+      # fortsätter fungera utan .env-ändring. Override i .env för staging/
+      # multi-env (t.ex. POSTGRES_DB=malarkrets_test).
+      POSTGRES_DB: ${POSTGRES_DB:-malarkrets}
+      POSTGRES_USER: ${POSTGRES_USER:-malarkrets}
     volumes:
       - postgres_prod_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U malarkrets"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-malarkrets}"]
       interval: 10s
       timeout: 5s
       retries: 5

@@ -101,10 +101,17 @@ until docker compose exec -T postgres pg_isready -U "$DB_USER" >/dev/null 2>&1; 
 done
 log "       postgres redo"
 
-# ── Skapa custom DB om det behövs ──────────────────────────────────────────
+# ── Skapa custom DB om POSTGRES_DB ≠ DB_NAME ───────────────────────────────
+# Om .env har POSTGRES_DB som matchar DB_NAME (rekommenderat) har postgres-
+# containern redan auto-skapat databasen och vi behöver inte göra nåt.
+# Om de skiljer — skapa manuellt. Fallback är hard-coded "malarkrets" från
+# compose-defaults om POSTGRES_DB inte är satt i .env alls.
 
-if [ "$DB_NAME" != "$DEFAULT_DB" ]; then
-  log "skapar $DB_NAME (postgres auto-initierar bara $DEFAULT_DB)"
+POSTGRES_DB_ENV=$(grep -E '^POSTGRES_DB=' "$ENV_FILE" 2>/dev/null | cut -d= -f2- | head -1)
+[ -n "$POSTGRES_DB_ENV" ] || POSTGRES_DB_ENV="$DEFAULT_DB"
+
+if [ "$DB_NAME" != "$POSTGRES_DB_ENV" ]; then
+  log "POSTGRES_DB=$POSTGRES_DB_ENV men DATABASE_URL pekar på $DB_NAME — skapar den manuellt"
   docker compose exec -T postgres psql -U "$DB_USER" -d postgres \
     -c "CREATE DATABASE $DB_NAME;" 2>&1 | tail -3
 fi
