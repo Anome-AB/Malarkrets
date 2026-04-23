@@ -13,7 +13,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx --env-file .env.local src/db/seed.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "cleanup:tokens": "node --env-file=.env.local scripts/cleanup-expired-tokens.mjs"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.1",

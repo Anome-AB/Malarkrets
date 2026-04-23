@@ -118,22 +118,6 @@ Obs: flera punkter måste påbörjas i god tid före flipp-datum, de är inte ef
 
 **Insats:** XS (en rad i den query som bygger populära).
 
-### Glömt lösenord (inloggningssidan)
-**Vad:** Länk "Glömt lösenord?" på login. Klick öppnar ett formulär för e-post. Vid submit: om adressen finns, skicka återställnings-mail med en token (giltig en timme). Länken i mailet leder till `/reset-password?token=...` där användaren sätter nytt lösenord.
-
-**Standardflöde:**
-- Ny kolumn `password_reset_token` + `password_reset_expires_at` på `users` (eller återanvänd `email_verification_token`-mönstret i separat tabell).
-- Server action: ingen information om e-posten finns eller ej i responsen (läckage-förebyggande).
-- Mail via samma pipeline som `email_verification_token` använder idag.
-- Token hashas i databasen (inte klartext).
-
-**Frågor innan bygget:**
-- Använder vi nuvarande mail-avsändare (SMTP via env-vars?) eller ska vi byta? RedFox-synk om extern tjänst.
-- Ska vi återanvända `email_verification_token`-kolumnen eller ha separata? Separata är tydligare men en kolumn till per user.
-- Rate-limit på submit (undvik att skicka 1000 mail / minut till samma adress)?
-
-**Insats:** M (schema + migration + action + mail-template + två sidor + token-TTL-hantering).
-
 ### Profil-layout: tomt utrymme under "Spara ändringar"
 **Vad:** I "Personlig information"-kortet blir det mycket vertikal tomyta under Spara-knappen. Grid-kolumnen ("Mina intressen") till höger är längre.
 

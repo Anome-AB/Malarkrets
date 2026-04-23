@@ -77,6 +77,15 @@ function LoginForm() {
           {...register("password")}
         />
 
+        <div className="-mt-2 text-right">
+          <Link
+            href="/auth/forgot-password"
+            className="text-sm text-primary hover:underline"
+          >
+            Glömt lösenord?
+          </Link>
+        </div>
+
         {banInfo && (
           <div className="rounded-control border border-error/30 bg-red-50 p-4" role="alert">
             <p className="text-sm font-semibold text-error mb-1">

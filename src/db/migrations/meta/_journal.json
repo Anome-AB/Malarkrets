@@ -15,6 +15,13 @@
 			"when": 1776868815159,
 			"tag": "0001_seed_baseline_data",
 			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "7",
+			"when": 1777089600000,
+			"tag": "0002_add_user_tokens_password_reset",
+			"breakpoints": true
 		}
 	]
 }
