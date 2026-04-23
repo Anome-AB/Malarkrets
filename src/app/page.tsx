@@ -6,13 +6,16 @@ import { db } from "@/lib/db";
 import {
   activities,
   activityParticipants,
-  activityTags,
   interestTags,
   userInterests,
   users,
 } from "@/db/schema";
 import { eq, gt, and, isNull, count, desc, sql } from "drizzle-orm";
-import { getMatchedActivities } from "@/lib/queries/activity-feed";
+import {
+  getMatchedActivities,
+  FEED_PAGE_SIZE,
+} from "@/lib/queries/activity-feed";
+import { enrichFeedActivities } from "@/lib/queries/activity-feed-enrich";
 import { getNotificationCount } from "@/lib/queries/notifications";
 import { AppShell } from "@/components/layout/app-shell";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -219,114 +222,22 @@ async function AuthenticatedFeed({
     .map((slug) => userInterestsList.find((t) => t.slug === slug)?.id)
     .filter((id): id is number => id !== undefined);
 
-  // Cursor pagination
-  const cursor = typeof params.cursor === "string" ? params.cursor : undefined;
-
-  // Get matched activities
+  // First page of the feed (lazy-loaded pagination happens client-side
+  // via the loadMoreFeed server action).
   const matchedActivities = await getMatchedActivities(
     userId,
     userProfile.gender,
     viewerAge,
-    cursor,
+    0,
     tagFilterIds.length > 0 ? tagFilterIds : undefined,
     showAll,
     userProfile.isAdmin,
   );
 
-  // Enrich with tags and participant counts
-  const activityIds = matchedActivities.map((a) => a.id);
-  let enrichedActivities: Array<{
-    id: string;
-    title: string;
-    description: string;
-    location: string;
-    startTime: Date;
-    endTime: Date | null;
-    imageThumbUrl: string | null;
-    imageAccentColor: string | null;
-    genderRestriction: "alla" | "kvinnor" | "man" | null;
-    maxParticipants: number | null;
-    whatToExpect: unknown;
-    tags: Array<{ id: number; name: string; slug: string }>;
-    participantCount: number;
-    creatorId: string | null;
-    userStatus: "interested" | "attending" | null;
-  }> = [];
-
-  if (activityIds.length > 0) {
-    // Get tags per activity
-    const tagRows = await db
-      .select({
-        activityId: activityTags.activityId,
-        tagId: interestTags.id,
-        tagName: interestTags.name,
-        tagSlug: interestTags.slug,
-      })
-      .from(activityTags)
-      .innerJoin(interestTags, eq(interestTags.id, activityTags.tagId))
-      .where(sql`${activityTags.activityId} IN (${sql.join(activityIds.map((id) => sql`${id}`), sql`, `)})`);
-
-    // Get participant counts (only attending, not interested)
-    const participantRows = await db
-      .select({
-        activityId: activityParticipants.activityId,
-        count: count(),
-      })
-      .from(activityParticipants)
-      .where(and(
-        sql`${activityParticipants.activityId} IN (${sql.join(activityIds.map((id) => sql`${id}`), sql`, `)})`,
-        eq(activityParticipants.status, "attending"),
-      ))
-      .groupBy(activityParticipants.activityId);
-
-    // Get current user's participation status per activity
-    const userParticipationRows = await db
-      .select({
-        activityId: activityParticipants.activityId,
-        status: activityParticipants.status,
-      })
-      .from(activityParticipants)
-      .where(and(
-        sql`${activityParticipants.activityId} IN (${sql.join(activityIds.map((id) => sql`${id}`), sql`, `)})`,
-        eq(activityParticipants.userId, userId),
-      ));
-
-    const userStatusByActivity = new Map<string, string>();
-    for (const row of userParticipationRows) {
-      userStatusByActivity.set(row.activityId, row.status);
-    }
-
-    const tagsByActivity = new Map<string, Array<{ id: number; name: string; slug: string }>>();
-    for (const row of tagRows) {
-      const existing = tagsByActivity.get(row.activityId) ?? [];
-      existing.push({ id: row.tagId, name: row.tagName, slug: row.tagSlug });
-      tagsByActivity.set(row.activityId, existing);
-    }
-
-    const countByActivity = new Map<string, number>();
-    for (const row of participantRows) {
-      countByActivity.set(row.activityId, row.count);
-    }
-
-    enrichedActivities = matchedActivities.map((a) => ({
-      id: a.id,
-      title: a.title,
-      description: a.description,
-      location: a.location,
-      startTime: a.startTime,
-      endTime: a.endTime,
-      imageThumbUrl: a.imageThumbUrl,
-      imageAccentColor: a.imageAccentColor,
-      genderRestriction: a.genderRestriction,
-      colorTheme: a.colorTheme,
-      maxParticipants: a.maxParticipants,
-      whatToExpect: a.whatToExpect,
-      tags: tagsByActivity.get(a.id) ?? [],
-      participantCount: countByActivity.get(a.id) ?? 0,
-      creatorId: a.creatorId,
-      userStatus: (userStatusByActivity.get(a.id) as "interested" | "attending" | undefined) ?? null,
-    }));
-  }
+  const enrichedActivities = await enrichFeedActivities(
+    matchedActivities,
+    userId,
+  );
 
   const unreadCount = await getNotificationCount(userId);
   const userInitials =
@@ -337,10 +248,7 @@ async function AuthenticatedFeed({
       .toUpperCase()
       .slice(0, 2) ?? "?";
 
-  const lastId =
-    enrichedActivities.length > 0
-      ? enrichedActivities[enrichedActivities.length - 1].id
-      : null;
+  const hasMore = enrichedActivities.length === FEED_PAGE_SIZE;
 
   return (
     <AppShell
@@ -355,7 +263,7 @@ async function AuthenticatedFeed({
         initialActivities={enrichedActivities}
         userInterests={userInterestsList}
         activeFilters={activeFilters}
-        nextCursor={enrichedActivities.length === 20 ? lastId : null}
+        initialHasMore={hasMore}
         userId={userId}
         showAll={showAll}
       />

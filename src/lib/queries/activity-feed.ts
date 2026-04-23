@@ -14,10 +14,10 @@ import {
   or,
   isNull,
   inArray,
-  count,
-  desc,
   asc,
 } from "drizzle-orm";
+
+export const FEED_PAGE_SIZE = 50;
 
 // Map user gender to activity restriction enum
 // User gender: man/kvinna/ej_angett → Activity restriction: man/kvinnor/alla
@@ -31,7 +31,7 @@ export async function getMatchedActivities(
   userId: string,
   viewerGender: string | null,
   viewerAge: number | null,
-  cursor?: string,
+  offset: number = 0,
   tagFilter?: number[],
   showAll?: boolean,
   isAdmin?: boolean,
@@ -61,10 +61,6 @@ export async function getMatchedActivities(
       ),
     );
 
-  const relevanceCount = sql<number>`count(${activityTags.tagId})`.as(
-    "relevance",
-  );
-
   const selectFields = {
     id: activities.id,
     title: activities.title,
@@ -81,7 +77,6 @@ export async function getMatchedActivities(
     whatToExpect: activities.whatToExpect,
     creatorId: activities.creatorId,
     createdAt: activities.createdAt,
-    relevance: relevanceCount,
   };
 
   const baseConditions = [
@@ -92,7 +87,6 @@ export async function getMatchedActivities(
     sql`NOT EXISTS (${blockedByViewer})`,
     // Hide activities from banned creators
     sql`NOT EXISTS (SELECT 1 FROM ${users} WHERE ${users.id} = ${activities.creatorId} AND ${users.isBanned} = true)`,
-    ...(cursor ? [gt(activities.id, cursor)] : []),
   ];
 
   // "Visa alla" modes:
@@ -100,6 +94,9 @@ export async function getMatchedActivities(
   //  - Regular user: bypass interest matching only; gender/age are still enforced
   //    so a man does not see kvinnor-only activities and under-age viewers do not
   //    see minAge-gated activities.
+  // Always sort chronologically by startTime so newly-created activities in
+  // the future land where their date actually is, not at the top. Offset-based
+  // pagination keeps this correct across lazy-loaded pages.
   if (showAll) {
     const tagFilterConditions = tagFilter
       ? [inArray(activityTags.tagId, tagFilter)]
@@ -128,8 +125,9 @@ export async function getMatchedActivities(
       .innerJoin(activityTags, eq(activityTags.activityId, activities.id))
       .where(and(...baseConditions, ...restrictionConditions, ...tagFilterConditions))
       .groupBy(activities.id)
-      .orderBy(asc(activities.startTime))
-      .limit(20);
+      .orderBy(asc(activities.startTime), asc(activities.id))
+      .limit(FEED_PAGE_SIZE)
+      .offset(offset);
   }
 
   return db
@@ -164,6 +162,7 @@ export async function getMatchedActivities(
       ),
     )
     .groupBy(activities.id)
-    .orderBy(desc(relevanceCount), asc(activities.startTime))
-    .limit(20);
+    .orderBy(asc(activities.startTime), asc(activities.id))
+    .limit(FEED_PAGE_SIZE)
+    .offset(offset);
 }

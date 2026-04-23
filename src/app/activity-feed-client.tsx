@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ActivityCard } from "@/components/activity/activity-card";
@@ -8,6 +8,7 @@ import { ActivityPanel } from "@/components/activity/activity-panel";
 import { Tag } from "@/components/ui/tag";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { loadMoreFeed } from "@/actions/feed";
 import { saveFeedFilter } from "@/components/layout/feed-link";
 
 interface WhatToExpect {
@@ -46,7 +47,7 @@ interface ActivityFeedProps {
   initialActivities: ActivityItem[];
   userInterests: Interest[];
   activeFilters: string[];
-  nextCursor: string | null;
+  initialHasMore: boolean;
   userId?: string;
   showAll?: boolean;
 }
@@ -68,16 +69,33 @@ export function ActivityFeed({
   initialActivities,
   userInterests,
   activeFilters,
-  nextCursor,
+  initialHasMore,
   userId,
   showAll = false,
 }: ActivityFeedProps) {
   const router = useRouter();
   const isDesktop = useIsDesktop();
   const [searchText, setSearchText] = useState("");
+  const [items, setItems] = useState<ActivityItem[]>(initialActivities);
+  const [offset, setOffset] = useState<number>(initialActivities.length);
+  const [hasMore, setHasMore] = useState<boolean>(initialHasMore);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
   const [filtersExpanded, setFiltersExpanded] = useState(activeFilters.length > 0 || showAll);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  // Reset pagination state when the server-rendered first page changes
+  // (filter toggle, "Visa alla" toggle, route navigation). Without this
+  // the appended batches from a previous filter would bleed into the new
+  // view.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing to an external source (server-provided initial page). The initial render already uses useState initializers with the same values, but subsequent prop changes (filter/route) must force a state reset.
+    setItems(initialActivities);
+    setOffset(initialActivities.length);
+    setHasMore(initialHasMore);
+    setLoadError(null);
+  }, [initialActivities, initialHasMore]);
 
   // Persist the user's current feed filter so "Utforska" + logo-links
   // restore it on return, rather than snapping back to "Mina intressen".
@@ -89,15 +107,64 @@ export function ActivityFeed({
   }, [showAll, activeFilters]);
 
   const filteredActivities = useMemo(() => {
-    if (!searchText.trim()) return initialActivities;
+    if (!searchText.trim()) return items;
     const q = searchText.toLowerCase();
-    return initialActivities.filter(
+    return items.filter(
       (a) =>
         a.title.toLowerCase().includes(q) ||
         a.description.toLowerCase().includes(q) ||
         a.location.toLowerCase().includes(q),
     );
-  }, [initialActivities, searchText]);
+  }, [items, searchText]);
+
+  const loadMore = useCallback(async () => {
+    if (!hasMore || loadingMore) return;
+    setLoadingMore(true);
+    setLoadError(null);
+    try {
+      const result = await loadMoreFeed({
+        offset,
+        intresse: activeFilters,
+        alla: showAll,
+      });
+      if (!result.ok) {
+        setLoadError(result.error);
+        return;
+      }
+      setItems((prev) => {
+        const seen = new Set(prev.map((a) => a.id));
+        const fresh = result.activities.filter((a) => !seen.has(a.id));
+        return [...prev, ...fresh];
+      });
+      setOffset((prev) => prev + result.activities.length);
+      setHasMore(result.hasMore);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [hasMore, loadingMore, offset, activeFilters, showAll]);
+
+  // Auto-fetch next page when the sentinel scrolls into view. rootMargin
+  // 200px triggers slightly before the sentinel is fully visible so the
+  // user rarely hits an empty bottom. Pauses while the user has an active
+  // search filter (search is client-side over loaded items; fetching more
+  // behind the scenes would still be a waste here).
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+    if (!hasMore) return;
+    if (searchText.trim()) return;
+
+    const target = sentinelRef.current;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          loadMore();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [hasMore, searchText, loadMore]);
 
   function handleCardClick(id: string) {
     if (isDesktop) {
@@ -121,15 +188,6 @@ export function ActivityFeed({
     } else {
       router.push("/");
     }
-  }
-
-  function handleLoadMore() {
-    if (!nextCursor) return;
-    setLoadingMore(true);
-    const params = new URLSearchParams();
-    if (activeFilters.length > 0) params.set("intresse", activeFilters.join(","));
-    params.set("cursor", nextCursor);
-    router.push(`/?${params.toString()}`);
   }
 
   return (
@@ -290,15 +348,31 @@ export function ActivityFeed({
             ))}
           </div>
 
-          {nextCursor && !searchText.trim() && (
-            <div className="flex justify-center mt-8">
-              <Button
-                variant="secondary"
-                loading={loadingMore}
-                onClick={handleLoadMore}
-              >
-                Ladda mer
-              </Button>
+          {/* Sentinel for IntersectionObserver-driven lazy loading. */}
+          {hasMore && !searchText.trim() && (
+            <div
+              ref={sentinelRef}
+              className="flex justify-center py-8"
+              aria-live="polite"
+            >
+              {loadingMore ? (
+                <span className="text-sm text-secondary">Laddar fler…</span>
+              ) : loadError ? (
+                <div className="flex flex-col items-center gap-2">
+                  <p className="text-sm text-error">{loadError}</p>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => loadMore()}
+                  >
+                    Försök igen
+                  </Button>
+                </div>
+              ) : (
+                <span className="text-xs text-dimmed">
+                  Scrolla för att se fler
+                </span>
+              )}
             </div>
           )}
         </>
