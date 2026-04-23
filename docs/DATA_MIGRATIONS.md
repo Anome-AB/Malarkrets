@@ -63,6 +63,10 @@ mekanism som för schemaändringar.
   kommer krocka.
 - Redigera en existerande migration som redan körts på någon miljö. Varje
   ändring = ny migrationsfil.
+- Låta CLI-verktyget (RedFox:s `bun run db:data-migration`) köra migrationen
+  direkt efter generering. Generering och körning är två separata steg. CI
+  och deploy-pipelinen är enda platserna som kör migrationer mot staging och
+  prod. Lokalt kör du manuellt `bun run db:migrate` när du vill testa.
 
 ## Regel 2: om data bara gör dev-livet lättare → seed
 
@@ -78,6 +82,11 @@ Den innehåller:
 
 Den förutsätter att migrationerna har körts och att taggarna redan finns i
 databasen (den gör `SELECT` på `interest_tags` för att slå upp ID:n).
+
+Om en schema-migration påverkar de fält som seed-filen sätter (t.ex. ny
+NOT NULL-kolumn på `users` eller `activities`) måste du uppdatera `seed.ts`
+i samma PR så demo-seed fortsätter gå igenom efter migrationen. Det är lätt
+att missa eftersom CI inte nödvändigtvis kör seed, så håll utkik själv.
 
 ### Rutin lokalt
 
