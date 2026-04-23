@@ -80,6 +80,9 @@ else
 fi
 
 # ── Steg 2: Docker pull (hämtar nya images från ghcr.io + stock-uppdateringar) ─
+# Obs: `docker compose pull` utan args hoppar över services med `profiles:`
+# (t.ex. `seed`). Vi pullar dem explicit också för att inte hamna med en 5-
+# dagar-gammal seed-image när någon senare kör `docker compose run --rm seed`.
 if [ "$SKIP_IMAGE_PULL" = "1" ]; then
   log "[2/5] docker pull hoppas över (SKIP_IMAGE_PULL=1)"
 else
@@ -87,6 +90,8 @@ else
   if ! docker compose pull --quiet; then
     fail "docker pull misslyckades — kör 'docker login ghcr.io' med en PAT som har read:packages."
   fi
+  # Profile-tools-services (seed) — måste pullas separat.
+  docker compose --profile tools pull --quiet 2>/dev/null || true
 fi
 
 # Logga vilken tag som faktiskt körs (användbart vid rollback-verifiering).
@@ -100,7 +105,11 @@ log "       APP_TAG=${APP_TAG:-latest}  MIGRATE_TAG=${MIGRATE_TAG:-migrate-lates
 # täcker det i teorin, men explicit väntan ger bättre loggutskrift.
 log "[3/5] startar postgres..."
 docker compose up -d postgres
-until docker compose exec -T postgres pg_isready -U malarkrets >/dev/null 2>&1; do
+# DB-user parsas från DATABASE_URL så scriptet fungerar oavsett om POSTGRES_USER
+# en dag byter namn i compose. Fallback till "malarkrets" om URL inte parse:ar.
+DB_USER=$(grep -E '^DATABASE_URL=' "$ENV_FILE" 2>/dev/null | sed -E 's|^DATABASE_URL=postgresql://([^:]+):.*|\1|' | head -1)
+[ -n "$DB_USER" ] || DB_USER="malarkrets"
+until docker compose exec -T postgres pg_isready -U "$DB_USER" >/dev/null 2>&1; do
   sleep 1
 done
 log "       postgres redo."
