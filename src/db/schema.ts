@@ -69,6 +69,11 @@ export const feedbackRatingEnum = pgEnum("feedback_rating", [
   "negative",
 ]);
 
+export const userTokenTypeEnum = pgEnum("user_token_type", [
+  "verify_email",
+  "reset_password",
+]);
+
 // ─── Custom types ───────────────────────────────────────────────────────────
 
 const bytea = customType<{ data: Buffer; driverData: Buffer }>({
@@ -104,8 +109,8 @@ export const users = pgTable("users", {
   id: uuid().defaultRandom().primaryKey(),
   email: text().notNull().unique(),
   emailVerified: boolean("email_verified").default(false),
-  emailVerificationToken: text("email_verification_token"),
   passwordHash: text("password_hash").notNull(),
+  passwordChangedAt: timestamp("password_changed_at"),
   firstName: text("first_name"),
   lastName: text("last_name"),
   displayName: text("display_name"),
@@ -120,6 +125,35 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+export const userTokens = pgTable(
+  "user_tokens",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
+    type: userTokenTypeEnum().notNull(),
+    tokenHash: text("token_hash").notNull(),
+    emailHash: text("email_hash").notNull(),
+    ip: text("ip"),
+    expiresAt: timestamp("expires_at").notNull(),
+    usedAt: timestamp("used_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("user_tokens_hash_idx").on(table.tokenHash),
+    index("user_tokens_ratelimit_email_idx").on(
+      table.emailHash,
+      table.type,
+      table.createdAt,
+    ),
+    index("user_tokens_ratelimit_ip_idx").on(
+      table.ip,
+      table.type,
+      table.createdAt,
+    ),
+    index("user_tokens_cleanup_idx").on(table.expiresAt),
+  ],
+);
 
 export const interestTags = pgTable("interest_tags", {
   id: serial().primaryKey(),
@@ -564,3 +598,6 @@ export type NewAdminAction = typeof adminActions.$inferInsert;
 
 export type Image = typeof images.$inferSelect;
 export type NewImage = typeof images.$inferInsert;
+
+export type UserToken = typeof userTokens.$inferSelect;
+export type NewUserToken = typeof userTokens.$inferInsert;

@@ -9,8 +9,22 @@ import { users } from "@/db/schema";
 import { loginSchema } from "@/lib/validations/auth";
 import { log } from "@/lib/logger";
 
+// Session/JWT lifetime: 15 min rolling, refresh on activity.
+// Password reset sets users.password_changed_at; tokens issued before then
+// are rejected in the jwt callback, forcing re-login across devices within
+// the window.
+const SESSION_MAX_AGE = 15 * 60;
+const SESSION_UPDATE_AGE = 5 * 60;
+
+// Clock-skew fudge for passwordChangedAt vs JWT iat comparison (2s).
+const CLOCK_SKEW_MS = 2000;
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  session: { strategy: "jwt" },
+  session: {
+    strategy: "jwt",
+    maxAge: SESSION_MAX_AGE,
+    updateAge: SESSION_UPDATE_AGE,
+  },
   pages: {
     signIn: "/auth/login",
   },
@@ -59,6 +73,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           email: user.email,
           name: user.displayName,
           image: user.avatarUrl,
+          passwordChangedAt: user.passwordChangedAt
+            ? user.passwordChangedAt.getTime()
+            : null,
         };
       },
     }),
@@ -66,13 +83,34 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
+        token.id = (user as { id: string }).id;
+        const pca = (user as { passwordChangedAt?: number | null })
+          .passwordChangedAt;
+        if (typeof pca === "number") {
+          token.passwordChangedAt = pca;
+        }
       }
+
+      // Session invalidation after password reset. iat is in seconds; the
+      // passwordChangedAt claim is in ms. A 2s skew buffer prevents the
+      // session that TRIGGERED the reset from logging itself out mid-request.
+      // If this token predates the recorded change, null out the identity
+      // so the session callback rejects it.
+      if (typeof token.iat === "number" && token.passwordChangedAt) {
+        const iatMs = token.iat * 1000;
+        const changedMs = token.passwordChangedAt as number;
+        if (iatMs + CLOCK_SKEW_MS < changedMs) {
+          token.id = undefined;
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {
-      if (session.user && token.id) {
+      if (session.user && token?.id) {
         session.user.id = token.id as string;
+      } else if (session.user && !token?.id) {
+        session.user = undefined as unknown as typeof session.user;
       }
       return session;
     },
