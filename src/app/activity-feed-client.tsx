@@ -8,6 +8,7 @@ import { ActivityPanel } from "@/components/activity/activity-panel";
 import { Tag } from "@/components/ui/tag";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { saveFeedFilter } from "@/components/layout/feed-link";
 
 interface WhatToExpect {
   okAlone?: boolean;
@@ -47,7 +48,6 @@ interface ActivityFeedProps {
   activeFilters: string[];
   nextCursor: string | null;
   userId?: string;
-  isAdmin?: boolean;
   showAll?: boolean;
 }
 
@@ -70,7 +70,6 @@ export function ActivityFeed({
   activeFilters,
   nextCursor,
   userId,
-  isAdmin = false,
   showAll = false,
 }: ActivityFeedProps) {
   const router = useRouter();
@@ -79,6 +78,15 @@ export function ActivityFeed({
   const [loadingMore, setLoadingMore] = useState(false);
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
   const [filtersExpanded, setFiltersExpanded] = useState(activeFilters.length > 0 || showAll);
+
+  // Persist the user's current feed filter so "Utforska" + logo-links
+  // restore it on return, rather than snapping back to "Mina intressen".
+  useEffect(() => {
+    const qs = new URLSearchParams();
+    if (showAll) qs.set("alla", "1");
+    if (activeFilters.length > 0) qs.set("intresse", activeFilters.join(","));
+    saveFeedFilter(qs.toString());
+  }, [showAll, activeFilters]);
 
   const filteredActivities = useMemo(() => {
     if (!searchText.trim()) return initialActivities;
@@ -174,33 +182,31 @@ export function ActivityFeed({
         </button>
         {filtersExpanded && (
           <div className="mt-2 space-y-2">
-            {/* Admin: mirror the sidebar's "Visa alla" / "Mina intressen" toggle */}
-            {isAdmin && (
-              <div className="inline-flex rounded-control border border-border overflow-hidden text-xs">
-                <button
-                  type="button"
-                  onClick={() => router.push("/?alla=1")}
-                  className={`px-3 py-1.5 font-medium transition-colors ${
-                    showAll
-                      ? "bg-primary text-white"
-                      : "bg-white text-secondary hover:bg-background"
-                  }`}
-                >
-                  Visa alla
-                </button>
-                <button
-                  type="button"
-                  onClick={() => router.push("/")}
-                  className={`px-3 py-1.5 font-medium border-l border-border transition-colors ${
-                    !showAll
-                      ? "bg-primary text-white"
-                      : "bg-white text-secondary hover:bg-background"
-                  }`}
-                >
-                  Mina intressen
-                </button>
-              </div>
-            )}
+            {/* Mirror the sidebar's "Visa alla" / "Mina intressen" toggle. */}
+            <div className="inline-flex rounded-control border border-border overflow-hidden text-xs">
+              <button
+                type="button"
+                onClick={() => router.push("/?alla=1")}
+                className={`px-3 py-1.5 font-medium transition-colors ${
+                  showAll
+                    ? "bg-primary text-white"
+                    : "bg-white text-secondary hover:bg-background"
+                }`}
+              >
+                Visa alla
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push("/")}
+                className={`px-3 py-1.5 font-medium border-l border-border transition-colors ${
+                  !showAll
+                    ? "bg-primary text-white"
+                    : "bg-white text-secondary hover:bg-background"
+                }`}
+              >
+                Mina intressen
+              </button>
+            </div>
             <div className="flex flex-wrap gap-2">
               {userInterests.map((interest) => (
                 <Tag

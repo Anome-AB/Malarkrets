@@ -34,6 +34,7 @@ export async function getMatchedActivities(
   cursor?: string,
   tagFilter?: number[],
   showAll?: boolean,
+  isAdmin?: boolean,
 ) {
   const now = new Date();
   const viewerRestriction = genderToRestriction(viewerGender);
@@ -94,17 +95,38 @@ export async function getMatchedActivities(
     ...(cursor ? [gt(activities.id, cursor)] : []),
   ];
 
-  // When showAll (admin mode), skip interest matching and gender/age restrictions
+  // "Visa alla" modes:
+  //  - Admin: bypass interest matching AND gender/age restrictions (moderation view).
+  //  - Regular user: bypass interest matching only; gender/age are still enforced
+  //    so a man does not see kvinnor-only activities and under-age viewers do not
+  //    see minAge-gated activities.
   if (showAll) {
     const tagFilterConditions = tagFilter
       ? [inArray(activityTags.tagId, tagFilter)]
       : [];
 
+    const restrictionConditions = isAdmin
+      ? []
+      : [
+          viewerRestriction
+            ? or(
+                eq(activities.genderRestriction, "alla"),
+                eq(activities.genderRestriction, viewerRestriction),
+              )
+            : eq(activities.genderRestriction, "alla"),
+          viewerAge !== null
+            ? or(
+                isNull(activities.minAge),
+                sql`${activities.minAge} <= ${viewerAge}`,
+              )
+            : isNull(activities.minAge),
+        ];
+
     return db
       .select(selectFields)
       .from(activities)
       .innerJoin(activityTags, eq(activityTags.activityId, activities.id))
-      .where(and(...baseConditions, ...tagFilterConditions))
+      .where(and(...baseConditions, ...restrictionConditions, ...tagFilterConditions))
       .groupBy(activities.id)
       .orderBy(asc(activities.startTime))
       .limit(20);
