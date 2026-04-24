@@ -277,6 +277,32 @@ den är aktiv (under PRE-GO-LIVE med `SITE_BANNER_TEXT` satt).
    Pipeline (release.yml) bygger en docker-image med tag `:0.2.0`,
    `:0.2`, `:0` + migrate-motsvarigheter. Användbart vid rollback.
 
+6. **Skapa GitHub Release** — samma innehåll som i `/nyheter`, fast
+   paketerat på repo:ts Releases-sida:
+   ```bash
+   gh release create v0.2.0 \
+     --title "v0.2.0 — Kort titel på svenska" \
+     --notes "$(cat <<'EOF'
+   En-mening sammanfattning av releasen.
+
+   ### Nytt
+   - ...
+
+   ### Förbättrat
+   - ...
+
+   ### Fixat
+   - ...
+
+   ---
+
+   Läs samma notes i appen under [Nyheter](https://malarkrets.se/nyheter).
+   EOF
+   )"
+   ```
+   Git-tag = ankare för CI. GitHub Release = publik anslagstavla.
+   Båda pekar på samma commit men har olika publik. Gör alltid båda.
+
 ### Versions-schema (PRE-GO-LIVE)
 
 - `v0.X.0` — ny feature-nivå (t.ex. forgot-password gick ut i v0.2.0)
