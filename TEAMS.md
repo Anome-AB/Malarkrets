@@ -20,6 +20,13 @@ respektive teams egna filer (`RELEASE.md`, ev. `DEVELOPMENT.md`).
 **Commit-prefix:** `feat(app):`, `fix(app):`, `refactor(app):`, `test(app):`,
 `docs(app):`, `feat(db):`, `fix(db):`
 
+**Releaser & versioner:** Ägs av RedFox. GreenLion bumpar inte `package.json`,
+sätter inga git-tags, skriver inget i `public/release-notes.json` och skapar
+inga GitHub Releases. Merga till `master` — det räcker. Flagga bara i
+PR-beskrivningen om ändringen är breaking (schema/API) eller om en
+användarsynlig fix förtjänar en notis till testarna, så plockar RedFox upp
+det vid nästa release-tillfälle.
+
 ## Team RedFox — Release & Deploy
 
 **Ägs av:** Hakan.
