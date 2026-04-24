@@ -34,19 +34,10 @@ Obs: flera punkter måste påbörjas i god tid före flipp-datum, de är inte ef
   middleware, och ersätt `https:` i img-src med konkreta domäner användare
   faktiskt laddar bilder från.
 
-- **Normalisera migrations-journalens tidsstämplar.** idx 4, 5 och 7 i
-  `src/db/migrations/meta/_journal.json` har hand-editerade framtida
-  timestamps (juni 2026) från tidigare merge-konflikter. 0008 fick
-  manuellt bumpas för att passera dem. CI-checken (`scripts/check-migration-journal.mjs`)
-  förhindrar återfall för nya migrationer, men den "high-water mark"
-  på 1781942400000 (2026-06-20) kommer följa med fram till dess real-tid
-  catchar upp — varje ny migration genererad med `Date.now()` innan dess
-  kommer CI-failar tills man manuellt bumpar `when`. Fix är tvåstegs:
-  (1) normalisera _journal.json till plausibla naturliga timestamps,
-  (2) kör DB-surgery på varje miljö (lokal, staging, VPS, GreenLions maskin)
-  för att uppdatera `drizzle.__drizzle_migrations.created_at` till
-  matchande värden. Cosmetisk men gör att framtida migrationer "bara
-  funkar" utan bump-danser.
+<!-- Migrations-journal-normalisering löst av PR #41 (migration squash
+     2026-04-22). Alla gamla fake-timestamps försvann med squash. -->
+
+
 
 ## Nästa session — Prioritet 1
 
@@ -152,11 +143,10 @@ Ramverket i schema:t finns redan (`user_blocks`-tabell), men den används inte. 
 - **Tidigare oro:** `127.0.0.1:5433:5432` i `docker-compose.yml` med kommentaren "REMOVE before VPS deploy" — kommentar-baserad säkerhet är skört.
 - **Nytt beslut:** Bindning kvar men på `127.0.0.1:5432:5432` (explicit loopback). Aldrig internet-exponerad. Används via SSH-tunnel från workstation för DB-klient-åtkomst. Dokumenterat i RELEASE.md. UFW blockerar ändå allt utom 22/80/443, så även om någon råkade byta `127.0.0.1` → `0.0.0.0` skulle brandväggen ta emot.
 
-### HIGH — Placeholder AUTH_SECRET i staging
-- **Vad:** `.env.staging.example` har `AUTH_SECRET=CHANGE_ME_...`. Om staging körs med detta värde kan vem som helst förfalska sessioner.
-- **Fix:** Generera riktigt AUTH_SECRET även i staging. Eventuellt: startup-check i appen som vägrar starta om AUTH_SECRET innehåller `CHANGE_ME`.
-- **Insats:** S
-- **Ägs av:** GreenLion (app-check) + RedFox (env-mall)
+### ~~HIGH — Placeholder AUTH_SECRET i staging~~ KLAR 2026-04-23
+- Riktigt AUTH_SECRET satt i både staging och prod `.env`-filer.
+- **Kvar (nice-to-have):** startup-check i appen som vägrar starta om
+  AUTH_SECRET innehåller `CHANGE_ME` — GreenLion-territorium, inte akut.
 
 ### ~~MEDIUM — Migrate/seed kör som root~~ KLAR 2026-04-18
 - Non-root `nextjs:nodejs` (uid/gid 1001) tillagt i både `migrate`- och
@@ -174,23 +164,19 @@ Ramverket i schema:t finns redan (`user_blocks`-tabell), men den används inte. 
   `img-src`. Härdning via nonces + specifika CDN-origins är en POST-GO-LIVE-
   uppgift, se parking lot.
 
-### MEDIUM — Google Maps API-nyckel i image-layer metadata
-- **Vad:** `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` lagras som ARG/ENV i builder-stage. Nåbar via `docker inspect` om imagen är publikt tillgänglig.
-- **Fix:** Säkerställ att GHCR-paketet är privat. Restriktera nyckeln med HTTP referrer i Google Cloud Console (se Fredrik-TODO nedan).
-- **Insats:** S
+### ~~MEDIUM — Google Maps API-nyckel i image-layer metadata~~ KLAR 2026-04-23
+- GHCR-paketet privat, HTTP referrer + API-restriktioner satta i Google Cloud Console.
+- Dygns-/månadskvot kvar att sätta (nice-to-have) — se Fredrik-TODO nedan.
 
 ## Backlog
 
-### Env-config: en enda källa för alla tjänster
-- **Vad:** `docker-compose.yml` har `env_file: .env.prod` på `app` och `migrate`, men `postgres` läser lösenord via `${VAR:-default}` shell-interpolering. Det gör att `.env.prod`-värden ignoreras av denna tjänst och default-lösenord används istället.
-- **Snabbfix (gjord 2026-04-16):** Lade till `env_file: .env.prod` på `postgres` så alla tjänster läser från samma källa.
-- **Kvar att göra:** Rensa bort `${VAR:-default}` fallbacks i compose `environment:`-blocken så det inte finns två ställen som sätter samma variabel. `.env.prod` ska vara den enda källan.
-- **Insats:** S
+### ~~Env-config: en enda källa för alla tjänster~~ KLAR 2026-04-22 (PR #47)
+- `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` läses nu från `.env.prod` med defaults i compose för dev. `.env.prod.example` dokumenterar fältet. Deploy-scripts (`deploy-local.sh`, `wipe-and-redeploy.sh`) parsar DB-namn/user från `DATABASE_URL` så det finns ingen hårdkodad sanning längre.
 
 ### Observability / Operations
 - Backup-strategi för PostgreSQL (pg_dump cron) — S
 - ~~Health check endpoint `/api/health`~~ KLAR (b69a227, 2026-04-14)
-- Strukturerad loggning (pino eller winston) — S
+- ~~Strukturerad loggning~~ KLAR 2026-04-20. OTel Collector → Dash0 hanterar traces, metrics och logs (PR #29–#31). Se `memory/telemetry-setup.md`.
 
 ### Secrets management (tillagt efter /plan-eng-review 2026-04-19)
 **Kontext:** Runtime-secrets (DATABASE_URL, AUTH_SECRET, RESEND_API_KEY, DASH0_AUTH_TOKEN m.fl.) ligger idag i `.env` på VPS:n, mode 0600, läst via `env_file:` i compose. Det är rätt hem för runtime-secrets — de ska inte till GitHub Secrets där de skulle blanda sig med CI-flödet och hamna i image-metadata. Build-time-secrets som `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` ligger redan korrekt i GitHub Secrets. Men nuvarande setup har tre svagheter som behöver adresseras innan go-live:
@@ -204,9 +190,7 @@ Ramverket i schema:t finns redan (`user_blocks`-tabell), men den används inte. 
   - Idag finns ingen dokumenterad process för att rotera AUTH_SECRET (alla sessioner invalideras), POSTGRES_PASSWORD (kräver DB-side update + env-update + restart), RESEND_API_KEY (ny key i Resend UI → .env → restart app).
   - Värt att skriva innan behovet uppstår — en engångs-operation på tre rader skapar ett prejudikat. Tar 30 minuter när det görs som förberedelse, flera timmar i panikläge under ett äkta incident.
 
-- **Synka `.env`-värdena till en password manager** — XS. Gör nu.
-  - Idag: värdena finns bara på VPS:n. Om VPS:en dör oåterkalleligt och backup är korrupt finns ingen kopia.
-  - Kopiera till 1Password/Bitwarden/liknande med tydlig naming (`mälarkrets-prod-env-YYYY-MM-DD`). Uppdatera vid varje rotation.
+- ~~**Synka `.env`-värdena till en password manager**~~ KLAR 2026-04-23. Staging + prod `.env` kopierade till password manager med datum-naming. Uppdatera vid varje rotation.
 
 - **(Framtida)** SOPS + age för version-kontroll av `.env` — M. Inte akut.
   - Om/när ni har flera miljöer (staging + prod + dev-per-person) eller flera personer hanterar secrets kan `sops` ge er krypterat-i-git med diff-historik. Overkill nu, värt att ta fram när ni har 2+ miljöer.
@@ -217,33 +201,25 @@ Ramverket i schema:t finns redan (`user_blocks`-tabell), men den används inte. 
 ### För Fredrik — GitHub-kontoägare
 - ~~**Lägg till GitHub Secret `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`**~~ KLAR 2026-04-15. Satt på Anome-AB/Malarkrets, plockas upp av release.yml + Dockerfile som build-arg.
 - **Restriktera nyckeln i Google Cloud Console**:
-  - ✅ HTTP referrers begränsade till localhost (2026-04-15) — säker som GitHub Secret tills prod-domän är bestämd.
-  - ⏳ Prod-domän är `malarkrets.se` — lägg till som tillåten referrer, annars renderar kartor i prod som gråa/"for development purposes only".
-  - ⏳ API restrictions: sätt till endast Maps JavaScript API + Maps Static API.
+  - ✅ HTTP referrers begränsade till localhost (2026-04-15).
+  - ✅ `malarkrets.se` tillagd som tillåten referrer (2026-04-23).
+  - ✅ API restrictions: endast Maps JavaScript API + Maps Static API (2026-04-23).
   - ⏳ Dygns-/månadskvot så stulen nyckel inte kan debiteras oändligt.
 - Om ni har fler hemligheter (SMTP, VPS SSH-nyckel osv) — lägg dem som secrets samtidigt, säg till så uppdaterar vi pipelinen.
 
 ### Release Pipeline (tillagt av /plan-eng-review 2026-04-14)
 - ~~**Semver image-tagging**~~ KLAR 2026-04-15. `git tag vX.Y.Z && git push --tags` genererar `:X.Y.Z`, `:X.Y`, `:X` + migrate-motsvarigheter. `:latest` flyttas bara av master-push. Compose stödjer `APP_TAG` / `MIGRATE_TAG` env-override för rollback.
 - **VPS-deploy i pipeline:** Lägg till SSH-deploy-steg i release.yml som kör docker compose pull + up på extern server. 15 rader YAML + 3 GitHub Secrets (VPS_HOST, VPS_USER, VPS_SSH_KEY) — dessa är deploy-time-secrets och hör hemma i GitHub Secrets (inte .env), se "Secrets management"-sektionen för distinktion. Insats: S. Beror på: pipeline + VPS finns.
+- ~~**Deploy-helpers och playbook**~~ KLAR 2026-04-22 (PR #47). `scripts/deploy-local.sh` (vanlig deploy m. `docker compose --profile tools pull`), `scripts/wipe-and-redeploy.sh` (data-breaking reset med backup + WIPE-prompt), `docs/DEPLOY_PLAYBOOK.md` (tre scenarier: vanlig / data-breaking / rollback).
+- ~~**Release-notes-flöde för testare**~~ KLAR 2026-04-24. `public/release-notes.json` + `/nyheter`-sida + länk i site-banner (PR #48 + #49 bugfix + direktpush v0.1.1). Rutin dokumenterad i `RELEASE.md` (6 steg: samla → översätt → notes-entry → PR → git tag → GitHub Release).
 
-### VPS-leverantör: Loopia (beslut 2026-04-15)
+### VPS-leverantör: Loopia (beslut 2026-04-15, provisionerad 2026-04-19)
 - 2 GB RAM / 50 GB HDD, 460 kr/mån ex moms.
 - **Motivering:** Lokal i Västerås (passar produktens varumärke), GDPR-enkelt, SLA under svensk lag, svensk support/faktura.
 - **Uppgraderingsväg:** 4 GB om RAM > 80% ihållande eller CPU-bundet (Sharp-bildresize under last).
 - **Exit-plan:** docker-compose-stacken är portabel. Flytt till Hetzner/DO ≈ 1h jobb (provisionera + kopiera compose + restore pg_dump).
 - **Verifiera med Loopia innan köp:** CPU-cores (minst 1 vCPU, helst 2), bandbredd/månad, snapshot/backup-möjlighet, Ubuntu LTS som OS.
-- **Provisioning-checklista (när VPS är bokad):**
-  1. Ubuntu 24.04 LTS (eller Debian 12 som fallback).
-  2. Lägg till 2 GB swapfile (`fallocate -l 2G /swapfile …`).
-  3. Skapa non-root user, SSH-nyckel-only, disable password-login.
-  4. UFW: öppna 22, 80, 443.
-  5. Installera Docker + Docker Compose plugin.
-  6. Caddy eller Nginx som reverse proxy (Let's Encrypt automatiskt via Caddy).
-  7. Klona repot + `.env.prod` (scp:a från säker plats, ligger inte i git).
-  8. `docker compose up -d` + healthcheck-verifiering.
-  9. Sätt upp `pg_dump` cron → dumpa till extern plats (Loopia backup-tjänst eller Backblaze B2).
-  10. ~~Ta bort `127.0.0.1:5433:5432`-mappningen från compose-filen innan deploy (dev-only).~~ → Se säkerhetshärdning ovan: ta bort postgres ports helt från prod-compose.
+- **Provisioning-checklista — KLAR 2026-04-19.** Steg 1–8 genomförda via `scripts/provision-vps.sh`. Punkt 9 (backup) kvar — se POST-GO-LIVE-checklistan. Punkt 10 omvärderad — postgres bunden till `127.0.0.1:5432` för SSH-tunnel-åtkomst (se säkerhetshärdning).
 
 - **Automatiska DB-migrationer vid deploy** — KLAR 2026-04-15 (alternativ 2 valt).
   - Init-container `migrate` i `docker-compose.yml` kör Drizzle-migrationer
