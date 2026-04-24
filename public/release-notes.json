@@ -1,0 +1,30 @@
+{
+  "releases": [
+    {
+      "version": "0.1.0",
+      "date": "2026-04-24",
+      "title": "Första test-versionen",
+      "summary": "Välkommen till Mälarkrets under test! Det här är den första version vi delar med externa användare. Här är vad som fungerar idag.",
+      "sections": {
+        "added": [
+          "Skapa, hitta och delta i aktiviteter i Västerås — från vandring och fika till sport, kultur och kodning.",
+          "Intressetaggar på sidomenyn — filtrera feeden efter det du är intresserad av.",
+          "\"Visa alla\"-läge som visar hela utbudet men respekterar ålders- och könsbegränsningar.",
+          "Anmäl dig som deltagare eller som intresserad (utan att förbinda dig).",
+          "Kommentarer på aktiviteter — för deltagare.",
+          "Kartor med plats-sökning som bara tillåter platser inom Västerås kommun.",
+          "Återställ lösenord via e-post om du glömmer det.",
+          "Mobilvy som känns bra att använda i farten.",
+          "Avisningar när något händer med aktiviteter du deltar i.",
+          "Blockera användare du inte vill se, rapportera olämpligt innehåll."
+        ],
+        "improved": [
+          "Feeden visar nu aktiviteter i kronologisk ordning — det som händer snart kommer först.",
+          "Nya datum- och tidsväljare i aktivitetsformuläret — tydligare att fylla i.",
+          "Levande startsida med bild från Västerås och populära aktiviteter."
+        ],
+        "fixed": []
+      }
+    }
+  ]
+}
