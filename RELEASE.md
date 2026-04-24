@@ -162,6 +162,28 @@ Se `README.md` för user-facing steg. Internt:
 `scripts/deploy-local.sh` gör pull → postgres-wait → db-probe → app →
 health poll. Läs scriptet innan ändringar.
 
+### Städa disk efter deploys
+
+Varje deploy drar in en ny sha-taggad image (~300 MB app + ~150 MB
+migrate). Gamla taggade versioner plockas **inte** bort av `docker system
+prune` — bara dangling (otagged). För att hålla disken nere:
+
+```bash
+bash scripts/cleanup-docker.sh              # default: 7 dagars retention
+RETENTION_HOURS=72 bash scripts/cleanup-docker.sh  # 3 dagar
+DRY_RUN=1 bash scripts/cleanup-docker.sh    # visa kandidater utan att ta bort
+```
+
+Scriptet tar bort oanvända images äldre än retention-fönstret + stoppade
+containers + build-cache + oanvända nätverk. **Volymer rörs aldrig.**
+Retention-fönstret är ditt rollback-fönster — sänk inte under hur långt
+tillbaka du kan tänka dig att behöva rulla.
+
+Rekommenderad cron (söndag 04:00):
+```cron
+0 4 * * 0 cd /home/deploy/malarkrets && bash scripts/cleanup-docker.sh >> /var/log/malarkrets-cleanup.log 2>&1
+```
+
 ### Ladda om `.env` efter ändring
 
 **Gotcha:** `env_file` i docker-compose läses bara vid **container-skapande**,
