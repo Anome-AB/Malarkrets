@@ -232,6 +232,74 @@ till Dash0. Instrumentering i appen görs av `@vercel/otel` (se
 - `chore(dev):` — dev-only verktyg (t.ex. portmappning)
 - `docs(release):` — denna fil, release-dokumentation
 
+## Release notes / Nyheter
+
+Användarsynliga ändringar dokumenteras i `public/release-notes.json` och
+renderas på `/nyheter`. Sidan är publik och länkas från site-banner:en när
+den är aktiv (under PRE-GO-LIVE med `SITE_BANNER_TEXT` satt).
+
+### Rutin för ny release (manuellt tills vidare)
+
+1. **Samla commits sedan förra taggen**:
+   ```bash
+   git log v0.1.0..HEAD --oneline
+   ```
+
+2. **Översätt till användar-språk** — grupperat i sektionerna `added`,
+   `improved`, `fixed`. Plain language, undvik kod-jargon och fil-namn.
+   Antingen själv eller genom att be Claude sammanfatta commits:en.
+
+3. **Lägg till entry FÖRST i arrayen** i `public/release-notes.json`
+   (nyast överst). Format:
+   ```json
+   {
+     "version": "0.2.0",
+     "date": "2026-05-XX",
+     "title": "Kort titel på svenska",
+     "summary": "En-mening sammanfattning.",
+     "sections": {
+       "added": ["..."],
+       "improved": ["..."],
+       "fixed": ["..."]
+     }
+   }
+   ```
+   Lämna tomma sektioner som `[]` — sidan visar bara det som har innehåll.
+
+4. **Commit + PR + merge**.
+
+5. **Tagga när PR är mergad**:
+   ```bash
+   git checkout master && git pull
+   git tag -a v0.2.0 -m "Release v0.2.0"
+   git push origin v0.2.0
+   ```
+   Pipeline (release.yml) bygger en docker-image med tag `:0.2.0`,
+   `:0.2`, `:0` + migrate-motsvarigheter. Användbart vid rollback.
+
+### Versions-schema (PRE-GO-LIVE)
+
+- `v0.X.0` — ny feature-nivå (t.ex. forgot-password gick ut i v0.2.0)
+- `v0.X.Y` — bug-fixar / småjusteringar inom samma feature-linje
+- `v1.0.0` — första stabila POST-GO-LIVE-release
+
+Detta signalerar "pre-GA, saker förändras" och ger ett tydligt kontrakt
+när vi bumpar till 1.0.
+
+### Vad ska INTE stå i release notes
+
+Infra/CI/deploy-förbättringar, refactors, test-tillägg, dokumentation.
+Allt som är osynligt för testaren utelämnas. Om det är osäkert — tumregel:
+"skulle en icke-teknisk Västerås-bo förstå att det här påverkar deras
+upplevelse?" Om nej → utelämna.
+
+### Framtida automation (fas 3)
+
+När tone är etablerad planerar vi en GitHub Action som tar `v*.*.*`-tag
+→ sammanställer commits → Claude Haiku API genererar draft → PR med
+uppdaterad `release-notes.json`. Human approval innan merge. Se
+`TODOS.md` för status.
+
 ## Rollback (planerat)
 
 Tills semver-tagging finns: `docker pull ghcr.io/ohman74/malarkrets:sha-<hash>`
@@ -249,7 +317,7 @@ från föregående grön release och starta om compose-stacken.
 - [ ] Pipeline grön
 - [ ] `/api/health` svarar 200 på target
 - [ ] Smoke: logga in, lista aktiviteter
-- [ ] Logga release i `TODOS.md` eller release-notes
+- [ ] Release-notes uppdaterade i `public/release-notes.json` + git-tag pushad (se "Release notes / Nyheter"-sektionen ovan)
 
 ## Gränsyta mot GreenLion
 

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useSyncExternalStore } from "react";
 
 function storageKey(text: string) {
@@ -43,6 +44,13 @@ export function SiteBannerDismissible({ text }: { text: string }) {
       className="relative bg-amber-500 text-black text-sm text-center py-2 px-10 font-medium"
     >
       {text}
+      {" · "}
+      <Link
+        href="/nyheter"
+        className="underline underline-offset-2 hover:text-black/70"
+      >
+        Se vad som är nytt →
+      </Link>
       <button
         type="button"
         aria-label="Stäng banner"
