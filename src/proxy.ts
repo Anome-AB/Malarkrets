@@ -11,12 +11,15 @@ export async function proxy(request: NextRequest) {
   //   unguessable, so "unlisted public" is fine for this content.
   // /api/health: container healthcheck and external monitoring — must not
   //   redirect (a 307 passes `wget --spider` but hides real failures).
+  // /nyheter: release notes for testers. Linked from the site-banner which
+  //   also renders for unauthenticated visitors — login-wall makes no sense.
   const publicPatterns = [
     /^\/auth(\/|$)/,
     /^\/api\/auth(\/|$)/,
     /^\/api\/images(\/|$)/,
     /^\/api\/health(\/|$)/,
     /^\/activity(\/|$)/,
+    /^\/nyheter(\/|$)/,
     /^\/$/,
   ];
 
