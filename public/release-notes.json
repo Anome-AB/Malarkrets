@@ -1,0 +1,36 @@
+{
+  "releases": [
+    {
+      "version": "0.1.0",
+      "date": "2026-04-24",
+      "title": "Första test-versionen",
+      "summary": "Välkommen till Mälarkrets under test. Det här är vad som fungerar idag — en community-plattform för aktiviteter i Västerås.",
+      "sections": {
+        "added": [
+          "Registrera ett konto med e-post och lösenord. Du får en verifieringslänk via mejl som måste klickas innan du kan logga in.",
+          "Återställ ditt lösenord via e-post om du glömmer det. Den länken är giltig i en timme. Alla andra inloggningar loggas ut när du byter lösenord.",
+          "Skapa en profil med för- och efternamn, visningsnamn, ålder, kön och en kort plats.",
+          "Välj dina intressen från en lista — det styr vad som dyker upp i din aktivitetsfeed.",
+          "Radera ditt konto när som helst.",
+          "Se en feed med kommande aktiviteter — det som sker närmast i tiden listas först. Scrolla så fylls 50 fler på i taget, ingen klick-paginering.",
+          "Filtrera feeden på intressetaggar i sidomenyn. Eller välj \"Visa alla\" för att se hela utbudet som passar dig (ålder och könsbegränsningar respekteras fortfarande).",
+          "Icke-inloggade besökare ser populära aktiviteter direkt på startsidan.",
+          "Skapa din egen aktivitet: titel, beskrivning, plats, datum och separat start-/sluttid. Plats-sökningen är låst till Västerås kommun — det går inte att välja en adress utanför.",
+          "Ladda upp en bild till din aktivitet eller välj ett färgtema som syns i feed-korten.",
+          "Begränsa din aktivitet efter behov: maxantal deltagare, minimiålder, könsspecifik (kvinnor/män/alla).",
+          "Skriv ett välkomstmeddelande i formuläret som peppar den som tvekar att komma ensam.",
+          "Redigera eller avboka din egen aktivitet. Avbokning kräver en anledning och deltagare får en avisering.",
+          "Anmäl dig till andras aktiviteter som \"Jag vill vara med!\" eller \"Intresserad\" (senare innebär inget åtagande).",
+          "Lämna en aktivitet när du vill.",
+          "Kommentera aktiviteter du deltar i.",
+          "Se dina egna aktiviteter på sidan \"Mina aktiviteter\" — både de du skapat och de du deltar i.",
+          "Aviseringar när något händer med aktiviteter du deltar i: ändringar, avbokning, nya kommentarer. Antal olästa visas i toppraden.",
+          "Kartor visar var aktiviteten äger rum.",
+          "Rapportera olämpligt innehåll och blockera användare du inte vill se i feeden eller kommentarsfält.",
+          "Admins kan moderera: redigera, avboka eller radera andras aktiviteter, och blockera användare som bryter mot reglerna. Blockerade användare kan inte logga in.",
+          "Fungerar på mobil och desktop. På desktop öppnas aktivitetsdetalj-vyn i en panel från höger istället för full sida — så du behåller feed-kontexten."
+        ]
+      }
+    }
+  ]
+}
