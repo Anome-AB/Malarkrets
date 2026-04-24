@@ -58,7 +58,7 @@ push master ──► .github/workflows/release.yml
                   ├─ docker build (Dockerfile, multi-stage)
                   │    build-args: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
                   │
-                  └─ push ghcr.io/ohman74/malarkrets:{latest, sha-<hash>}
+                  └─ push ghcr.io/anome-ab/malarkrets:{latest, sha-<hash>}
 ```
 
 Deploy (idag manuellt): `bash scripts/deploy-local.sh` pullar imagen och
@@ -80,7 +80,7 @@ startar `docker-compose.yml`.
 
 ### Lägga till GitHub Secret
 
-- CLI: `gh secret set NAMN --repo ohman74/Malarkrets`
+- CLI: `gh secret set NAMN --repo Anome-AB/Malarkrets`
 - Webb: Settings → Secrets and variables → Actions.
 - Dokumentera i `.env.prod.example` med kommentar `# set via GitHub Secret`.
 
@@ -219,7 +219,9 @@ till Dash0. Instrumentering i appen görs av `@vercel/otel` (se
 ## Säkerhet
 
 - `.env` committas **aldrig** (.gitignore fångar `.env*` utom templates).
-- Postgres exponerar inte port i prod-compose (förutom vid temporär dev-access).
+- Postgres binder `127.0.0.1:5432:5432` i prod-compose — endast loopback,
+  aldrig internet. Extern åtkomst sker via SSH-tunnel (se "Databas-
+  migrationer" ovan). UFW blockerar ändå allt utom 22/80/443.
 - Google Maps-nyckel är `NEXT_PUBLIC_*` → exponeras i klient-bundeln.
   Måste restriktioneras i Google Cloud Console (HTTP referrers + API-scope +
   kvot). Se TODOS.
@@ -242,7 +244,7 @@ den är aktiv (under PRE-GO-LIVE med `SITE_BANNER_TEXT` satt).
 
 1. **Samla commits sedan förra taggen**:
    ```bash
-   git log v0.1.0..HEAD --oneline
+   git log $(git describe --tags --abbrev=0)..HEAD --oneline
    ```
 
 2. **Översätt till användar-språk** — grupperat i sektionerna `added`,
@@ -305,8 +307,8 @@ den är aktiv (under PRE-GO-LIVE med `SITE_BANNER_TEXT` satt).
 
 ### Versions-schema (PRE-GO-LIVE)
 
-- `v0.X.0` — ny feature-nivå (t.ex. forgot-password gick ut i v0.2.0)
-- `v0.X.Y` — bug-fixar / småjusteringar inom samma feature-linje
+- `v0.X.0` — ny feature-nivå
+- `v0.X.Y` — bug-fixar / småjusteringar inom samma feature-linje (t.ex. v0.1.1 = nyheter-länk-fix)
 - `v1.0.0` — första stabila POST-GO-LIVE-release
 
 Detta signalerar "pre-GA, saker förändras" och ger ett tydligt kontrakt
@@ -325,11 +327,6 @@ När tone är etablerad planerar vi en GitHub Action som tar `v*.*.*`-tag
 → sammanställer commits → Claude Haiku API genererar draft → PR med
 uppdaterad `release-notes.json`. Human approval innan merge. Se
 `TODOS.md` för status.
-
-## Rollback (planerat)
-
-Tills semver-tagging finns: `docker pull ghcr.io/ohman74/malarkrets:sha-<hash>`
-från föregående grön release och starta om compose-stacken.
 
 ## Checklistor
 
