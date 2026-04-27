@@ -257,6 +257,7 @@ async function AuthenticatedFeed({
       showAll={showAll}
       unreadCount={unreadCount}
       userInitials={userInitials}
+      userAvatarUrl={userProfile.avatarUrl}
       isAdmin={userProfile.isAdmin}
     >
       <ActivityFeed

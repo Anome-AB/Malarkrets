@@ -230,6 +230,7 @@ export default async function ActivityDetailPage({
           interests={shellData.interests}
           unreadCount={shellData.unreadCount}
           userInitials={shellData.initials}
+          userAvatarUrl={shellData.avatarUrl}
           isAdmin={shellData.isAdmin}
         >
           {tombstone}
@@ -529,6 +530,7 @@ export default async function ActivityDetailPage({
         interests={shellData.interests}
         unreadCount={shellData.unreadCount}
         userInitials={shellData.initials}
+        userAvatarUrl={shellData.avatarUrl}
         isAdmin={shellData.isAdmin}
       >
         {pageContent}

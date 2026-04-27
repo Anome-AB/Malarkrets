@@ -68,6 +68,7 @@ export default async function ProfilePage() {
       interests={shellData.interests}
       unreadCount={shellData.unreadCount}
       userInitials={shellData.initials}
+      userAvatarUrl={shellData.avatarUrl}
       isAdmin={shellData.isAdmin}
     >
       <div className="px-6 py-8">
@@ -81,6 +82,8 @@ export default async function ProfilePage() {
             emailVerified: profile.emailVerified ?? false,
             birthDate: profile.birthDate ?? "",
             gender: profile.gender ?? "ej_angett",
+            avatarUrl: profile.avatarUrl ?? null,
+            initials: shellData.initials,
           }}
           currentInterestIds={interests.map((i) => i.id)}
           allTags={allTags}
