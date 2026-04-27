@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useTransition, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,6 +10,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { updateProfile, updateInterests, deleteAccount } from "@/actions/profile";
 import { unblockUser } from "@/actions/blocking";
 import { AvatarPicker } from "@/components/profile/avatar-picker";
+import { useAutoSave } from "@/hooks/useAutoSave";
 
 interface ProfileData {
   firstName: string;
@@ -42,17 +42,20 @@ interface ProfileClientProps {
   blockedUsers: BlockedUser[];
 }
 
+type Gender = "man" | "kvinna" | "ej_angett";
+
+function isGender(value: string): value is Gender {
+  return value === "man" || value === "kvinna" || value === "ej_angett";
+}
+
 export function ProfileClient({
   profile,
   currentInterestIds,
   allTags,
   blockedUsers: initialBlocked,
 }: ProfileClientProps) {
-  const router = useRouter();
   const { toast } = useToast();
-  const [isPending, startTransition] = useTransition();
 
-  // Profile form state
   const [firstName, setFirstName] = useState(profile.firstName);
   const [lastName, setLastName] = useState(profile.lastName);
   const [displayName, setDisplayName] = useState(profile.displayName);
@@ -61,11 +64,7 @@ export function ProfileClient({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Auto-suggest displayName from firstName + first letter of lastName
-  // ("Fredrik I"). Tracks the last auto-filled value so continued typing
-  // in firstName keeps refreshing the suggestion ("F I" → "Fr I" → "Fre I"),
-  // but any manual edit in the displayName field detaches the link and from
-  // then on firstName/lastName changes leave displayName alone. Clearing the
-  // field (back to empty) reattaches the auto-fill.
+  // ("Fredrik I"). Manual edit detaches the link; clearing reattaches it.
   const [lastAutoFill, setLastAutoFill] = useState<string | null>(null);
 
   function suggestDisplayName(first: string, last: string): string {
@@ -92,14 +91,30 @@ export function ProfileClient({
   }
   function handleDisplayNameChange(value: string) {
     setDisplayName(value);
-    // Any manual edit (including clearing) detaches auto-fill. If the user
-    // empties the field, reattach so first/last changes can fill it again.
     setLastAutoFill(value === "" ? null : value === lastAutoFill ? lastAutoFill : null);
   }
 
-  // Interest state
+  // Bundla persondata till ett patch-objekt som hooken kan watcha. JSON-jämförs
+  // i hooken så referensbyte vid varje render är oviktigt.
+  const profilePatch = useMemo(
+    () => ({
+      firstName,
+      lastName,
+      displayName,
+      birthDate,
+      gender: isGender(gender) ? gender : ("ej_angett" as const),
+    }),
+    [firstName, lastName, displayName, birthDate, gender],
+  );
+
+  useAutoSave({
+    value: profilePatch,
+    save: async (patch) => updateProfile(patch),
+    toastOnSuccess: "Sparat",
+  });
+
+  // Interests
   const [selectedTags, setSelectedTags] = useState<number[]>(currentInterestIds);
-  const [savingInterests, setSavingInterests] = useState(false);
   const [tagSearch, setTagSearch] = useState("");
 
   const filteredTags = useMemo(() => {
@@ -108,28 +123,15 @@ export function ProfileClient({
     return allTags.filter((t) => t.name.toLowerCase().includes(q));
   }, [allTags, tagSearch]);
 
-  // Blocked users state
-  const [blockedUsers, setBlockedUsers] = useState(initialBlocked);
-
-  function handleProfileSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    startTransition(async () => {
-      const formData = new FormData();
-      if (firstName) formData.set("firstName", firstName);
-      if (lastName) formData.set("lastName", lastName);
-      if (displayName) formData.set("displayName", displayName);
-      if (birthDate) formData.set("birthDate", birthDate);
-      if (gender) formData.set("gender", gender);
-
-      const result = await updateProfile(formData);
-      if (result.success) {
-        toast("Profilen har uppdaterats", "success");
-        router.refresh();
-      } else {
-        toast(result.error ?? "Något gick fel", "error");
-      }
-    });
-  }
+  // Längre debounce för tag-toggles eftersom användare ofta klickar fler i
+  // burst — slår ihop bursts till en toast istället för en per klick.
+  useAutoSave({
+    value: selectedTags,
+    save: async (tags) => updateInterests(tags),
+    debounceMs: 1500,
+    enabled: selectedTags.length >= 3,
+    toastOnSuccess: "Intressen sparade",
+  });
 
   function toggleTag(tagId: number) {
     setSelectedTags((prev) =>
@@ -139,25 +141,8 @@ export function ProfileClient({
     );
   }
 
-  function handleSaveInterests() {
-    if (selectedTags.length < 3) {
-      toast("Välj minst 3 intressen", "error");
-      return;
-    }
-    setSavingInterests(true);
-    startTransition(async () => {
-      const formData = new FormData();
-      formData.set("tagIds", JSON.stringify(selectedTags));
-      const result = await updateInterests(formData);
-      setSavingInterests(false);
-      if (result.success) {
-        toast("Intressen sparade", "success");
-        router.refresh();
-      } else {
-        toast(result.error ?? "Något gick fel", "error");
-      }
-    });
-  }
+  // Blocked users
+  const [blockedUsers, setBlockedUsers] = useState(initialBlocked);
 
   async function handleUnblock(blockedId: string) {
     const result = await unblockUser(blockedId);
@@ -171,13 +156,12 @@ export function ProfileClient({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* Personal info */}
       <Card title="Personlig information" className="space-y-6">
         <AvatarPicker
           initialAvatarUrl={profile.avatarUrl}
           initials={profile.initials}
         />
-        <form onSubmit={handleProfileSubmit} className="space-y-4">
+        <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Förnamn"
@@ -201,7 +185,6 @@ export function ProfileClient({
               Föreslås automatiskt från förnamn och första bokstaven i efternamnet. Du kan ändra det.
             </p>
           </div>
-
 
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-heading">
@@ -246,16 +229,9 @@ export function ProfileClient({
               <option value="man">Man</option>
             </select>
           </div>
-
-          <div className="flex justify-end">
-            <Button type="submit" loading={isPending}>
-              Spara ändringar
-            </Button>
-          </div>
-        </form>
+        </div>
       </Card>
 
-      {/* Interests */}
       <Card title="Mina intressen">
         <p className="text-sm text-secondary mb-3">
           Välj minst 3 intressen. Dessa styr vilka aktiviteter du ser.
@@ -282,21 +258,11 @@ export function ProfileClient({
             </p>
           )}
         </div>
-        <p className="text-xs text-dimmed mb-3">
+        <p className="text-xs text-dimmed">
           {selectedTags.length} av minst 3 valda
         </p>
-        <div className="flex justify-end">
-          <Button
-            onClick={handleSaveInterests}
-            loading={savingInterests}
-            disabled={selectedTags.length < 3}
-          >
-            Spara intressen
-          </Button>
-        </div>
       </Card>
 
-      {/* Blocked users */}
       <Card title="Blockerade användare">
         {blockedUsers.length === 0 ? (
           <p className="text-sm text-secondary">
@@ -325,7 +291,6 @@ export function ProfileClient({
         )}
       </Card>
 
-      {/* Danger zone */}
       <Card variant="danger" title="Farligt område">
         <p className="text-sm text-secondary mb-6">
           Att radera ditt konto går inte att ångra. All data tas bort permanent.

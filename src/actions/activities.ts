@@ -18,6 +18,7 @@ import {
 import {
   createActivitySchema,
   updateActivitySchema,
+  type UpdateActivityInput,
 } from "@/lib/validations/activity";
 import { eq, and, count, sql, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -185,41 +186,27 @@ export async function createActivity(formData: FormData) {
   }
 }
 
-export async function updateActivity(formData: FormData) {
+// Auto-save-vänligt: tar emot ett patch-objekt med bara förändrade fält.
+// Klassiska FormData-callers byggs ovanpå genom att skicka in objektet direkt.
+//
+// `options.autoSave` styr två sidoeffekter som vi vill undvika när hooken
+// fires många gånger per editing-session:
+//  - Skicka notiser till deltagare (skulle bli spam vid varje keystroke).
+//  - revalidatePath / cache-invalidering (lokalt UI är optimistiskt; nästa
+//    page-load hämtar färskt).
+// Default autoSave=false så befintliga test- och submit-callers behåller
+// sina semantik.
+type UpdateActivityPatch = Partial<UpdateActivityInput> & { id: string };
+
+export async function updateActivity(
+  patch: UpdateActivityPatch,
+  options: { autoSave?: boolean } = {},
+) {
+  const { autoSave = false } = options;
   try {
     const user = await requireAuth();
 
-    const raw = {
-      id: formData.get("id"),
-      title: formData.get("title") || undefined,
-      description: formData.get("description") || undefined,
-      location: formData.get("location") || undefined,
-      latitude: formData.get("latitude") ? Number(formData.get("latitude")) : undefined,
-      longitude: formData.get("longitude") ? Number(formData.get("longitude")) : undefined,
-      imageThumbUrl: formData.has("imageThumbUrl") ? (formData.get("imageThumbUrl") as string) || null : undefined,
-      imageMediumUrl: formData.has("imageMediumUrl") ? (formData.get("imageMediumUrl") as string) || null : undefined,
-      imageOgUrl: formData.has("imageOgUrl") ? (formData.get("imageOgUrl") as string) || null : undefined,
-      imageAccentColor: formData.has("imageAccentColor") ? (formData.get("imageAccentColor") as string) || null : undefined,
-      colorTheme: formData.has("colorTheme") ? (formData.get("colorTheme") as string) || null : undefined,
-      startTime: formData.get("startTime") || undefined,
-      endTime: formData.get("endTime") || undefined,
-      maxParticipants: formData.get("maxParticipants")
-        ? Number(formData.get("maxParticipants"))
-        : undefined,
-      genderRestriction: formData.get("genderRestriction") || undefined,
-      minAge: formData.get("minAge")
-        ? Number(formData.get("minAge"))
-        : undefined,
-      tags: formData.get("tags")
-        ? JSON.parse(formData.get("tags") as string)
-        : undefined,
-      whatToExpect: formData.get("whatToExpect")
-        ? JSON.parse(formData.get("whatToExpect") as string)
-        : undefined,
-      adminReason: formData.get("adminReason") || undefined,
-    };
-
-    const parsed = updateActivitySchema.safeParse(raw);
+    const parsed = updateActivitySchema.safeParse(patch);
     if (!parsed.success) {
       return { success: false, error: parsed.error.issues[0].message };
     }
@@ -405,29 +392,35 @@ export async function updateActivity(formData: FormData) {
     // Notify all participants (interested + attending) about the update.
     // Excludes the actor (creator editing self, or admin editing — creator
     // separately gets the richer activity_edited_by_admin notification above).
-    const participants = await db
-      .select({ userId: activityParticipants.userId })
-      .from(activityParticipants)
-      .where(eq(activityParticipants.activityId, id));
+    //
+    // Skippas i auto-save-läge: hooken fires många gånger per editing-session
+    // och varje keystroke skulle spamma alla deltagare. Admin-notiser och
+    // cancel/delete-notiser går utanför detta path och påverkas inte.
+    if (!autoSave) {
+      const participants = await db
+        .select({ userId: activityParticipants.userId })
+        .from(activityParticipants)
+        .where(eq(activityParticipants.activityId, id));
 
-    const recipients = participants.filter((p) => {
-      if (p.userId === user.id!) return false;
-      // Creator already got activity_edited_by_admin — skip the generic update.
-      if (isAdminEdit && activity.creatorId && p.userId === activity.creatorId) return false;
-      return true;
-    });
-    if (recipients.length > 0) {
-      await db.insert(notifications).values(
-        recipients.map((p) => ({
-          userId: p.userId,
-          type: "activity_updated" as const,
-          activityId: id,
-        })),
-      );
+      const recipients = participants.filter((p) => {
+        if (p.userId === user.id!) return false;
+        // Creator already got activity_edited_by_admin — skip the generic update.
+        if (isAdminEdit && activity.creatorId && p.userId === activity.creatorId) return false;
+        return true;
+      });
+      if (recipients.length > 0) {
+        await db.insert(notifications).values(
+          recipients.map((p) => ({
+            userId: p.userId,
+            type: "activity_updated" as const,
+            activityId: id,
+          })),
+        );
+      }
+
+      revalidatePath("/");
+      revalidatePath(`/activity/${id}`);
     }
-
-    revalidatePath("/");
-    revalidatePath(`/activity/${id}`);
 
     return { success: true };
   } catch (error) {

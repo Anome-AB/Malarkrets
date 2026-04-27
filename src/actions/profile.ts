@@ -15,28 +15,37 @@ import {
   updateInterestsSchema,
 } from "@/lib/validations/profile";
 import { eq } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { log, errAttrs } from "@/lib/logger";
 
-export async function updateProfile(formData: FormData) {
+type UpdateProfilePatch = {
+  firstName?: string;
+  lastName?: string;
+  displayName?: string;
+  birthDate?: string;
+  gender?: "man" | "kvinna" | "ej_angett";
+};
+
+// Auto-save-vänligt server-action: tar emot ett patch-objekt med bara
+// förändrade fält. Validerar partial schema, uppdaterar bara de kolumner
+// som finns i payload. Kallas från useAutoSave-hooken.
+//
+// revalidatePath skippas medvetet — auto-save fires många gånger per
+// editing-session och cache-invalidering är onödig (lokal UI är optimistisk,
+// nästa page-load hämtar färskt).
+export async function updateProfile(patch: UpdateProfilePatch) {
   try {
     const user = await requireAuth();
 
-    const raw = {
-      firstName: formData.get("firstName") || undefined,
-      lastName: formData.get("lastName") || undefined,
-      displayName: formData.get("displayName") || undefined,
-      birthDate: formData.get("birthDate") || undefined,
-      gender: formData.get("gender") || undefined,
-    };
-
-    const parsed = updateProfileSchema.safeParse(raw);
+    const parsed = updateProfileSchema.safeParse(patch);
     if (!parsed.success) {
-      return { success: false, error: parsed.error.issues[0].message };
+      return { success: false as const, error: parsed.error.issues[0].message };
     }
 
     const data = parsed.data;
+    if (Object.keys(data).length === 0) {
+      return { success: true as const };
+    }
 
     await db
       .update(users)
@@ -49,50 +58,43 @@ export async function updateProfile(formData: FormData) {
       })
       .where(eq(users.id, user.id!));
 
-    revalidatePath("/");
-
-    return { success: true };
+    return { success: true as const };
   } catch (error) {
     log.error("updateProfile error", errAttrs(error));
-    return { success: false, error: "Något gick fel vid uppdatering av profil" };
+    return {
+      success: false as const,
+      error: "Något gick fel vid uppdatering av profil",
+    };
   }
 }
 
-export async function updateInterests(formData: FormData) {
+export async function updateInterests(tagIds: number[]) {
   try {
     const user = await requireAuth();
 
-    const raw = {
-      tagIds: JSON.parse((formData.get("tagIds") as string) || "[]"),
-    };
-
-    const parsed = updateInterestsSchema.safeParse(raw);
+    const parsed = updateInterestsSchema.safeParse({ tagIds });
     if (!parsed.success) {
-      return { success: false, error: parsed.error.issues[0].message };
+      return { success: false as const, error: parsed.error.issues[0].message };
     }
 
-    const { tagIds } = parsed.data;
+    const validTagIds = parsed.data.tagIds;
 
-    // Delete all existing interests
     await db.delete(userInterests).where(eq(userInterests.userId, user.id!));
 
-    // Insert new ones
-    if (tagIds.length > 0) {
+    if (validTagIds.length > 0) {
       await db.insert(userInterests).values(
-        tagIds.map((tagId) => ({
+        validTagIds.map((tagId) => ({
           userId: user.id!,
           tagId,
         })),
       );
     }
 
-    revalidatePath("/");
-
-    return { success: true };
+    return { success: true as const };
   } catch (error) {
     log.error("updateInterests error", errAttrs(error));
     return {
-      success: false,
+      success: false as const,
       error: "Något gick fel vid uppdatering av intressen",
     };
   }
@@ -103,7 +105,6 @@ export async function deleteAccount() {
     const user = await requireAuth();
     const userId = user.id!;
 
-    // Anonymize user profile
     await db
       .update(users)
       .set({
@@ -117,7 +118,6 @@ export async function deleteAccount() {
       })
       .where(eq(users.id, userId));
 
-    // Delete related data
     await db.delete(userInterests).where(eq(userInterests.userId, userId));
     await db.delete(userBlocks).where(eq(userBlocks.blockerId, userId));
     await db.delete(notifications).where(eq(notifications.userId, userId));
@@ -125,12 +125,11 @@ export async function deleteAccount() {
       .delete(analyticsEvents)
       .where(eq(analyticsEvents.userId, userId));
 
-    // Sign out and redirect
     await signOut({ redirectTo: "/" });
   } catch (error) {
     log.error("deleteAccount error", errAttrs(error));
     return {
-      success: false,
+      success: false as const,
       error: "Något gick fel vid radering av konto",
     };
   }

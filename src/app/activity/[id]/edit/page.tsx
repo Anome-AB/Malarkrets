@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition, useEffect, useCallback } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,12 +13,14 @@ import { PlacesAutocomplete } from "@/components/ui/places-autocomplete";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { CancelActivityModal } from "@/components/activity/cancel-activity-modal";
 import { randomCourageMessage, randomFromList } from "@/lib/courage-messages";
+import { useAutoSave } from "@/hooks/useAutoSave";
 import {
   combineDateTime,
   combineEndDateTime,
   toDateInput,
   toTimeInput,
 } from "@/lib/datetime";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 interface InterestTag {
@@ -52,7 +54,6 @@ export default function EditActivityPage() {
   const params = useParams<{ id: string }>();
   const activityId = params.id;
   const { toast } = useToast();
-  const [isPending, startTransition] = useTransition();
   const [userInterests, setUserInterests] = useState<InterestTag[]>([]);
   const [selectedTags, setSelectedTags] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
@@ -119,10 +120,12 @@ export default function EditActivityPage() {
 
   const {
     register,
-    handleSubmit,
+    watch,
     reset,
     formState: { errors },
-  } = useForm<FormValues>();
+  } = useForm<FormValues>({ mode: "onBlur" });
+
+  const watched = watch();
 
   useEffect(() => {
     async function fetchData() {
@@ -242,79 +245,126 @@ export default function EditActivityPage() {
     setCoordinates({ lat: place.lat, lng: place.lng });
   }, []);
 
-  function onSubmit(values: FormValues) {
-    if (selectedTags.length === 0) {
-      toast("Välj minst en intressetagg", "error");
-      return;
-    }
-    if (!locationText.trim()) {
-      toast("Ange en plats", "error");
-      return;
-    }
-    if (!image.thumbUrl && !colorTheme) {
-      toast("Välj en bild eller en bakgrundsfärg", "error");
-      return;
-    }
-
-    startTransition(async () => {
-      const formData = new FormData();
-      formData.set("id", activityId);
-      formData.set("title", values.title);
-      formData.set("description", values.description);
-      formData.set("location", locationText);
-      if (coordinates) {
-        formData.set("latitude", String(coordinates.lat));
-        formData.set("longitude", String(coordinates.lng));
-      }
-      formData.set("imageThumbUrl", image.thumbUrl ?? "");
-      formData.set("imageMediumUrl", image.mediumUrl ?? "");
-      formData.set("imageOgUrl", image.ogUrl ?? "");
-      formData.set("imageAccentColor", image.accentColor ?? "");
-      formData.set("colorTheme", colorTheme ?? "");
-      const startCombined = combineDateTime(
-        values.date,
-        values.startTimeOfDay,
-      );
-      if (!startCombined) {
-        toast("Ange datum och starttid", "error");
-        return;
-      }
-      const endCombined = combineEndDateTime(
-        values.date,
-        values.startTimeOfDay,
-        values.endTimeOfDay,
-      );
-      formData.set("startTime", startCombined);
-      if (endCombined) formData.set("endTime", endCombined);
-      if (values.maxParticipants) formData.set("maxParticipants", values.maxParticipants);
-      const restriction = genderOpen
-        ? (userGender === "kvinna" ? "kvinnor" : userGender === "man" ? "man" : "alla")
+  // Bygg ett patch-objekt från RHF-watched values + non-RHF state. Hooken
+  // jämför via JSON så referensbyte vid varje render är OK.
+  const patch = useMemo(() => {
+    const startTime = combineDateTime(watched.date, watched.startTimeOfDay) ?? undefined;
+    const endTime =
+      combineEndDateTime(
+        watched.date,
+        watched.startTimeOfDay,
+        watched.endTimeOfDay,
+      ) ?? undefined;
+    const courageMessage =
+      courageEnabled && courageText.trim() ? courageText.trim() : undefined;
+    const genderRestriction: "alla" | "kvinnor" | "man" = isAdminEdit
+      ? "alla"
+      : genderOpen
+        ? userGender === "kvinna"
+          ? "kvinnor"
+          : userGender === "man"
+            ? "man"
+            : "alla"
         : "alla";
-      formData.set("genderRestriction", restriction);
-      if (values.minAge) formData.set("minAge", values.minAge);
-      formData.set("tags", JSON.stringify(selectedTags));
-      const courageMessage = courageEnabled && courageText.trim() ? courageText.trim() : undefined;
-      formData.set("whatToExpect", JSON.stringify({
-        audience,
-        experienceLevel: values.experienceLevel,
-        whoComes: values.whoComes || undefined,
-        latePolicy: values.latePolicy || undefined,
+
+    return {
+      id: activityId,
+      title: watched.title,
+      description: watched.description,
+      location: locationText,
+      latitude: coordinates?.lat,
+      longitude: coordinates?.lng,
+      imageThumbUrl: image.thumbUrl,
+      imageMediumUrl: image.mediumUrl,
+      imageOgUrl: image.ogUrl,
+      imageAccentColor: image.accentColor,
+      colorTheme,
+      startTime,
+      endTime,
+      maxParticipants: watched.maxParticipants
+        ? Number(watched.maxParticipants)
+        : undefined,
+      minAge:
+        !isAdminEdit && watched.minAge ? Number(watched.minAge) : undefined,
+      genderRestriction: !isAdminEdit ? genderRestriction : undefined,
+      tags: selectedTags,
+      whatToExpect: {
+        audience: audience as "alla" | "par" | "familj",
+        experienceLevel: (watched.experienceLevel ?? "alla") as
+          | "alla"
+          | "nyborjare"
+          | "medel"
+          | "avancerad",
+        whoComes: watched.whoComes || undefined,
+        latePolicy: watched.latePolicy || undefined,
         ...(courageMessage ? { courageMessage } : {}),
-      }));
-      if (isAdminEdit) {
-        formData.set("adminReason", values.adminReason);
-      }
+      },
+      adminReason: isAdminEdit ? watched.adminReason : undefined,
+    };
+  }, [
+    activityId,
+    watched.title,
+    watched.description,
+    watched.date,
+    watched.startTimeOfDay,
+    watched.endTimeOfDay,
+    watched.maxParticipants,
+    watched.minAge,
+    watched.experienceLevel,
+    watched.whoComes,
+    watched.latePolicy,
+    watched.adminReason,
+    locationText,
+    coordinates,
+    image,
+    colorTheme,
+    selectedTags,
+    audience,
+    courageEnabled,
+    courageText,
+    isAdminEdit,
+    genderOpen,
+    userGender,
+  ]);
 
-      const result = await updateActivity(formData);
+  // Auto-save fires bara när formuläret är giltigt. Kraven matchar serverns:
+  // titel/beskrivning/datum/tid/plats/koordinat finns, intressetagg vald,
+  // bild eller färg vald, och vid admin-edit en anledning på minst 10 tecken.
+  const isValid = useMemo(() => {
+    if (loading) return false;
+    if (!watched.title || watched.title.length < 3) return false;
+    if (!watched.description || watched.description.length < 10) return false;
+    if (!locationText.trim() || !coordinates) return false;
+    if (!image.thumbUrl && !colorTheme) return false;
+    if (!watched.date || !watched.startTimeOfDay) return false;
+    if (selectedTags.length === 0) return false;
+    if (
+      isAdminEdit &&
+      (!watched.adminReason || watched.adminReason.length < 10)
+    )
+      return false;
+    return true;
+  }, [
+    loading,
+    watched.title,
+    watched.description,
+    watched.date,
+    watched.startTimeOfDay,
+    watched.adminReason,
+    locationText,
+    coordinates,
+    image.thumbUrl,
+    colorTheme,
+    selectedTags.length,
+    isAdminEdit,
+  ]);
 
-      if (result.success) {
-        toast("Aktiviteten har uppdaterats!", "success");
-        router.push(`/activity/${activityId}`);
-      } else {
-        toast(result.error ?? "Något gick fel", "error");
-      }
-    });
-  }
+  useAutoSave({
+    value: patch,
+    enabled: isValid,
+    save: async (p) => updateActivity(p, { autoSave: true }),
+    toastOnSuccess: "Sparat",
+  });
 
   if (loading) {
     return (
@@ -337,11 +387,14 @@ export default function EditActivityPage() {
 
   return (
     <div className="px-6 pt-8 flex flex-col min-h-full">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-start justify-between mb-6 gap-4">
         <div>
           <h1 className="text-2xl font-bold text-heading">
             {isAdminEdit ? "Redigera aktivitet som admin" : "Redigera aktivitet"}
           </h1>
+          <p className="text-sm text-dimmed mt-1">
+            Ändringar sparas automatiskt.
+          </p>
           {isAdminEdit && creatorDisplayName && (
             <p className="text-sm text-secondary mt-1">
               Arrangör: <span className="font-medium text-heading">{creatorDisplayName}</span>
@@ -350,9 +403,9 @@ export default function EditActivityPage() {
         </div>
         <Link
           href={`/activity/${activityId}`}
-          className="text-sm text-secondary hover:text-heading transition-colors"
+          className="text-sm text-secondary hover:text-heading transition-colors whitespace-nowrap"
         >
-          Avbryt
+          Tillbaka till aktiviteten
         </Link>
       </div>
 
@@ -383,7 +436,7 @@ export default function EditActivityPage() {
         </Card>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1">
+      <div className="flex flex-col flex-1">
         <div className="grid grid-cols-activity-form gap-6 items-start">
             <Card title="Grundläggande information" className="space-y-4">
               <Input
@@ -635,22 +688,30 @@ export default function EditActivityPage() {
             </Card>
         </div>
 
-        {/* Sticky footer — pushed to bottom of viewport */}
-        <div className="sticky bottom-0 -mx-6 px-6 py-3 bg-white border-t border-border shadow-sticky-footer mt-auto pt-3 flex justify-between items-center gap-3 z-10">
-          {isAdminEdit ? (
-            <p className="text-xs text-dimmed">
-              Avboka eller ta bort görs via moderations-verktygen på aktivitetssidan.
+        {!isAdminEdit && (
+          <Card
+            variant="danger"
+            title="Avsluta redigering"
+            className="mt-8 space-y-4"
+          >
+            <p className="text-sm text-secondary">
+              Ändringar sparas automatiskt. Använd knappen nedan om du vill
+              ställa in eller radera aktiviteten.
             </p>
-          ) : (
-            <Button variant="danger" onClick={() => setShowCancelModal(true)}>
+            <Button
+              variant="danger"
+              onClick={() => setShowCancelModal(true)}
+            >
               {participantCount > 0 ? "Ställ in aktivitet" : "Radera aktivitet"}
             </Button>
-          )}
-          <Button type="submit" variant="primary" loading={isPending}>
-            Spara ändringar
-          </Button>
-        </div>
-      </form>
+          </Card>
+        )}
+        {isAdminEdit && (
+          <p className="mt-8 text-xs text-dimmed">
+            Avboka eller ta bort görs via moderations-verktygen på aktivitetssidan.
+          </p>
+        )}
+      </div>
 
       <CancelActivityModal
         open={showCancelModal}

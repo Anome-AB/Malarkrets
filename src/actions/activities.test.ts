@@ -308,17 +308,15 @@ describe("Own activity (creator perspective)", () => {
       // updateActivity selects participants for notifications
       selectQueue.push([]);
 
-      const fd = makeFormData({
+      const result = await updateActivity({
         id: ACTIVITY_ID,
         title: "Uppdaterad vandring vid Mälaren",
         description: "Vi vandrar vid Mälaren, alla välkomna",
         location: "Djäkneberget, Västerås",
         startTime: "2026-04-20T09:00:00Z",
-        tags: JSON.stringify([1]),
-        whatToExpect: JSON.stringify({ audience: "alla", experienceLevel: "alla" }),
+        tags: [1],
+        whatToExpect: { audience: "alla", experienceLevel: "alla" },
       });
-
-      const result = await updateActivity(fd);
       expect(result.success).toBe(true);
     });
 
@@ -327,17 +325,15 @@ describe("Own activity (creator perspective)", () => {
       mockDbQueryActivitiesFindFirst.mockResolvedValue(makeActivity({ creatorId: CREATOR.id }));
       mockDbQueryUsersFindFirst.mockResolvedValue(makeOtherProfile());
 
-      const fd = makeFormData({
+      const result = await updateActivity({
         id: ACTIVITY_ID,
         title: "Uppdaterad vandring vid Mälaren",
         description: "Vi vandrar vid Mälaren, alla välkomna",
         location: "Djäkneberget, Västerås",
         startTime: "2026-04-20T09:00:00Z",
-        tags: JSON.stringify([1]),
-        whatToExpect: JSON.stringify({ audience: "alla", experienceLevel: "alla" }),
+        tags: [1],
+        whatToExpect: { audience: "alla", experienceLevel: "alla" },
       });
-
-      const result = await updateActivity(fd);
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error).toContain("egna");
@@ -587,8 +583,7 @@ describe("Other's activity (non-creator perspective)", () => {
     it("rejects updating other's activity", async () => {
       mockDbQueryActivitiesFindFirst.mockResolvedValue(makeActivity({ creatorId: CREATOR.id }));
 
-      const fd = makeFormData({ id: ACTIVITY_ID, title: "Försök ändra" });
-      const result = await updateActivity(fd);
+      const result = await updateActivity({ id: ACTIVITY_ID, title: "Försök ändra" });
       expect(result.success).toBe(false);
     });
   });
