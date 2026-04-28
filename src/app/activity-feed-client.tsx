@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ActivityCard } from "@/components/activity/activity-card";
 import { ActivityPanel } from "@/components/activity/activity-panel";
@@ -74,6 +74,7 @@ export function ActivityFeed({
   showAll = false,
 }: ActivityFeedProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const isDesktop = useIsDesktop();
   const [searchText, setSearchText] = useState("");
   const [items, setItems] = useState<ActivityItem[]>(initialActivities);
@@ -84,6 +85,20 @@ export function ActivityFeed({
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
   const [filtersExpanded, setFiltersExpanded] = useState(activeFilters.length > 0 || showAll);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  // Återöppna panelen när användaren kommer tillbaka från edit-sidan via
+  // ?activity=<id>. Param städas direkt så URL:en stannar ren och senare
+  // panel-öppningar styrs bara av lokal state.
+  useEffect(() => {
+    const fromQuery = searchParams.get("activity");
+    if (!fromQuery) return;
+    if (!isDesktop) return;
+    setSelectedActivityId(fromQuery);
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete("activity");
+    const qs = next.toString();
+    router.replace(qs ? `?${qs}` : window.location.pathname, { scroll: false });
+  }, [searchParams, isDesktop, router]);
 
   // Reset pagination state when the server-rendered first page changes
   // (filter toggle, "Visa alla" toggle, route navigation). Without this

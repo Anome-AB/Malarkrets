@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,8 +52,18 @@ const AUDIENCE_OPTIONS = [
 export default function EditActivityPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
   const activityId = params.id;
   const { toast } = useToast();
+
+  // ?return-param skickas av varje "Redigera"-länk (panel, full-vy, my-activities,
+  // admin-controls). Whitelist:a med startsWith("/") så vi inte vidarebefordrar
+  // till externa domäner. Default är fullsida-vyn — samma som tidigare.
+  const rawReturn = searchParams.get("return");
+  const returnPath =
+    rawReturn && rawReturn.startsWith("/") && !rawReturn.startsWith("//")
+      ? rawReturn
+      : `/activity/${activityId}`;
   const [userInterests, setUserInterests] = useState<InterestTag[]>([]);
   const [selectedTags, setSelectedTags] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
@@ -402,7 +412,7 @@ export default function EditActivityPage() {
           )}
         </div>
         <Link
-          href={`/activity/${activityId}`}
+          href={returnPath}
           className="text-sm text-secondary hover:text-heading transition-colors whitespace-nowrap"
         >
           Tillbaka till aktiviteten

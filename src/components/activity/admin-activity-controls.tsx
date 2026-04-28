@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
@@ -25,6 +25,7 @@ interface Props {
 
 export function AdminActivityControls({ activity, creatorIsAdmin, compact = false }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
@@ -75,7 +76,11 @@ export function AdminActivityControls({ activity, creatorIsAdmin, compact = fals
     });
   }
 
-  const editHref = `/activity/${activity.id}/edit`;
+  // I compact-läge sitter kontrollerna i activity-panel ovanpå feeden;
+  // skicka med ?activity=<id> i return så feeden kan öppna panelen igen.
+  // I full-vy (non-compact) återgår vi till samma fullside-aktivitet.
+  const returnPath = compact ? `${pathname}?activity=${activity.id}` : pathname;
+  const editHref = `/activity/${activity.id}/edit?return=${encodeURIComponent(returnPath)}`;
 
   return (
     <>

@@ -507,7 +507,7 @@ export default async function ActivityDetailPage({
                   <span className="text-xs font-semibold text-primary uppercase tracking-wider">
                     Din aktivitet
                   </span>
-                  <Link href={`/activity/${id}/edit`}>
+                  <Link href={`/activity/${id}/edit?return=${encodeURIComponent(`/activity/${id}`)}`}>
                     <Button variant="secondary" size="compact" type="button">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />

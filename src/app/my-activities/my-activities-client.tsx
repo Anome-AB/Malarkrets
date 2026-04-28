@@ -94,7 +94,7 @@ export function MyActivitiesClient({
                   </span>
                 ) : (
                   <Link
-                    href={`/activity/${activity.id}/edit`}
+                    href={`/activity/${activity.id}/edit?return=${encodeURIComponent("/my-activities")}`}
                     className="absolute top-3 right-3 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-primary bg-white border border-primary rounded-lg hover:bg-primary-light transition-colors z-10"
                     onClick={(e) => e.stopPropagation()}
                   >

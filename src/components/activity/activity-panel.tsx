@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { getColorHex } from "@/lib/color-themes";
@@ -57,6 +58,7 @@ interface ActivityPanelProps {
 
 export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps) {
   const { toast } = useToast();
+  const pathname = usePathname();
   const panelRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const [detail, setDetail] = useState<ActivityDetail | null>(null);
@@ -438,14 +440,18 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
         )}
 
         {/* Creator tools footer — sticky, mirrors the admin footer pattern. Only the
-            edit action lives here; cancel/delete stay on the edit page. */}
+            edit action lives here; cancel/delete stay on the edit page.
+            return-param skickar med pathname + ?activity=<id> så feeden öppnar
+            panelen igen när användaren klickar "Tillbaka". */}
         {detail && detail.isCreator && !detail.deletedAt && (
           <div className="shrink-0 bg-primary-light border-t-2 border-primary/30 px-6 py-3 shadow-admin-footer">
             <div className="flex items-center justify-between gap-3">
               <span className="text-xs font-semibold text-primary uppercase tracking-wider">
                 Din aktivitet
               </span>
-              <Link href={`/activity/${activityId}/edit`}>
+              <Link
+                href={`/activity/${activityId}/edit?return=${encodeURIComponent(`${pathname}?activity=${activityId}`)}`}
+              >
                 <Button variant="secondary" size="compact" type="button">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
