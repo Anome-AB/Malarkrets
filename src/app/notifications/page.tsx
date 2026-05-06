@@ -36,6 +36,7 @@ export default async function NotificationsPage() {
       interests={shellData.interests}
       unreadCount={shellData.unreadCount}
       userInitials={shellData.initials}
+      userAvatarUrl={shellData.avatarUrl}
       isAdmin={shellData.isAdmin}
     >
       <NotificationsClient items={items} />

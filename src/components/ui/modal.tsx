@@ -2,14 +2,22 @@
 
 import React, { useEffect, useRef, useId } from "react";
 
+const sizeStyles = {
+  sm: "max-w-sm",
+  md: "max-w-lg",
+  lg: "max-w-2xl",
+  xl: "max-w-4xl",
+} as const;
+
 type ModalProps = {
   open: boolean;
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  size?: keyof typeof sizeStyles;
 };
 
-function Modal({ open, onClose, title, children }: ModalProps) {
+function Modal({ open, onClose, title, children, size = "md" }: ModalProps) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
@@ -68,20 +76,21 @@ function Modal({ open, onClose, title, children }: ModalProps) {
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="
+        className={`
           relative
           bg-white
           rounded-card
           shadow-xl
-          w-full max-w-lg
+          w-full ${sizeStyles[size]}
           mx-4
-          p-6
+          max-h-[90vh]
+          flex flex-col
           focus:outline-none
           animate-in fade-in zoom-in-95
-        "
+        `}
       >
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between p-6 pb-4 shrink-0">
           <h2
             id={titleId}
             className="text-lg font-semibold text-heading"
@@ -119,7 +128,7 @@ function Modal({ open, onClose, title, children }: ModalProps) {
         </div>
 
         {/* Content */}
-        <div>{children}</div>
+        <div className="px-6 pb-6 overflow-y-auto">{children}</div>
       </div>
     </div>
   );

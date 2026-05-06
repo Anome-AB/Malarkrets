@@ -9,6 +9,8 @@ interface ImageCropModalProps {
   onConfirm: (croppedBlob: Blob) => void;
   onCancel: () => void;
   loading?: boolean;
+  aspectRatio?: number;
+  cropShape?: "rect" | "round";
 }
 
 async function getCroppedBlob(
@@ -54,6 +56,8 @@ export function ImageCropModal({
   onConfirm,
   onCancel,
   loading = false,
+  aspectRatio = 16 / 9,
+  cropShape = "rect",
 }: ImageCropModalProps) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -84,7 +88,8 @@ export function ImageCropModal({
             image={imageSrc}
             crop={crop}
             zoom={zoom}
-            aspect={16 / 9}
+            aspect={aspectRatio}
+            cropShape={cropShape}
             onCropChange={setCrop}
             onZoomChange={setZoom}
             onCropComplete={onCropComplete}

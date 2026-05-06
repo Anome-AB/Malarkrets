@@ -54,17 +54,6 @@ Obs: flera punkter måste påbörjas i god tid före flipp-datum, de är inte ef
 
 ## Nästa session — Prioritet 2
 
-### Datum/tid-picker för desktop
-**Vad:** Native `datetime-local` input fungerar dåligt på desktop. Scroll-baserad tid-väljare är mobiloptimerad.
-**Varför:** Desktop-användare förväntar sig att kunna klicka/skriva tid, inte scrolla.
-**Lösning:** Anpassad kalender-komponent eller bibliotek (react-datepicker, @radix-ui/date-picker).
-**Insats:** S-M
-
-### Profilbild-uppladdning
-**Vad:** Profilen saknar uppladdning av profilbild.
-**Varför:** Sharp redan konfigurerat för aktivitetsbilder, samma pipeline kan återanvändas.
-**Insats:** S
-
 ### Återkommande aktiviteter (MVP + framtida per-instans-override)
 **Vad:** Låt skapare markera en aktivitet som återkommande (dagligen / veckovis / månadsvis) med start- och slutdatum. Systemet genererar alla instanser upfront. Feeden visar bara nästa kommande instans per serie.
 
@@ -93,16 +82,6 @@ Obs: flera punkter måste påbörjas i god tid före flipp-datum, de är inte ef
 **Insats:** M-L (schema-migration, server actions för serieskapande + edit/cancel av framtida instanser, feed-query-uppdatering, 2-3 UI-komponenter, migration-skript).
 
 **v2 — per-instans-override:** Lägg till `modified_from_series` boolean på `activities`. Edit av en enskild instans sätter flaggan och slutar följa serieändringar. Edit av serien hoppar över modifierade instanser. Cancel av en instans = bara den raden. Ingen ny schema-ändring krävs utöver den flaggan.
-
-### "Visa alla" för vanliga användare (feed-filtrering)
-**Vad:** Idag har bara admins en "Visa alla"-toggle som bypassar intresse-matchningen. Vanliga användare ska också få välja "Visa alla", men deras vy ska fortfarande respektera hårda begränsningar.
-
-**Regler för vanlig "Visa alla":**
-- Filtrera bort aktiviteter som är könsbegränsade till ett kön användaren inte matchar (t.ex. man eller ej_angett ser inte "endast kvinnor"-aktiviteter).
-- Filtrera bort aktiviteter med `minAge` satt om användarens `birthDate` saknas, eller användaren är yngre än `minAge`.
-- Admin-toggeln ska fortsätta visa allt (inklusive det som filtreras för vanliga användare).
-
-**Insats:** S (bara query-predikat i `getMatchedActivities`, UI-toggeln speglas från admin-varianten).
 
 ### Populära aktiviteter på startsidan: filtrera könsbegränsade
 **Vad:** "Populära aktiviteter"-sektionen på landningssidan (för icke-inloggade) visar alla aktiviteter. Exkludera könsbegränsade så att den anonyma vyn inte exponerar "endast kvinnor"/"endast män"-aktiviteter för folk vi inte vet vilka är.

@@ -251,6 +251,7 @@ export default async function MyActivitiesPage() {
       interests={shellData.interests}
       unreadCount={shellData.unreadCount}
       userInitials={shellData.initials}
+      userAvatarUrl={shellData.avatarUrl}
       isAdmin={shellData.isAdmin}
     >
       <MyActivitiesClient

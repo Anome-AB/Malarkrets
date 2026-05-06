@@ -10,9 +10,10 @@ import { logOut } from "@/actions/auth";
 interface TopNavProps {
   unreadCount: number;
   userInitials: string;
+  userAvatarUrl?: string | null;
 }
 
-export function TopNav({ unreadCount, userInitials }: TopNavProps) {
+export function TopNav({ unreadCount, userInitials, userAvatarUrl }: TopNavProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showLogout, setShowLogout] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -41,11 +42,20 @@ export function TopNav({ unreadCount, userInitials }: TopNavProps) {
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-sm font-semibold select-none hover:bg-white/30 transition-colors"
+            className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-sm font-semibold select-none hover:bg-white/30 transition-colors overflow-hidden"
             aria-haspopup="true"
             aria-expanded={menuOpen}
+            aria-label="Min profil"
           >
-            {userInitials}
+            {userAvatarUrl ? (
+              <img
+                src={userAvatarUrl}
+                alt=""
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              userInitials
+            )}
           </button>
 
           {menuOpen && (

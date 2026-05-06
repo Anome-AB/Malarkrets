@@ -16,6 +16,7 @@ interface AppShellProps {
   showAll?: boolean;
   unreadCount: number;
   userInitials: string;
+  userAvatarUrl?: string | null;
   isAdmin?: boolean;
 }
 
@@ -26,11 +27,12 @@ export function AppShell({
   showAll = false,
   unreadCount,
   userInitials,
+  userAvatarUrl,
   isAdmin = false,
 }: AppShellProps) {
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <TopNav unreadCount={unreadCount} userInitials={userInitials} />
+      <TopNav unreadCount={unreadCount} userInitials={userInitials} userAvatarUrl={userAvatarUrl} />
 
       {/* 60px = TopNav. --banner-h is 0 unless SiteBanner is rendered;
           see globals.css. Falls back to 0 if the variable is missing. */}

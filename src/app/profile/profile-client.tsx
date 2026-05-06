@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/toast";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { updateProfile, updateInterests, deleteAccount } from "@/actions/profile";
 import { unblockUser } from "@/actions/blocking";
+import { AvatarPicker } from "@/components/profile/avatar-picker";
 
 interface ProfileData {
   firstName: string;
@@ -19,6 +20,8 @@ interface ProfileData {
   emailVerified: boolean;
   birthDate: string;
   gender: string;
+  avatarUrl: string | null;
+  initials: string;
 }
 
 interface TagItem {
@@ -169,7 +172,11 @@ export function ProfileClient({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Personal info */}
-      <Card title="Personlig information" className="space-y-4">
+      <Card title="Personlig information" className="space-y-6">
+        <AvatarPicker
+          initialAvatarUrl={profile.avatarUrl}
+          initials={profile.initials}
+        />
         <form onSubmit={handleProfileSubmit} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input

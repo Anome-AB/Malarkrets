@@ -21,6 +21,7 @@ export default async function CreateActivityLayout({
       interests={shellData.interests}
       unreadCount={shellData.unreadCount}
       userInitials={shellData.initials}
+      userAvatarUrl={shellData.avatarUrl}
       isAdmin={shellData.isAdmin}
     >
       {children}
