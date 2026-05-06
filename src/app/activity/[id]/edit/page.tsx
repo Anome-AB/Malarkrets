@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect, useCallback, useRef } from "react";
+import { useState, useTransition, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -8,12 +8,12 @@ import { Input } from "@/components/ui/input";
 import { TagPicker } from "@/components/activity/tag-picker";
 import { useTrackUnsavedChanges } from "@/contexts/unsaved-changes";
 import { useToast } from "@/components/ui/toast";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { updateActivity, cancelOrDeleteActivity } from "@/actions/activities";
 import { Card } from "@/components/ui/card";
 import { PlacesAutocomplete } from "@/components/ui/places-autocomplete";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { CancelActivityModal } from "@/components/activity/cancel-activity-modal";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { randomCourageMessage, randomFromList } from "@/lib/courage-messages";
 import {
   combineDateTime,
@@ -134,27 +134,61 @@ export default function EditActivityPage() {
     formState: { errors, isDirty: rhfDirty },
   } = useForm<FormValues>();
 
-  // Snapshot av non-RHF-state efter att fetchData applicerat initialvärden -
-  // så vi kan jämföra mot nuvarande state och flagga dirty om något skiljer.
-  // Sätts en gång (i fetchData-effekten) via initialSnapshotRef.
+  // Dirty-tracking: jämför nuvarande non-RHF-state mot snapshot taget när
+  // formuläret är färdig-laddat. RHF-fälten täcks separat av rhfDirty.
+  // initialSnapshotRef sätts en gång (av fetchData-effekten ELLER via raf-
+  // fallback nedan), sen flippar isDirty så fort något skiljer sig.
+  //
+  // beforeunload + sidebar/topnav-navigation hanteras globalt av
+  // UnsavedChangesProvider via useTrackUnsavedChanges-hooken längst ned -
+  // ingen lokal listener eller egen ConfirmDialog behövs.
   const initialSnapshotRef = useRef<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
-  const nonRhfSnapshot = JSON.stringify({
-    locationText,
-    coordinates,
-    selectedTags: [...selectedTags].sort(),
-    image,
-    colorTheme,
-    audience,
-    genderOpen,
-    courageEnabled,
-    courageText,
-  });
+
+  const nonRhfSnapshot = useMemo(
+    () =>
+      JSON.stringify({
+        loc: locationText,
+        coords: coordinates,
+        img: image,
+        color: colorTheme,
+        tags: [...selectedTags].sort(),
+        audience,
+        genderOpen,
+        courageEnabled,
+        courageText,
+      }),
+    [
+      locationText,
+      coordinates,
+      image,
+      colorTheme,
+      selectedTags,
+      audience,
+      genderOpen,
+      courageEnabled,
+      courageText,
+    ],
+  );
+
   const isDirty =
     !submitted &&
     initialSnapshotRef.current !== null &&
-    (rhfDirty || nonRhfSnapshot !== initialSnapshotRef.current);
+    (nonRhfSnapshot !== initialSnapshotRef.current || rhfDirty);
+
   useTrackUnsavedChanges(isDirty);
+
+  // Capture initial snapshot direkt efter att fetchData kört reset() och
+  // satt non-RHF-state. requestAnimationFrame ger React en chans att hinna
+  // applicera setState-batchen innan vi snapshot:ar - annars riskerar vi
+  // att fånga ett halvfärdigt initialvärde och flagga dirty falskt.
+  useEffect(() => {
+    if (loading || initialSnapshotRef.current !== null) return;
+    const raf = requestAnimationFrame(() => {
+      initialSnapshotRef.current = nonRhfSnapshot;
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [loading, nonRhfSnapshot]);
 
   useEffect(() => {
     async function fetchData() {
@@ -238,33 +272,10 @@ export default function EditActivityPage() {
           adminReason: "",
         });
 
-        // Snapshot non-RHF-state efter att initialvärdena applicerats. Allt
-        // som skiljer sig från det här flaggas som dirty. Vi snapshot:ar
-        // EFTER setState-batch:en så samma värden som flödar in i
-        // nonRhfSnapshot ovan finns här.
-        initialSnapshotRef.current = JSON.stringify({
-          locationText: activity.location ?? "",
-          coordinates:
-            activity.latitude && activity.longitude
-              ? { lat: activity.latitude, lng: activity.longitude }
-              : null,
-          selectedTags: [...(activity.tags ?? [])].sort(),
-          image: {
-            thumbUrl: activity.imageThumbUrl ?? null,
-            mediumUrl: activity.imageMediumUrl ?? null,
-            ogUrl: activity.imageOgUrl ?? null,
-            accentColor: activity.imageAccentColor ?? null,
-          },
-          colorTheme: activity.colorTheme ?? null,
-          audience:
-            typeof wte.audience === "string" &&
-            ["alla", "par", "familj"].includes(wte.audience)
-              ? wte.audience
-              : "alla",
-          genderOpen: activity.genderRestriction !== "alla",
-          courageEnabled: !!wte.courageMessage,
-          courageText: wte.courageMessage ?? "",
-        });
+        // initialSnapshotRef sätts via raf-effekten nedan när loading=false,
+        // inte här - så vi garanterat fångar samma serialiserade form som
+        // nonRhfSnapshot använder för jämförelse (annars riskerar olika
+        // nyckelnamn att ge falsk dirty direkt vid load).
       } catch {
         setLoadError("Kunde inte ladda aktiviteten");
       } finally {
@@ -282,6 +293,7 @@ export default function EditActivityPage() {
     if (result.success) {
       setSubmitted(true);
       setShowCancelModal(false);
+      setSubmitted(true);
       if ((result as { deleted?: boolean }).deleted) {
         toast(
           isDraft ? "Utkastet har tagits bort" : "Aktiviteten har raderats",

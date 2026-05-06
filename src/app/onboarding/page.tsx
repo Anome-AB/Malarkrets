@@ -56,9 +56,7 @@ export default function OnboardingPage() {
     if (selectedIds.length < 3) return;
 
     startTransition(async () => {
-      const formData = new FormData();
-      formData.set("tagIds", JSON.stringify(selectedIds));
-      const result = await updateInterests(formData);
+      const result = await updateInterests(selectedIds);
 
       if (result.success) {
         toast("Välkommen! Dina intressen har sparats.", "success");
