@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { interestTags, userInterests } from "@/db/schema";
-import { count, eq, desc } from "drizzle-orm";
+import { count, eq } from "drizzle-orm";
 
 export async function GET() {
   const tags = await db
@@ -12,8 +12,11 @@ export async function GET() {
     })
     .from(interestTags)
     .leftJoin(userInterests, eq(userInterests.tagId, interestTags.id))
-    .groupBy(interestTags.id)
-    .orderBy(desc(count(userInterests.userId)), interestTags.name);
+    .groupBy(interestTags.id);
+
+  // Sortera alfabetiskt med svenskt locale så å/ä/ö hamnar sist (efter z)
+  // istället för var som helst som default-collation skulle ge.
+  tags.sort((a, b) => a.name.localeCompare(b.name, "sv"));
 
   return Response.json({ tags });
 }
