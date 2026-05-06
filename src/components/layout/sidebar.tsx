@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FeedLink } from "@/components/layout/feed-link";
+import { GuardedLink } from "@/components/layout/guarded-link";
+import { useUnsavedChanges } from "@/contexts/unsaved-changes";
 import { logOut } from "@/actions/auth";
 
 interface Interest {
@@ -95,16 +96,16 @@ export function Sidebar({ interests, activeFilters = [], showAll = false, isAdmi
             }
             return (
               <li key={item.label}>
-                <Link href={item.href} className={className}>
+                <GuardedLink href={item.href} className={className}>
                   {item.icon}
                   {item.label}
-                </Link>
+                </GuardedLink>
               </li>
             );
           })}
           {isAdmin && (
             <li>
-              <Link
+              <GuardedLink
                 href="/admin"
                 className={`flex items-center gap-3 px-4 py-3 text-sm transition-colors ${
                   pathname === "/admin"
@@ -117,7 +118,7 @@ export function Sidebar({ interests, activeFilters = [], showAll = false, isAdmi
                   <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
                 </svg>
                 Admin
-              </Link>
+              </GuardedLink>
             </li>
           )}
         </ul>
@@ -129,7 +130,7 @@ export function Sidebar({ interests, activeFilters = [], showAll = false, isAdmi
             Intressen
           </h3>
           <div className="space-y-1 mb-3">
-            <Link
+            <GuardedLink
               href="/?alla=1"
               className={`block px-3 py-1.5 text-xs rounded-md transition-colors ${
                 showAll
@@ -138,8 +139,8 @@ export function Sidebar({ interests, activeFilters = [], showAll = false, isAdmi
               }`}
             >
               Visa alla
-            </Link>
-            <Link
+            </GuardedLink>
+            <GuardedLink
               href="/"
               className={`block px-3 py-1.5 text-xs rounded-md transition-colors ${
                 activeFilters.length === 0 && !showAll
@@ -148,7 +149,7 @@ export function Sidebar({ interests, activeFilters = [], showAll = false, isAdmi
               }`}
             >
               Mina intressen
-            </Link>
+            </GuardedLink>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {interests.map((interest) => {
@@ -161,7 +162,7 @@ export function Sidebar({ interests, activeFilters = [], showAll = false, isAdmi
                 ? `/?intresse=${nextFilters.join(",")}`
                 : "/";
               return (
-                <Link
+                <GuardedLink
                   key={interest.id}
                   href={href}
                   className={`inline-block px-2 py-1 text-xs rounded-full transition-colors ${
@@ -171,7 +172,7 @@ export function Sidebar({ interests, activeFilters = [], showAll = false, isAdmi
                   }`}
                 >
                   {interest.name}
-                </Link>
+                </GuardedLink>
               );
             })}
           </div>

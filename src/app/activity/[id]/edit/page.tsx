@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useTransition, useEffect, useCallback } from "react";
+import { useState, useTransition, useEffect, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TagPicker } from "@/components/activity/tag-picker";
+import { useTrackUnsavedChanges } from "@/contexts/unsaved-changes";
 import { useToast } from "@/components/ui/toast";
 import { updateActivity, cancelOrDeleteActivity } from "@/actions/activities";
 import { Card } from "@/components/ui/card";
@@ -21,6 +22,7 @@ import {
   toTimeInput,
 } from "@/lib/datetime";
 import Link from "next/link";
+import { GuardedLink } from "@/components/layout/guarded-link";
 
 interface InterestTag {
   id: number;
@@ -129,8 +131,30 @@ export default function EditActivityPage() {
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty: rhfDirty },
   } = useForm<FormValues>();
+
+  // Snapshot av non-RHF-state efter att fetchData applicerat initialvärden -
+  // så vi kan jämföra mot nuvarande state och flagga dirty om något skiljer.
+  // Sätts en gång (i fetchData-effekten) via initialSnapshotRef.
+  const initialSnapshotRef = useRef<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+  const nonRhfSnapshot = JSON.stringify({
+    locationText,
+    coordinates,
+    selectedTags: [...selectedTags].sort(),
+    image,
+    colorTheme,
+    audience,
+    genderOpen,
+    courageEnabled,
+    courageText,
+  });
+  const isDirty =
+    !submitted &&
+    initialSnapshotRef.current !== null &&
+    (rhfDirty || nonRhfSnapshot !== initialSnapshotRef.current);
+  useTrackUnsavedChanges(isDirty);
 
   useEffect(() => {
     async function fetchData() {
@@ -213,6 +237,34 @@ export default function EditActivityPage() {
           latePolicy: wte.latePolicy ?? "",
           adminReason: "",
         });
+
+        // Snapshot non-RHF-state efter att initialvärdena applicerats. Allt
+        // som skiljer sig från det här flaggas som dirty. Vi snapshot:ar
+        // EFTER setState-batch:en så samma värden som flödar in i
+        // nonRhfSnapshot ovan finns här.
+        initialSnapshotRef.current = JSON.stringify({
+          locationText: activity.location ?? "",
+          coordinates:
+            activity.latitude && activity.longitude
+              ? { lat: activity.latitude, lng: activity.longitude }
+              : null,
+          selectedTags: [...(activity.tags ?? [])].sort(),
+          image: {
+            thumbUrl: activity.imageThumbUrl ?? null,
+            mediumUrl: activity.imageMediumUrl ?? null,
+            ogUrl: activity.imageOgUrl ?? null,
+            accentColor: activity.imageAccentColor ?? null,
+          },
+          colorTheme: activity.colorTheme ?? null,
+          audience:
+            typeof wte.audience === "string" &&
+            ["alla", "par", "familj"].includes(wte.audience)
+              ? wte.audience
+              : "alla",
+          genderOpen: activity.genderRestriction !== "alla",
+          courageEnabled: !!wte.courageMessage,
+          courageText: wte.courageMessage ?? "",
+        });
       } catch {
         setLoadError("Kunde inte ladda aktiviteten");
       } finally {
@@ -228,6 +280,7 @@ export default function EditActivityPage() {
     setCancelLoading(false);
 
     if (result.success) {
+      setSubmitted(true);
       setShowCancelModal(false);
       if ((result as { deleted?: boolean }).deleted) {
         toast(
@@ -348,6 +401,7 @@ export default function EditActivityPage() {
       const result = await updateActivity(formData, { publish: isPublish });
 
       if (result.success) {
+        setSubmitted(true);
         toast(
           isPublish
             ? "Aktiviteten har publicerats!"
@@ -402,12 +456,12 @@ export default function EditActivityPage() {
             </p>
           )}
         </div>
-        <Link
+        <GuardedLink
           href={`/activity/${activityId}`}
           className="text-sm text-secondary hover:text-heading transition-colors"
         >
           Avbryt
-        </Link>
+        </GuardedLink>
       </div>
 
       {isAdminEdit && (

@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { GuardedLink } from "@/components/layout/guarded-link";
 
 interface BottomNavProps {
   unreadCount?: number;
@@ -60,7 +60,7 @@ export function BottomNav({ unreadCount = 0 }: BottomNavProps) {
       {tabs.map((tab) => {
         const isActive = pathname === tab.href;
         return (
-          <Link
+          <GuardedLink
             key={tab.href}
             href={tab.href}
             className={`flex flex-col items-center gap-0.5 text-nano relative ${
@@ -74,7 +74,7 @@ export function BottomNav({ unreadCount = 0 }: BottomNavProps) {
               </span>
             )}
             <span>{tab.label}</span>
-          </Link>
+          </GuardedLink>
         );
       })}
     </nav>

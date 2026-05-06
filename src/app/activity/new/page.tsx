@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TagPicker } from "@/components/activity/tag-picker";
+import { useTrackUnsavedChanges } from "@/contexts/unsaved-changes";
 import { useToast } from "@/components/ui/toast";
 import { Card } from "@/components/ui/card";
 import { PlacesAutocomplete } from "@/components/ui/places-autocomplete";
@@ -110,7 +111,7 @@ export default function CreateActivityPage() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isDirty: rhfDirty },
   } = useForm<FormValues>({
     defaultValues: {
       genderRestriction: "alla",
@@ -119,6 +120,23 @@ export default function CreateActivityPage() {
       date: toDateInput(new Date()),
     },
   });
+
+  // Sidan flaggas dirty om något betydande har fyllts i. Defaults för date,
+  // genderRestriction, experienceLevel räknas inte (de är fördefinierade,
+  // inte användarinmatning). När create-action lyckats sätts submitted=true
+  // så confirm-dialogen inte triggas mitt under success-redirect:en.
+  const [submitted, setSubmitted] = useState(false);
+  const isDirty =
+    !submitted &&
+    (rhfDirty ||
+      selectedTags.length > 0 ||
+      locationText.trim().length > 0 ||
+      coordinates !== null ||
+      image.thumbUrl !== null ||
+      courageEnabled ||
+      audience !== "alla" ||
+      genderOpen);
+  useTrackUnsavedChanges(isDirty);
 
   // Fetch user interests client-side
   useEffect(() => {
@@ -234,6 +252,9 @@ export default function CreateActivityPage() {
       const result = await createActivity(formData, { publish: isPublish });
 
       if (result.success && result.activityId) {
+        // Markera som submitted så useTrackUnsavedChanges slutar rapportera
+        // dirty - annars triggar success-redirect:en bekräftelsedialogen.
+        setSubmitted(true);
         toast(
           isPublish ? "Aktiviteten har publicerats!" : "Utkast sparat",
           "success",

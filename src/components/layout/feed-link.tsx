@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
+import { GuardedLink } from "@/components/layout/guarded-link";
 
 const STORAGE_KEY = "malarkrets:feed-filter";
 
@@ -61,8 +61,8 @@ export function FeedLink({ children, className, prefetch }: FeedLinkProps) {
   }, [pathname]);
 
   return (
-    <Link href={href} className={className} prefetch={prefetch}>
+    <GuardedLink href={href} className={className} prefetch={prefetch}>
       {children}
-    </Link>
+    </GuardedLink>
   );
 }
