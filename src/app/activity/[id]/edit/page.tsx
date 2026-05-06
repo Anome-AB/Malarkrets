@@ -76,6 +76,13 @@ export default function EditActivityPage() {
   // Audience state
   const [audience, setAudience] = useState<string>("alla");
 
+  // Draft state - när publishedAt är null är aktiviteten ett utkast.
+  // Då visas både Spara utkast och Publicera-knappar; när den redan är
+  // publicerad finns bara Spara ändringar.
+  const [isDraft, setIsDraft] = useState(false);
+  const [isCancelled, setIsCancelled] = useState(false);
+  const [submitMode, setSubmitMode] = useState<"draft" | "publish">("draft");
+
   // Image state
   const [image, setImage] = useState<{
     thumbUrl: string | null;
@@ -162,6 +169,8 @@ export default function EditActivityPage() {
         setUserGender(genderForToggle);
         setSelectedTags(activity.tags ?? []);
         setParticipantCount(activity.participantCount ?? 0);
+        setIsDraft(!activity.publishedAt);
+        setIsCancelled(!!activity.cancelledAt);
         setLocationText(activity.location ?? "");
         if (activity.latitude && activity.longitude) {
           setCoordinates({ lat: activity.latitude, lng: activity.longitude });
@@ -250,17 +259,24 @@ export default function EditActivityPage() {
   );
 
   function onSubmit(values: FormValues) {
-    if (selectedTags.length === 0) {
-      toast("Välj minst en intressetagg", "error");
-      return;
-    }
-    if (!locationText.trim()) {
-      toast("Ange en plats", "error");
-      return;
-    }
-    if (!image.thumbUrl && !colorTheme) {
-      toast("Välj en bild eller en bakgrundsfärg", "error");
-      return;
+    const isPublish = submitMode === "publish";
+
+    // Vid publicering: kör full klient-validering så vi fångar luckor i
+    // utkastet innan servern blir inblandad. Vid vanlig spara-utkast på en
+    // draft skippar vi detta så användaren kan fortsätta jobba halvfärdigt.
+    if (isPublish) {
+      if (selectedTags.length === 0) {
+        toast("Välj minst en intressetagg", "error");
+        return;
+      }
+      if (!locationText.trim()) {
+        toast("Ange en plats", "error");
+        return;
+      }
+      if (!image.thumbUrl && !colorTheme) {
+        toast("Välj en bild eller en bakgrundsfärg", "error");
+        return;
+      }
     }
 
     startTransition(async () => {
@@ -283,16 +299,21 @@ export default function EditActivityPage() {
         values.startTimeOfDay,
       );
       if (!startCombined) {
-        toast("Ange datum och starttid", "error");
-        return;
+        if (isPublish) {
+          toast("Ange datum och starttid", "error");
+          return;
+        }
+        // Draft-spara utan tid: hoppa över start/end så servern lämnar
+        // det orört. Updateaction:en kräver bara id på draft-läge.
+      } else {
+        formData.set("startTime", startCombined);
+        const endCombined = combineEndDateTime(
+          values.date,
+          values.startTimeOfDay,
+          values.endTimeOfDay,
+        );
+        if (endCombined) formData.set("endTime", endCombined);
       }
-      const endCombined = combineEndDateTime(
-        values.date,
-        values.startTimeOfDay,
-        values.endTimeOfDay,
-      );
-      formData.set("startTime", startCombined);
-      if (endCombined) formData.set("endTime", endCombined);
       if (values.maxParticipants) formData.set("maxParticipants", values.maxParticipants);
       const restriction = genderOpen
         ? (userGender === "kvinna" ? "kvinnor" : userGender === "man" ? "man" : "alla")
@@ -312,10 +333,15 @@ export default function EditActivityPage() {
         formData.set("adminReason", values.adminReason);
       }
 
-      const result = await updateActivity(formData);
+      const result = await updateActivity(formData, { publish: isPublish });
 
       if (result.success) {
-        toast("Aktiviteten har uppdaterats!", "success");
+        toast(
+          isPublish
+            ? "Aktiviteten har publicerats!"
+            : "Aktiviteten har uppdaterats!",
+          "success",
+        );
         router.push(`/activity/${activityId}`);
       } else {
         toast(result.error ?? "Något gick fel", "error");
@@ -347,8 +373,17 @@ export default function EditActivityPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-heading">
-            {isAdminEdit ? "Redigera aktivitet som admin" : "Redigera aktivitet"}
+            {isAdminEdit
+              ? "Redigera aktivitet som admin"
+              : isDraft
+                ? "Redigera utkast"
+                : "Redigera aktivitet"}
           </h1>
+          {isDraft && !isAdminEdit && (
+            <p className="text-sm text-secondary mt-1">
+              Utkastet är inte synligt för andra. Klicka på Publicera när du är klar.
+            </p>
+          )}
           {isAdminEdit && creatorDisplayName && (
             <p className="text-sm text-secondary mt-1">
               Arrangör: <span className="font-medium text-heading">{creatorDisplayName}</span>
@@ -656,9 +691,28 @@ export default function EditActivityPage() {
               {participantCount > 0 ? "Ställ in aktivitet" : "Radera aktivitet"}
             </Button>
           )}
-          <Button type="submit" variant="primary" loading={isPending}>
-            Spara ändringar
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              type="submit"
+              variant={isDraft && !isAdminEdit ? "secondary" : "primary"}
+              loading={isPending && submitMode === "draft"}
+              disabled={isPending}
+              onClick={() => setSubmitMode("draft")}
+            >
+              Spara ändringar
+            </Button>
+            {isDraft && !isAdminEdit && !isCancelled && (
+              <Button
+                type="submit"
+                variant="primary"
+                loading={isPending && submitMode === "publish"}
+                disabled={isPending}
+                onClick={() => setSubmitMode("publish")}
+              >
+                Publicera
+              </Button>
+            )}
+          </div>
         </div>
       </form>
 

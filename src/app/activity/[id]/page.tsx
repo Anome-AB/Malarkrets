@@ -195,6 +195,12 @@ export default async function ActivityDetailPage({
 
   const isAdmin = shellData?.isAdmin ?? false;
 
+  // Drafts (publishedAt IS NULL) är bara synliga för creator + admin.
+  // Andra användare får 404 - de ska aldrig veta att utkastet finns.
+  if (!activity.publishedAt && !isCreator && !isAdmin) {
+    notFound();
+  }
+
   // Soft-delete handling: non-admins without context get 404. Creator/participant
   // see a tombstone. Admin sees full view with a red banner at the top.
   if (activity.deletedAt) {
@@ -296,6 +302,28 @@ export default async function ActivityDetailPage({
               <p className="text-sm text-red-600 mt-1">
                 {activity.cancelledReason}
               </p>
+            )}
+          </div>
+        )}
+
+        {/* Draft banner - syns bara för creator + admin (övriga får 404). */}
+        {!activity.publishedAt && !activity.cancelledAt && !activity.deletedAt && (
+          <div className="bg-alert-bg border border-alert-text/30 rounded-card p-4 mb-6 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-alert-text">
+                Detta är ett utkast
+              </p>
+              <p className="text-sm text-alert-text/80 mt-1">
+                Aktiviteten är inte synlig för andra. Klicka på Publicera för att lägga ut den.
+              </p>
+            </div>
+            {isCreator && (
+              <Link
+                href={`/activity/${id}/edit`}
+                className="inline-flex shrink-0 items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-primary bg-white border border-primary rounded-lg hover:bg-primary-light transition-colors"
+              >
+                Redigera utkast
+              </Link>
             )}
           </div>
         )}

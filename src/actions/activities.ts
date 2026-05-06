@@ -17,13 +17,25 @@ import {
 } from "@/db/schema";
 import {
   createActivitySchema,
+  draftActivitySchema,
   updateActivitySchema,
 } from "@/lib/validations/activity";
+import { z } from "zod";
+
+type UpdateActivityData = z.infer<typeof updateActivitySchema>;
 import { eq, and, count, sql, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { log, errAttrs } from "@/lib/logger";
 
-export async function createActivity(formData: FormData) {
+// publish=true publicerar direkt (full validering, syns i feeden).
+// publish=false sparar som utkast (lös validering, syns bara för creator
+// och admin). Spara-utkast-flödet förlitar sig på att skapa-formulärets
+// fält redan har default-värden där användaren inte fyllt i något.
+export async function createActivity(
+  formData: FormData,
+  options: { publish?: boolean } = {},
+) {
+  const publish = options.publish ?? true;
   try {
     const user = await requireAuth();
 
@@ -46,13 +58,16 @@ export async function createActivity(formData: FormData) {
       };
     }
 
+    // Konvertera null från formData.get till undefined så zod-schemats
+    // .optional()-fält fungerar både för publicering och utkast (draft
+    // skickar inte alla fält, så vi får null för det som saknas).
     const raw = {
-      title: formData.get("title"),
-      description: formData.get("description"),
-      location: formData.get("location"),
+      title: (formData.get("title") as string) || undefined,
+      description: (formData.get("description") as string) || undefined,
+      location: (formData.get("location") as string) || undefined,
       latitude: formData.get("latitude") ? Number(formData.get("latitude")) : undefined,
       longitude: formData.get("longitude") ? Number(formData.get("longitude")) : undefined,
-      startTime: formData.get("startTime"),
+      startTime: (formData.get("startTime") as string) || undefined,
       endTime: formData.get("endTime") || undefined,
       maxParticipants: formData.get("maxParticipants")
         ? Number(formData.get("maxParticipants"))
@@ -72,7 +87,8 @@ export async function createActivity(formData: FormData) {
       ),
     };
 
-    const parsed = createActivitySchema.safeParse(raw);
+    const schema = publish ? createActivitySchema : draftActivitySchema;
+    const parsed = schema.safeParse(raw);
     if (!parsed.success) {
       return { success: false, error: parsed.error.issues[0].message };
     }
@@ -150,6 +166,7 @@ export async function createActivity(formData: FormData) {
         genderRestriction: genderRestriction as "alla" | "kvinnor" | "man",
         startTime: new Date(startTime),
         endTime: endTime ? new Date(endTime) : null,
+        publishedAt: publish ? new Date() : null,
       })
       .returning({ id: activities.id });
 
@@ -185,7 +202,14 @@ export async function createActivity(formData: FormData) {
   }
 }
 
-export async function updateActivity(formData: FormData) {
+// publish=true triggar publicering: full validering (createActivitySchema)
+// och sätter publishedAt om det inte redan är satt. Default false betyder
+// vanligt update där publishedAt lämnas orört.
+export async function updateActivity(
+  formData: FormData,
+  options: { publish?: boolean } = {},
+) {
+  const publish = options.publish ?? false;
   try {
     const user = await requireAuth();
 
@@ -219,12 +243,24 @@ export async function updateActivity(formData: FormData) {
       adminReason: formData.get("adminReason") || undefined,
     };
 
-    const parsed = updateActivitySchema.safeParse(raw);
-    if (!parsed.success) {
-      return { success: false, error: parsed.error.issues[0].message };
+    // Vid publicering kräver vi att hela aktiviteten är fullständig
+    // ifylld - använd strict create-schema istället för partial-update.
+    // Vi måste manuellt extracta id (som inte ingår i createActivitySchema).
+    let data: UpdateActivityData;
+    if (publish) {
+      const { id, adminReason, ...payload } = raw;
+      const strict = createActivitySchema.safeParse(payload);
+      if (!strict.success) {
+        return { success: false, error: strict.error.issues[0].message };
+      }
+      data = { ...strict.data, id: id as string, adminReason } as UpdateActivityData;
+    } else {
+      const parsed = updateActivitySchema.safeParse(raw);
+      if (!parsed.success) {
+        return { success: false, error: parsed.error.issues[0].message };
+      }
+      data = parsed.data;
     }
-
-    const data = parsed.data;
 
     const activity = await db.query.activities.findFirst({
       where: eq(activities.id, data.id),
@@ -337,6 +373,13 @@ export async function updateActivity(formData: FormData) {
       }
     }
 
+    // Vid publicering: sätt publishedAt om det inte redan är satt. Vi
+    // tillåter aldrig att ompublicera en redan publicerad aktivitet, så
+    // existerande timestamp bevaras. När activity är cancelled eller
+    // deleted kan den inte heller publiceras.
+    const shouldPublish =
+      publish && !activity.publishedAt && !activity.cancelledAt && !activity.deletedAt;
+
     await db
       .update(activities)
       .set({
@@ -353,6 +396,7 @@ export async function updateActivity(formData: FormData) {
         ...(whatToExpect !== undefined && { whatToExpect }),
         ...(startTime !== undefined && { startTime: new Date(startTime) }),
         ...(endTime !== undefined && { endTime: new Date(endTime) }),
+        ...(shouldPublish && { publishedAt: new Date() }),
         updatedAt: new Date(),
       })
       .where(eq(activities.id, id));

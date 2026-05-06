@@ -37,6 +37,7 @@ async function getCreatedActivities(userId: string) {
       cancelledReason: activities.cancelledReason,
       deletedAt: activities.deletedAt,
       deletedReason: activities.deletedReason,
+      publishedAt: activities.publishedAt,
     })
     .from(activities)
     .where(eq(activities.creatorId, userId))
@@ -121,6 +122,7 @@ async function getCreatedActivities(userId: string) {
     cancelledReason: a.cancelledReason,
     deletedAt: a.deletedAt,
     deletedReason: a.deletedReason,
+    publishedAt: a.publishedAt,
   }));
 }
 

@@ -147,24 +147,47 @@ export default function CreateActivityPage() {
     );
   }
 
+  // Vilken knapp triggade submit. Sätts strax innan handleSubmit kallas så
+  // onSubmit vet om vi sparar utkast (lös validering, ingen feed) eller
+  // publicerar (full validering, syns för alla).
+  const [submitMode, setSubmitMode] = useState<"draft" | "publish">("publish");
+
   function onSubmit(values: FormValues) {
-    if (selectedTags.length === 0) {
-      toast("Välj minst en intressetagg", "error");
-      return;
-    }
-    if (!locationText.trim()) {
-      toast("Ange en plats", "error");
-      return;
-    }
-    if (!image.thumbUrl && !colorTheme) {
-      toast("Välj en bild eller en bakgrundsfärg", "error");
-      return;
+    const isPublish = submitMode === "publish";
+
+    if (isPublish) {
+      // Full validering vid publicering. Vid utkast hoppar vi över allt
+      // detta så användaren kan spara halvfärdigt arbete.
+      if (selectedTags.length === 0) {
+        toast("Välj minst en intressetagg", "error");
+        return;
+      }
+      if (!locationText.trim()) {
+        toast("Ange en plats", "error");
+        return;
+      }
+      if (!image.thumbUrl && !colorTheme) {
+        toast("Välj en bild eller en bakgrundsfärg", "error");
+        return;
+      }
     }
 
-    const startCombined = combineDateTime(values.date, values.startTimeOfDay);
+    // Vid draft: tillåt avsaknad starttid genom att falla tillbaka till
+    // dagens datum kl 12:00. DB-kolumnen är NOT NULL, så vi måste alltid
+    // skicka något. Vid publicering kräver vi att användaren faktiskt
+    // valt tid.
+    let startCombined = combineDateTime(values.date, values.startTimeOfDay);
     if (!startCombined) {
-      toast("Ange datum och starttid", "error");
-      return;
+      if (isPublish) {
+        toast("Ange datum och starttid", "error");
+        return;
+      }
+      const fallbackDate = values.date || toDateInput(new Date());
+      startCombined = combineDateTime(fallbackDate, "12:00");
+      if (!startCombined) {
+        toast("Ogiltigt datum", "error");
+        return;
+      }
     }
     const endCombined = combineEndDateTime(
       values.date,
@@ -208,11 +231,18 @@ export default function CreateActivityPage() {
         }),
       );
 
-      const result = await createActivity(formData);
+      const result = await createActivity(formData, { publish: isPublish });
 
       if (result.success && result.activityId) {
-        toast("Aktiviteten har skapats!", "success");
-        router.push(`/activity/${result.activityId}`);
+        toast(
+          isPublish ? "Aktiviteten har publicerats!" : "Utkast sparat",
+          "success",
+        );
+        router.push(
+          isPublish
+            ? `/activity/${result.activityId}`
+            : `/activity/${result.activityId}/edit`,
+        );
       } else {
         toast(result.error ?? "Något gick fel", "error");
       }
@@ -492,9 +522,24 @@ export default function CreateActivityPage() {
           </div>
 
           {/* Sticky footer - pushed to bottom of viewport */}
-          <div className="sticky bottom-0 -mx-6 px-6 py-3 bg-white border-t border-border shadow-sticky-footer mt-auto pt-3 flex justify-end z-10">
-            <Button type="submit" variant="primary" loading={isPending}>
-              Skapa aktivitet
+          <div className="sticky bottom-0 -mx-6 px-6 py-3 bg-white border-t border-border shadow-sticky-footer mt-auto pt-3 flex justify-end gap-3 z-10">
+            <Button
+              type="submit"
+              variant="secondary"
+              loading={isPending && submitMode === "draft"}
+              disabled={isPending}
+              onClick={() => setSubmitMode("draft")}
+            >
+              Spara utkast
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={isPending && submitMode === "publish"}
+              disabled={isPending}
+              onClick={() => setSubmitMode("publish")}
+            >
+              Publicera
             </Button>
           </div>
         </form>

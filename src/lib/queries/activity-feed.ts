@@ -14,6 +14,7 @@ import {
   gt,
   or,
   isNull,
+  isNotNull,
   inArray,
   asc,
 } from "drizzle-orm";
@@ -83,6 +84,9 @@ export async function getMatchedActivities(
   const baseConditions = [
     isNull(activities.deletedAt),
     isNull(activities.cancelledAt),
+    // Drafts (publishedAt IS NULL) syns inte i feeden. De når bara
+    // creator + admin via /my-activities respektive moderation-vyer.
+    isNotNull(activities.publishedAt),
     gt(activities.startTime, now),
     sql`NOT EXISTS (${blockedByCreator})`,
     sql`NOT EXISTS (${blockedByViewer})`,

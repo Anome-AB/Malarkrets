@@ -38,6 +38,7 @@ interface Activity {
   participantCount: number;
   cancelledAt: Date | string | null;
   cancelledReason: string | null;
+  publishedAt?: Date | string | null;
 }
 
 interface ParticipatingActivity extends Activity {
@@ -93,26 +94,33 @@ export function MyActivitiesClient({
                     Inställd
                   </span>
                 ) : (
-                  <Link
-                    href={`/activity/${activity.id}/edit`}
-                    className="absolute top-3 right-3 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-primary bg-white border border-primary rounded-lg hover:bg-primary-light transition-colors z-10"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <svg
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
+                  <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
+                    {!activity.publishedAt && (
+                      <span className="inline-block text-xs font-semibold px-2.5 py-1 rounded-full bg-alert-bg text-alert-text">
+                        Utkast
+                      </span>
+                    )}
+                    <Link
+                      href={`/activity/${activity.id}/edit`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-primary bg-white border border-primary rounded-lg hover:bg-primary-light transition-colors"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                    </svg>
-                    Redigera
-                  </Link>
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                      Redigera
+                    </Link>
+                  </div>
                 )}
               </div>
             ))}
