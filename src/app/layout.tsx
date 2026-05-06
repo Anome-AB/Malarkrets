@@ -3,7 +3,18 @@ import { ToastProvider } from "@/components/ui/toast";
 import { SiteBanner } from "@/components/site-banner";
 import "./globals.css";
 
+// metadataBase används av Next.js för att göra alla relativa URL:er i metadata
+// (openGraph.images m.fl.) absoluta. Crawlers som Slack och Twitter följer
+// inte relativa /api/images/<id>-paths, så utan detta får inläggen ingen
+// förhandsgranskningsbild.
+//
+// AUTH_URL är samma variabel som NextAuth läser för callback-URL:er, så
+// vi håller en source of truth för "vad är min publika bas-URL". Faller
+// tillbaka på localhost i dev där AUTH_URL inte alltid är satt.
+const baseUrl = process.env.AUTH_URL ?? "http://localhost:3000";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(baseUrl),
   title: "Mälarkrets",
   description: "Hitta ditt sammanhang i Västerås",
 };
