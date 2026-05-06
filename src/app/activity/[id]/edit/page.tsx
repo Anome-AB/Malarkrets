@@ -237,10 +237,17 @@ export default function EditActivityPage() {
     );
   }
 
-  const handlePlaceSelect = useCallback((place: { address: string; lat: number; lng: number }) => {
-    setLocationText(place.address);
-    setCoordinates({ lat: place.lat, lng: place.lng });
-  }, []);
+  const handleLocationChange = useCallback(
+    (loc: { address: string; lat: number | null; lng: number | null }) => {
+      setLocationText(loc.address);
+      setCoordinates(
+        loc.lat !== null && loc.lng !== null
+          ? { lat: loc.lat, lng: loc.lng }
+          : null,
+      );
+    },
+    [],
+  );
 
   function onSubmit(values: FormValues) {
     if (selectedTags.length === 0) {
@@ -412,10 +419,13 @@ export default function EditActivityPage() {
                 {errors.description && <p className="text-sm text-error">{errors.description.message}</p>}
               </div>
               <PlacesAutocomplete
-                value={locationText}
-                onChange={setLocationText}
-                onPlaceSelect={handlePlaceSelect}
-                placeholder="Var ska det hållas?"
+                value={{
+                  address: locationText,
+                  lat: coordinates?.lat ?? null,
+                  lng: coordinates?.lng ?? null,
+                }}
+                onChange={handleLocationChange}
+                placeholder="Sök eller klicka på kartan..."
               />
               <Input
                 label="Datum"
