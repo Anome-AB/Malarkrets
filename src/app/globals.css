@@ -72,6 +72,13 @@
 @utility grid-cols-activity-form {
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
 }
+/* Activity-listor (my-activities) — auto-fill istället för auto-fit så
+   ensamma kort stannar på sin 500px min-bredd istället för att sträckas
+   ut. Skiljer sig från grid-cols-activity-feed där auto-fit är önskvärt
+   eftersom huvudfeeden alltid har många kort att fördela jämnt. */
+@utility grid-cols-activity-list {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 500px), 1fr));
+}
 
 /* Sticky footer shadow — subtle top-shadow used on form action bars */
 @utility shadow-sticky-footer {
