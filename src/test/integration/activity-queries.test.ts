@@ -2,7 +2,7 @@
 // "does our schema actually let me insert + query a realistic row" gap
 // that mock-DB-based unit tests cannot.
 //
-// Keep this file small — the unit tests in src/actions/*.test.ts cover
+// Keep this file small - the unit tests in src/actions/*.test.ts cover
 // permission logic thoroughly against mock-DB. This file is specifically
 // for catching SQL/schema regressions the mock cannot see.
 

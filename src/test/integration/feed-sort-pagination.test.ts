@@ -69,7 +69,7 @@ async function seedActivity(
   return a;
 }
 
-describe("getMatchedActivities — sort + offset", () => {
+describe("getMatchedActivities - sort + offset", () => {
   let db: TestDb;
   let client: postgres.Sql;
 

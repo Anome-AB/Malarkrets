@@ -1,10 +1,10 @@
-// Helper for integration tests — creates a Drizzle client connected to a
+// Helper for integration tests - creates a Drizzle client connected to a
 // test Postgres (local docker compose or CI service container) and runs
 // migrations from scratch.
 //
 // Safety: refuses to run against a DATABASE_URL that doesn't look like a
 // test database (connection string must contain "test"). Integration tests
-// DROP SCHEMA to start clean — pointing this at prod would wipe data.
+// DROP SCHEMA to start clean - pointing this at prod would wipe data.
 
 import { drizzle } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
@@ -47,7 +47,7 @@ export async function teardownTestDb(client: postgres.Sql): Promise<void> {
 
 /**
  * Connect to an already-migrated test DB. Use in test files that just
- * need to run queries — migrations are set up once by global-setup.ts.
+ * need to run queries - migrations are set up once by global-setup.ts.
  */
 export function getTestClient(): {
   db: TestDb;

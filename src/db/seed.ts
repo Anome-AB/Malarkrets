@@ -8,7 +8,7 @@ import * as schema from "./schema";
 //
 // This script inserts demo users + demo activities + demo participants +
 // demo comments against a database that has already been migrated. Reference
-// data (interest tags, courage messages) is NOT inserted here — those live
+// data (interest tags, courage messages) is NOT inserted here - those live
 // in migrations (see 0001_seed_baseline_data.sql and any follow-up data
 // migrations). That separation lets reference data evolve safely in prod
 // while demo data stays a local-only convenience.
@@ -316,7 +316,7 @@ async function seed() {
       genderRestriction: "alla" as const,
       minAge: null,
       tags: ["Vandring"],
-      whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Blandad grupp, alla åldrar", latePolicy: "Kom i tid, vi väntar inte efter start", courageMessage: "Du behöver inte känna någon för att komma — många som dyker upp gör det för första gången." },
+      whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Blandad grupp, alla åldrar", latePolicy: "Kom i tid, vi väntar inte efter start", courageMessage: "Du behöver inte känna någon för att komma - många som dyker upp gör det för första gången." },
     },
     {
       title: "Brädspelskväll på Stadsbiblioteket",
@@ -334,7 +334,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Mest 20-40 år, alla välkomna", latePolicy: "Kom när du kan, vi kör hela kvällen", courageMessage: "Kom som du är. Det spelar ingen roll om du är nybörjare eller inte känner någon." },
     },
     {
-      title: "Nybörjarmatlagning — Indiskt",
+      title: "Nybörjarmatlagning - Indiskt",
       description: "Lär dig laga autentisk indisk mat från grunden. Vi gör tikka masala, naan och raita. Alla ingredienser ingår.",
       location: "Folkets Hus, Västerås",
       latitude: 59.6095, longitude: 16.5470,
@@ -376,7 +376,7 @@ async function seed() {
       genderRestriction: "alla" as const,
       minAge: null,
       tags: ["Yoga"],
-      whatToExpect: { audience: "alla", experienceLevel: "nyborjare", whoComes: "Mest kvinnor 25-50, men alla välkomna", latePolicy: "Kom 5 min innan start", courageMessage: "Jag startade den här aktiviteten just för att det ska vara lätt att hänga med — välkommen!" },
+      whatToExpect: { audience: "alla", experienceLevel: "nyborjare", whoComes: "Mest kvinnor 25-50, men alla välkomna", latePolicy: "Kom 5 min innan start", courageMessage: "Jag startade den här aktiviteten just för att det ska vara lätt att hänga med - välkommen!" },
     },
     {
       title: "Fågelskådning vid Asköviken",
@@ -425,7 +425,7 @@ async function seed() {
     },
     {
       title: "Keramikworkshop",
-      description: "Prova på keramik och dreja din egen skål. Material ingår. Begränsat antal platser — passa på!",
+      description: "Prova på keramik och dreja din egen skål. Material ingår. Begränsat antal platser - passa på!",
       location: "Kulturhuset, Västerås",
       latitude: 59.6100, longitude: 16.5490,
       colorTheme: "rose",
@@ -439,7 +439,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "nyborjare", whoComes: "Kreativa kvinnor 18+", latePolicy: "Måste vara på plats vid start" },
     },
     {
-      title: "Löpgrupp — 5 km",
+      title: "Löpgrupp - 5 km",
       description: "Gemensam löprunda på ca 5 km i lagom tempo. Vi springer längs Mälaren och tillbaka. Alla hastigheter välkomna!",
       location: "Lögarängen, Västerås",
       latitude: 59.6075, longitude: 16.5530,
@@ -485,7 +485,7 @@ async function seed() {
     },
     {
       title: "Historisk stadsvandring",
-      description: "Guidad promenad genom Västerås historia — från vikingatid till modern industri. Vi besöker domkyrkan, Anundshög-utställningen och mer.",
+      description: "Guidad promenad genom Västerås historia - från vikingatid till modern industri. Vi besöker domkyrkan, Anundshög-utställningen och mer.",
       location: "Domkyrkan, Västerås",
       latitude: 59.6115, longitude: 16.5395,
       colorTheme: "lavender",
@@ -514,7 +514,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Animefans och filmälskare", latePolicy: "Kom gärna 15 min innan för bästa plats" },
     },
     {
-      title: "Simning — morgonpass",
+      title: "Simning - morgonpass",
       description: "Gemensamt morgonpass i 50-metersbassängen. Vi simmar i eget tempo men peppar varandra. Alla nivåer välkomna.",
       location: "Lögarängsbadet, Västerås",
       latitude: 59.6070, longitude: 16.5535,
@@ -529,7 +529,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Simmare i alla åldrar och nivåer", latePolicy: "Var ombytt och redo kl 07:00" },
     },
     {
-      title: "Språk — Svenska/Engelska",
+      title: "Språk - Svenska/Engelska",
       description: "Öva svenska eller engelska i avslappnad miljö. Vi byter språk varannan halvtimme. Fika ingår!",
       location: "Café Stationen, Västerås",
       latitude: 59.6090, longitude: 16.5560,

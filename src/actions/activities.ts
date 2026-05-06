@@ -258,7 +258,7 @@ export async function updateActivity(formData: FormData) {
     }
 
     // Creator-specific validations (gender/age depend on creator's profile).
-    // Admins don't touch these — we ignore gender/minAge from the payload in admin mode.
+    // Admins don't touch these - we ignore gender/minAge from the payload in admin mode.
     if (isCreator) {
       const creator = viewerProfile;
       if (data.genderRestriction) {
@@ -403,7 +403,7 @@ export async function updateActivity(formData: FormData) {
     }
 
     // Notify all participants (interested + attending) about the update.
-    // Excludes the actor (creator editing self, or admin editing — creator
+    // Excludes the actor (creator editing self, or admin editing - creator
     // separately gets the richer activity_edited_by_admin notification above).
     const participants = await db
       .select({ userId: activityParticipants.userId })
@@ -412,7 +412,7 @@ export async function updateActivity(formData: FormData) {
 
     const recipients = participants.filter((p) => {
       if (p.userId === user.id!) return false;
-      // Creator already got activity_edited_by_admin — skip the generic update.
+      // Creator already got activity_edited_by_admin - skip the generic update.
       if (isAdminEdit && activity.creatorId && p.userId === activity.creatorId) return false;
       return true;
     });

@@ -7,7 +7,7 @@ vi.mock("@/lib/auth", () => ({
   requireAuth: () => mockRequireAuth(),
 }));
 
-// Mock DB — build a flexible mock that tracks calls
+// Mock DB - build a flexible mock that tracks calls
 const mockDbQueryActivitiesFindFirst = vi.fn();
 const mockDbQueryParticipantsFindFirst = vi.fn();
 const mockDbQueryUsersFindFirst = vi.fn();
@@ -210,7 +210,7 @@ describe("Own activity (creator perspective)", () => {
         location: "Djäkneberget, Västerås",
         latitude: "59.6140",
         longitude: "16.5380",
-        startTime: "2026-04-20T09:00:00Z",
+        startTime: "2099-04-20T09:00:00Z",
         maxParticipants: "15",
         genderRestriction: "alla",
         colorTheme: "sage",
@@ -233,7 +233,7 @@ describe("Own activity (creator perspective)", () => {
         title: "Vandring",
         description: "En fin vandring längs strandpromenaden",
         location: "Västerås",
-        startTime: "2026-04-20T09:00:00Z",
+        startTime: "2099-04-20T09:00:00Z",
         tags: JSON.stringify([1]),
         whatToExpect: JSON.stringify({ okAlone: true, experienceLevel: "alla" }),
       });
@@ -250,7 +250,7 @@ describe("Own activity (creator perspective)", () => {
         title: "Ab",
         description: "En fin vandring längs strandpromenaden",
         location: "Västerås",
-        startTime: "2026-04-20T09:00:00Z",
+        startTime: "2099-04-20T09:00:00Z",
         tags: JSON.stringify([1]),
         whatToExpect: JSON.stringify({ okAlone: true, experienceLevel: "alla" }),
       });
@@ -264,7 +264,7 @@ describe("Own activity (creator perspective)", () => {
         title: "Vandring vid sjön",
         description: "En fin vandring längs strandpromenaden",
         location: "Västerås",
-        startTime: "2026-04-20T09:00:00Z",
+        startTime: "2099-04-20T09:00:00Z",
         tags: JSON.stringify([]),
         whatToExpect: JSON.stringify({ okAlone: true, experienceLevel: "alla" }),
       });
@@ -284,7 +284,7 @@ describe("Own activity (creator perspective)", () => {
         location: "Västerås",
         latitude: "59.6099",
         longitude: "16.5448",
-        startTime: "2026-04-20T09:00:00Z",
+        startTime: "2099-04-20T09:00:00Z",
         genderRestriction: "kvinnor",
         colorTheme: "sage",
         tags: JSON.stringify([1]),
@@ -313,7 +313,7 @@ describe("Own activity (creator perspective)", () => {
         title: "Uppdaterad vandring vid Mälaren",
         description: "Vi vandrar vid Mälaren, alla välkomna",
         location: "Djäkneberget, Västerås",
-        startTime: "2026-04-20T09:00:00Z",
+        startTime: "2099-04-20T09:00:00Z",
         tags: JSON.stringify([1]),
         whatToExpect: JSON.stringify({ audience: "alla", experienceLevel: "alla" }),
       });
@@ -332,7 +332,7 @@ describe("Own activity (creator perspective)", () => {
         title: "Uppdaterad vandring vid Mälaren",
         description: "Vi vandrar vid Mälaren, alla välkomna",
         location: "Djäkneberget, Västerås",
-        startTime: "2026-04-20T09:00:00Z",
+        startTime: "2099-04-20T09:00:00Z",
         tags: JSON.stringify([1]),
         whatToExpect: JSON.stringify({ audience: "alla", experienceLevel: "alla" }),
       });
@@ -350,7 +350,7 @@ describe("Own activity (creator perspective)", () => {
   describe("cancelOrDeleteActivity", () => {
     it("deletes activity with no participants", async () => {
       mockDbQueryActivitiesFindFirst.mockResolvedValue(makeActivity());
-      // No participants — returns empty array of { userId } rows
+      // No participants - returns empty array of { userId } rows
       selectQueue.push([]);
 
       const result = await cancelOrDeleteActivity(ACTIVITY_ID);

@@ -35,7 +35,7 @@ const TIME_RE = /^\d{2}:\d{2}$/;
 
 /**
  * Combine a date-input value ("YYYY-MM-DD") and a time-input value ("HH:MM")
- * into a datetime-local string ("YYYY-MM-DDTHH:MM") — what the server action
+ * into a datetime-local string ("YYYY-MM-DDTHH:MM") - what the server action
  * expects to pass to `new Date()`. Returns null on invalid input.
  */
 export function combineDateTime(
@@ -52,7 +52,7 @@ export function combineDateTime(
  *
  * If the end time is earlier in the day than the start time (e.g. start
  * 22:00, end 01:00), the end is assumed to land on the next calendar day
- * — the common "kvällsaktivitet"-pattern. Activities that span more than
+ * - the common "kvällsaktivitet"-pattern. Activities that span more than
  * 24 hours are not covered; those need an explicit second date field which
  * we'll add later if the need shows up.
  *

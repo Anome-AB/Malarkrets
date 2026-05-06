@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import {
   activities,
   activityTags,
+  activityParticipants,
   userInterests,
   userBlocks,
   users,
@@ -130,11 +131,19 @@ export async function getMatchedActivities(
       .offset(offset);
   }
 
+  // Default-feed: visa aktiviteter där minst en tagg matchar tittarens
+  // intressen ELLER där tittaren är skaparen ELLER där tittaren redan har
+  // anmält sig (intresserad eller kommer). Bypass:erna finns för att en
+  // användare alltid ska se aktiviteter de själva har commitat till, även
+  // om taggen inte matchar deras personliga intressen.
+  //
+  // LEFT JOIN istället för INNER JOIN på userInterests så bypass:erna kan
+  // släppa igenom matchningar utan interest-rad.
   return db
     .select(selectFields)
     .from(activities)
     .innerJoin(activityTags, eq(activityTags.activityId, activities.id))
-    .innerJoin(
+    .leftJoin(
       userInterests,
       and(
         eq(userInterests.tagId, activityTags.tagId),
@@ -144,6 +153,16 @@ export async function getMatchedActivities(
     .where(
       and(
         ...baseConditions,
+        // Tag-match ELLER eget skapande ELLER egen deltagar-status
+        or(
+          sql`${userInterests.userId} IS NOT NULL`,
+          eq(activities.creatorId, userId),
+          sql`EXISTS (
+            SELECT 1 FROM ${activityParticipants}
+            WHERE ${activityParticipants.activityId} = ${activities.id}
+              AND ${activityParticipants.userId} = ${userId}
+          )`,
+        ),
         // Gender restriction filter
         viewerRestriction
           ? or(

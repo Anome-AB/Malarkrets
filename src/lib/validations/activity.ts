@@ -41,6 +41,11 @@ const vasterasLocationCheck = {
   path: ["location"],
 };
 
+// Vid skapande måste startTime ligga i framtiden. Liten tolerans (60 sek)
+// för klock-skew mellan klient och server samt för långsamma form-flöden
+// där servern kan hinna passera valt klockslag medan användaren submit:ar.
+const PAST_TIME_TOLERANCE_MS = 60 * 1000;
+
 export const createActivitySchema = baseActivitySchema
   .refine(
     (data) => !!data.imageThumbUrl || !!data.colorTheme,
@@ -55,6 +60,17 @@ export const createActivitySchema = baseActivitySchema
       typeof data.longitude === "number" &&
       isInVasteras(data.latitude, data.longitude),
     vasterasLocationCheck,
+  )
+  .refine(
+    (data) => {
+      const start = new Date(data.startTime).getTime();
+      if (Number.isNaN(start)) return false;
+      return start >= Date.now() - PAST_TIME_TOLERANCE_MS;
+    },
+    {
+      message: "Aktivitetens starttid måste ligga i framtiden",
+      path: ["startTime"],
+    },
   );
 
 export const updateActivitySchema = baseActivitySchema

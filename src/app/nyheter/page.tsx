@@ -6,11 +6,11 @@ import { Card } from "@/components/ui/card";
 
 export const metadata: Metadata = {
   title: "Nyheter · Mälarkrets",
-  description: "Vad som är nytt i Mälarkrets — ändringar, fixar och tillägg.",
+  description: "Vad som är nytt i Mälarkrets - ändringar, fixar och tillägg.",
 };
 
 // Release-notes läses från public/release-notes.json vid build-tid.
-// Manuellt kurerad tills vidare — se docs/RELEASE_NOTES.md (framtida) för
+// Manuellt kurerad tills vidare - se docs/RELEASE_NOTES.md (framtida) för
 // rutinen. Strukturen är framtidssäker mot en eventuell LLM-driven
 // auto-generering senare (fas 3 i planen).
 
@@ -85,7 +85,7 @@ export default function NyheterPage() {
           </nav>
           <h1 className="text-3xl md:text-4xl font-bold mb-2">Nyheter</h1>
           <p className="text-white/85">
-            Vad som hänt i Mälarkrets — nya funktioner, förbättringar och fixar.
+            Vad som hänt i Mälarkrets - nya funktioner, förbättringar och fixar.
           </p>
         </div>
       </header>

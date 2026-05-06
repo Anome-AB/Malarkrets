@@ -59,7 +59,7 @@ export function PlacesAutocomplete({
   });
 
   // Ladda Maps + Places-libben en gång. Sätt mapLoadFailed om SDK inte
-  // går att ladda — komponenten degraderar då till search-only utan karta.
+  // går att ladda - komponenten degraderar då till search-only utan karta.
   useEffect(() => {
     if (!optionsSet) {
       setOptions({
@@ -74,7 +74,7 @@ export function PlacesAutocomplete({
   }, []);
 
   // Drop / drag pin-handler. Kollar bbox, sätter marker, och kör
-  // reverse geocode om address-textfältet är tomt — skriver aldrig över
+  // reverse geocode om address-textfältet är tomt - skriver aldrig över
   // egen text. Lagrad i ref så att marker-listeners (som skapas inuti
   // funktionen själv) kan kalla senaste versionen utan rekursion-varning.
   const placePinRef = useRef<(lat: number, lng: number) => Promise<void>>(
@@ -205,7 +205,7 @@ export function PlacesAutocomplete({
       const address = composeAddress(place);
       onChangeRef.current({ address, lat, lng });
 
-      // Synka kartan — flytta marker och centrera
+      // Synka kartan - flytta marker och centrera
       const map = mapRef.current;
       if (map) {
         map.panTo({ lat, lng });

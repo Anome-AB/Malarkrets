@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS "courage_messages" (
 );
 --> statement-breakpoint
 -- NOTE: "images" table already created in 0007_images_in_database.sql,
--- but schema.ts added it later — re-declare as IF NOT EXISTS so this
+-- but schema.ts added it later - re-declare as IF NOT EXISTS so this
 -- migration is idempotent for environments that have it and for fresh DBs.
 CREATE TABLE IF NOT EXISTS "images" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,

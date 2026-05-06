@@ -249,7 +249,7 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
 
           {!loading && detail && (
             <>
-              {/* Image — shown only if uploaded. Wider banner ratio than the feed card
+              {/* Image - shown only if uploaded. Wider banner ratio than the feed card
                   so the panel's vertical budget goes to content, not the hero. */}
               {detail.imageMediumUrl && (
                 <img
@@ -374,10 +374,8 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
 
               </div>
 
-              {/* Description */}
-              <p className="text-heading whitespace-pre-wrap leading-relaxed">
-                {detail.description}
-              </p>
+              {/* Description med expand/collapse för långa texter */}
+              <PanelDescription text={detail.description} />
 
               {/* Courage section */}
               {detail.whatToExpect && (
@@ -398,7 +396,7 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
           )}
         </div>
 
-        {/* Participant footer — sticky join/leave for non-creator viewers, including
+        {/* Participant footer - sticky join/leave for non-creator viewers, including
             admins (admins also get the admin footer below this one). Rendered first in
             DOM so it stacks above any role-specific footer in the visual order. */}
         {detail && !detail.isCreator && !detail.deletedAt && !detail.cancelledAt && (
@@ -433,7 +431,7 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
           </div>
         )}
 
-        {/* Admin moderation footer — sticky, visible only to non-creator admins on live activities */}
+        {/* Admin moderation footer - sticky, visible only to non-creator admins on live activities */}
         {detail && detail.viewerIsAdmin && !detail.isCreator && !detail.deletedAt && (
           <div className="shrink-0 bg-info-light border-t-2 border-info/40 px-6 py-3 shadow-admin-footer">
             <AdminActivityControls
@@ -448,7 +446,7 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
           </div>
         )}
 
-        {/* Creator tools footer — sticky, mirrors the admin footer pattern. Only the
+        {/* Creator tools footer - sticky, mirrors the admin footer pattern. Only the
             edit action lives here; cancel/delete stay on the edit page. */}
         {detail && detail.isCreator && !detail.deletedAt && (
           <div className="shrink-0 bg-primary-light border-t-2 border-primary/30 px-6 py-3 shadow-admin-footer">
@@ -484,6 +482,40 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
         variant="danger"
         loading={isPending}
       />
+    </div>
+  );
+}
+
+// Panelens utrymme är trångt; långa beskrivningar (>= 350 tecken) klippas
+// till sex rader med en "Visa mer"-länk. Korta texter renderas oförändrat
+// så vi inte visar onödig UI för en två-radsbeskrivning. Toggle-state är
+// per-panel-instans så det återställs vid byte av aktivitet.
+function PanelDescription({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = text.length >= 350;
+
+  if (!isLong) {
+    return (
+      <p className="text-heading whitespace-pre-wrap leading-relaxed">{text}</p>
+    );
+  }
+
+  return (
+    <div>
+      <p
+        className={`text-heading whitespace-pre-wrap leading-relaxed ${
+          expanded ? "" : "line-clamp-6"
+        }`}
+      >
+        {text}
+      </p>
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="mt-2 text-sm text-primary hover:underline"
+      >
+        {expanded ? "Visa mindre" : "Visa mer"}
+      </button>
     </div>
   );
 }

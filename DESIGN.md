@@ -1,4 +1,4 @@
-# Design System — Mälarkrets
+# Design System - Mälarkrets
 
 ## Product Context
 - **What this is:** Community activity platform for people in Västerås to find and join local activities (hiking, photography, board games, cooking, etc.)
@@ -8,15 +8,15 @@
 
 ## Aesthetic Direction
 - **Direction:** Scandinavian Warm Minimal
-- **Decoration level:** Minimal — typography and spacing do the heavy lifting
+- **Decoration level:** Minimal - typography and spacing do the heavy lifting
 - **Mood:** Clean and functional but with warmth. Nature around Mälaren as subtle inspiration, not clinical tech. A well-organized community board, not a SaaS dashboard.
 - **Reference sites:** Meetup (2025 redesign), Luma, Circle.so
 
 ## Typography
-- **Display/Hero:** Satoshi (700, 900) — Modern geometric sans with personality, distinctly not generic. Loaded via Fontshare.
-- **Body:** Instrument Sans (400, 500, 600) — Warm, readable at small sizes, pairs well with Satoshi. Loaded via Fontshare.
-- **UI/Labels:** Instrument Sans (500, 600) — same as body
-- **Data/Tables:** Geist Mono (tabular-nums) — clean monospace for numbers in admin tables, participant counts, timestamps
+- **Display/Hero:** Satoshi (700, 900) - Modern geometric sans with personality, distinctly not generic. Loaded via Fontshare.
+- **Body:** Instrument Sans (400, 500, 600) - Warm, readable at small sizes, pairs well with Satoshi. Loaded via Fontshare.
+- **UI/Labels:** Instrument Sans (500, 600) - same as body
+- **Data/Tables:** Geist Mono (tabular-nums) - clean monospace for numbers in admin tables, participant counts, timestamps
 - **Code:** Geist Mono
 - **Loading:** Fontshare CDN for Satoshi + Instrument Sans. Geist Mono via Google Fonts. Inter as fallback only.
 - **Scale:**
@@ -34,7 +34,7 @@
 | Mono | 13px | 400 | Geist Mono | Participant counts, timestamps in admin |
 
 ## Color
-- **Approach:** Restrained — one accent plus warm neutrals. Color is rare and meaningful.
+- **Approach:** Restrained - one accent plus warm neutrals. Color is rare and meaningful.
 
 ### Core palette
 ```
@@ -51,7 +51,7 @@
 
 ### Accent + semantic
 ```
---color-accent: #c4956a         copper/wood — badges, decorative highlights
+--color-accent: #c4956a         copper/wood - badges, decorative highlights
 --color-accent-light: #f5ede4   accent background
 --color-warning: #e07a3a        notifications, warnings
 --color-error: #dc3545          errors, destructive actions
@@ -77,15 +77,15 @@
 Note: Previous md(12) was non-standard. All spacing now follows a clean 4px grid with power-of-2 progression.
 
 ## Layout
-- **Approach:** Grid-disciplined — consistent responsive grids, no creative asymmetry
+- **Approach:** Grid-disciplined - consistent responsive grids, no creative asymmetry
 - **Grid:**
   - Mobile: 1 column
   - Tablet (md): 2 columns
   - Desktop (lg): 2-3 columns depending on page
 - **Max content width:** None on detail pages (fill available space). `max-w-3xl` on form pages.
 - **Border radius:**
-  - Cards/panels: `rounded-card` (10px — defined in `globals.css` via `--radius-card`)
-  - Buttons/inputs: `rounded-control` (8px — defined in `globals.css` via `--radius-control`)
+  - Cards/panels: `rounded-card` (10px - defined in `globals.css` via `--radius-card`)
+  - Buttons/inputs: `rounded-control` (8px - defined in `globals.css` via `--radius-control`)
   - Never use arbitrary values (`rounded-[8px]`, `rounded-[10px]`). Names describe intent; arbitrary values don't.
   - Tags/badges: `rounded-full` (9999px)
   - Avatars: `rounded-full`
@@ -183,15 +183,15 @@ Grid columns per page:
 Activity cards in responsive grid: `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5`
 
 ## Motion
-- **Approach:** Minimal-functional — only transitions that aid comprehension
+- **Approach:** Minimal-functional - only transitions that aid comprehension
 - **Easing:** Enter: ease-out, Exit: ease-in, Move: ease-in-out
 - **Duration:**
-  - Micro: 100ms — hover states, focus rings, button press
-  - Short: 200ms — card hover shadow, tag selection, input focus
-  - Medium: 350ms — panel slide-in, modal open, accordion expand
-  - Long: 500ms — page transitions (if implemented)
+  - Micro: 100ms - hover states, focus rings, button press
+  - Short: 200ms - card hover shadow, tag selection, input focus
+  - Medium: 350ms - panel slide-in, modal open, accordion expand
+  - Long: 500ms - page transitions (if implemented)
 - **Rules:**
-  - Always respect `prefers-reduced-motion` — disable all non-essential animation
+  - Always respect `prefers-reduced-motion` - disable all non-essential animation
   - No springy bounces, no staggered list animations
   - Card hover: `shadow-md` transition, not scale or translateY
   - Modal: fade overlay + scale-up content (from 0.95 to 1.0)
@@ -212,10 +212,10 @@ Activity cards in responsive grid: `grid grid-cols-1 md:grid-cols-2 lg:grid-cols
 ## Icons
 - Emoji as primary icons for activity categories (v1)
 - Lucide React for UI icons (already used for nav items)
-- Keep icon usage minimal — text labels are primary, icons support
+- Keep icon usage minimal - text labels are primary, icons support
 
 ## Touch Targets
-Minimum 44x44px on all interactive elements (WCAG 2.1 AAA). Use the semantic utility `min-h-touch-target` — never the arbitrary value `min-h-[44px]`. The `<Button>` component applies it automatically for `sm`/`md`/`lg` sizes.
+Minimum 44x44px on all interactive elements (WCAG 2.1 AAA). Use the semantic utility `min-h-touch-target` - never the arbitrary value `min-h-[44px]`. The `<Button>` component applies it automatically for `sm`/`md`/`lg` sizes.
 
 **Compact exception:** `<Button size="compact">` opts out of the 44px minimum (~36px tall). Reserved for desktop-only dense surfaces: admin toolbars, modal footers, sticky action bars inside side panels. Never use `compact` on mobile-reachable surfaces or primary actions.
 
@@ -231,7 +231,7 @@ Always use `<ConfirmDialog>` component. Never `window.confirm()`. For complex di
 | Date | Decision | Rationale |
 |------|----------|-----------|
 | 2026-04-01 | Switch from Inter to Satoshi (display) + Instrument Sans (body) | Inter is overused in the category. Satoshi gives geometric precision with Scandinavian character. Instrument Sans is warm and readable. |
-| 2026-04-01 | Add copper accent #c4956a | Breaks from pure green/white palette. Adds warmth — "wooden cabin by the lake" feeling. Used sparingly for badges and decorative highlights. |
+| 2026-04-01 | Add copper accent #c4956a | Breaks from pure green/white palette. Adds warmth - "wooden cabin by the lake" feeling. Used sparingly for badges and decorative highlights. |
 | 2026-04-01 | Add info color #4a7c94 | Muted teal fits the palette better than pure blue. Used for informational badges. |
 | 2026-04-01 | Fix spacing scale to pure 4px grid | Previous md(12) broke the pattern. New scale: 4, 8, 16, 24, 32, 48, 64. |
 | 2026-04-01 | Add structured motion system | Previous "150ms ease" was too vague. New: micro/short/medium/long with specific easing per transition type. |

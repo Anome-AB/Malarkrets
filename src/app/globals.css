@@ -44,41 +44,48 @@
   --font-sans: "Instrument Sans", sans-serif;
   --font-mono: "Geist Mono", monospace;
 
-  /* Radii — semantic names, used via rounded-control / rounded-card */
+  /* Radii - semantic names, used via rounded-control / rounded-card */
   --radius-control: 8px;  /* inputs, buttons, small interactive surfaces */
   --radius-card: 10px;    /* cards, modals, panels, auth containers */
 
-  /* Navigation heights — consumed by the h-topnav / h-bottomnav / pb-bottomnav /
+  /* Navigation heights - consumed by the h-topnav / h-bottomnav / pb-bottomnav /
      bottom-bottomnav / top-below-topnav utilities below. Change a value here and
      all coupled layout offsets follow automatically. */
   --height-topnav: 60px;     /* desktop + mobile top bar */
   --height-bottomnav: 56px;  /* mobile bottom tab bar */
 }
 
-/* WCAG 2.1 AAA minimum touch target (44x44px) — apply to all interactive elements
+/* WCAG 2.1 AAA minimum touch target (44x44px) - apply to all interactive elements
    by default. Compact exceptions (desktop-only admin toolbars, dense modal footers)
    must be explicit opt-outs. */
 @utility min-h-touch-target {
   min-height: 44px;
 }
 
-/* Activity grids — auto-fill responsive grids tuned to the card and form widths */
+/* Activity grids - auto-fill responsive grids tuned to the card and form widths */
 @utility grid-cols-activity-feed {
   /* Cards fill whatever space the column gives them (1fr) with a 500px min.
      auto-fit (not auto-fill) collapses empty tracks so real cards can grow
-     to fill the row — no phantom columns capping card width. */
+     to fill the row - no phantom columns capping card width. */
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 500px), 1fr));
 }
 @utility grid-cols-activity-form {
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
 }
+/* Activity-listor (my-activities) - auto-fill istället för auto-fit så
+   ensamma kort stannar på sin 500px min-bredd istället för att sträckas
+   ut. Skiljer sig från grid-cols-activity-feed där auto-fit är önskvärt
+   eftersom huvudfeeden alltid har många kort att fördela jämnt. */
+@utility grid-cols-activity-list {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 500px), 1fr));
+}
 
-/* Sticky footer shadow — subtle top-shadow used on form action bars */
+/* Sticky footer shadow - subtle top-shadow used on form action bars */
 @utility shadow-sticky-footer {
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
 }
 
-/* Navigation layout — all coupled offsets derive from --height-topnav / --height-bottomnav
+/* Navigation layout - all coupled offsets derive from --height-topnav / --height-bottomnav
    so changing a nav height updates everything that sits next to it. */
 @utility h-topnav {
   height: var(--height-topnav);
@@ -101,38 +108,38 @@
   padding-bottom: calc(var(--height-bottomnav) + 84px);
 }
 
-/* Typography — sub-text-xs size reserved for notification badges and dense meta labels.
+/* Typography - sub-text-xs size reserved for notification badges and dense meta labels.
    Do not use for body copy; accessibility starts being a concern below 12px. */
 @utility text-nano {
   font-size: 10px;
   line-height: 1;
 }
 
-/* Static map thumbnail height — used on activity detail map and places-autocomplete preview */
+/* Static map thumbnail height - used on activity detail map and places-autocomplete preview */
 @utility h-static-map {
   height: 150px;
 }
-/* Static map height on the full activity detail page — slightly taller than the panel preview */
+/* Static map height on the full activity detail page - slightly taller than the panel preview */
 @utility h-detail-map {
   height: 180px;
 }
 
-/* Desktop sidebar width — fixed-width nav column on lg+ screens */
+/* Desktop sidebar width - fixed-width nav column on lg+ screens */
 @utility w-sidebar {
   width: 200px;
 }
-/* Sliding detail panel max width — opens from the right on desktop.
+/* Sliding detail panel max width - opens from the right on desktop.
    Sized to fit a side-by-side layout of title/metadata (~300px) + square static map
    (~220px) with 16px gap + 48px internal padding. */
 @utility max-w-slide-panel {
   max-width: 560px;
 }
 
-/* Notification pill in the activity feed — min width lets single-digit counts stay circular */
+/* Notification pill in the activity feed - min width lets single-digit counts stay circular */
 @utility min-w-pill {
   min-width: 20px;
 }
-/* Small circular badge (topnav notification indicator) — 18x18 */
+/* Small circular badge (topnav notification indicator) - 18x18 */
 @utility size-badge {
   width: 18px;
   height: 18px;
@@ -148,18 +155,18 @@
   backdrop-filter: blur(2px);
 }
 
-/* Sticky action-bar shadows — three distinct top-shadows for three distinct contexts.
+/* Sticky action-bar shadows - three distinct top-shadows for three distinct contexts.
    Each intensity is tuned to the weight of the bar it sits under. */
 @utility shadow-action-bar {
-  /* Mobile action bar above the bottomnav on activity detail — lightest */
+  /* Mobile action bar above the bottomnav on activity detail - lightest */
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
 }
 @utility shadow-admin-footer {
-  /* Admin moderation footer inside sliding panel — strongest, signals a heavier action zone */
+  /* Admin moderation footer inside sliding panel - strongest, signals a heavier action zone */
   box-shadow: 0 -4px 12px -8px rgba(0, 0, 0, 0.15);
 }
 
-/* Ken Burns — slow pan + zoom for hero images. Container is always scaled
+/* Ken Burns - slow pan + zoom for hero images. Container is always scaled
    >1 so translate() never exposes its edges. 40s cycle feels ambient, not
    busy. Parent must have `overflow: hidden` so the scaled overflow clips.
    Respects prefers-reduced-motion for accessibility. */
@@ -212,7 +219,7 @@ label, .font-display {
   font-family: "Satoshi", sans-serif;
 }
 
-/* Form input icons — unify size and position across native date/time inputs and
+/* Form input icons - unify size and position across native date/time inputs and
    selects. Native pickers render their own indicators at varying offsets and
    sizes; we override them so every icon sits 12px from the right, vertically
    centred, at the same 18px size in --color-dimmed. */

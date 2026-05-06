@@ -3,7 +3,7 @@
 // TRUNCATE's between tests.
 //
 // Vitest calls `setup()` before any test runs and `teardown()` after all
-// tests finish — both optional exports.
+// tests finish - both optional exports.
 
 import { setupTestDb, teardownTestDb } from "./db";
 

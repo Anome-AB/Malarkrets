@@ -1,7 +1,7 @@
 # Mälarkrets
 
 Community-plattform för aktiviteter i Västerås. Användare skapar, hittar och deltar
-i lokala aktiviteter — vandring, fika, sport, kultur, kodning. Byggd som ett
+i lokala aktiviteter - vandring, fika, sport, kultur, kodning. Byggd som ett
 intraprenörsprojekt.
 
 ## Stack
@@ -83,13 +83,13 @@ for f in src/db/migrations/0*.sql; do
     psql -U malarkrets -d malarkrets < "$f"
 done
 
-# seed (från host — kräver temporär portmappning)
+# seed (från host - kräver temporär portmappning)
 DATABASE_URL="postgresql://malarkrets:malarkrets_prod@localhost:5433/malarkrets" \
   bun run src/db/seed.ts
 ```
 
 > **Obs:** I utvecklingsfasen får data wipeas fritt. Innan prod-lansering måste
-> en riktig migrationsstrategi på plats — se `TODOS.md`.
+> en riktig migrationsstrategi på plats - se `TODOS.md`.
 
 ## Projektstruktur
 
@@ -119,7 +119,7 @@ Alla UI-beslut följer [`DESIGN.md`](DESIGN.md). Kortversion:
 
 ## Next.js-anvisningar
 
-Detta projekt använder en Next.js-version med brytande ändringar mot äldre docs —
+Detta projekt använder en Next.js-version med brytande ändringar mot äldre docs -
 läs alltid `node_modules/next/dist/docs/` innan du skriver kod. Se `AGENTS.md`.
 
 ## Team-struktur

@@ -271,12 +271,12 @@ export default async function ActivityDetailPage({
       )}
 
       <div className="px-6 py-8 pb-detail-mobile-footer lg:pb-8">
-        {/* Deleted banner — only visible to admins since other viewers are already
+        {/* Deleted banner - only visible to admins since other viewers are already
             routed to the tombstone above. */}
         {activity.deletedAt && (
           <div className="bg-red-50 border border-red-300 rounded-card p-4 mb-6">
             <p className="text-sm font-semibold text-red-700">
-              BORTTAGEN — modererad av admin
+              BORTTAGEN - modererad av admin
             </p>
             {activity.deletedReason && (
               <p className="text-sm text-red-600 mt-1">
@@ -311,7 +311,7 @@ export default async function ActivityDetailPage({
         )}
 
         <div className="max-w-5xl space-y-6">
-            {/* Image — shown only if uploaded */}
+            {/* Image - shown only if uploaded */}
             {activity.imageMediumUrl && (
               <img
                 src={activity.imageMediumUrl}
@@ -448,12 +448,12 @@ export default async function ActivityDetailPage({
                 )}
               </div>
 
-              {/* Description — full width below */}
+              {/* Description - full width below */}
               <p className="mt-6 text-heading whitespace-pre-wrap leading-relaxed">
                 {activity.description}
               </p>
 
-              {/* Action buttons — desktop only, mobile uses floating bar.
+              {/* Action buttons - desktop only, mobile uses floating bar.
                   Creators get their Edit button in a sticky card at the end of the
                   content column instead of here. */}
               {!isCreator && (
@@ -494,7 +494,7 @@ export default async function ActivityDetailPage({
               />
             </Card>
 
-            {/* Admin moderation — placed last so it naturally sits at the bottom of the
+            {/* Admin moderation - placed last so it naturally sits at the bottom of the
                 content column, and sticks to the viewport bottom on desktop while scrolling
                 back up through the page. Mobile stays inline to avoid colliding with the
                 floating join/leave action bar. */}
@@ -511,7 +511,7 @@ export default async function ActivityDetailPage({
               </Card>
             )}
 
-            {/* Creator tools — sticky footer mirroring the admin card pattern. Only the
+            {/* Creator tools - sticky footer mirroring the admin card pattern. Only the
                 edit action lives here; cancel/delete stay on the edit page. */}
             {currentUserId && isCreator && !activity.deletedAt && (
               <Card className="!bg-primary-light border-primary/20 lg:sticky lg:bottom-4 lg:z-20 shadow-admin-footer">

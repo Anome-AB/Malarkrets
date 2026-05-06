@@ -76,7 +76,7 @@ export function composeReverseAddress(
 
 /**
  * Reverse geocode en koordinat till en mänsklig adress. Returnerar null vid
- * fel eller tom svar — anroparen får då lämna textfältet oförändrat istället
+ * fel eller tom svar - anroparen får då lämna textfältet oförändrat istället
  * för att skriva över med en gissning.
  */
 export async function reverseGeocode(

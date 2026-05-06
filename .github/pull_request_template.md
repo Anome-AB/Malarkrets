@@ -4,9 +4,9 @@
 
 ## Team
 
-- [ ] GreenLion (applikation — `src/`, schema, UI, deps)
-- [ ] RedFox (release & deploy — pipeline, Docker, scripts, secrets)
-- [ ] Cross-team — kräver koordination (fyll i avsnittet nedan)
+- [ ] GreenLion (applikation - `src/`, schema, UI, deps)
+- [ ] RedFox (release & deploy - pipeline, Docker, scripts, secrets)
+- [ ] Cross-team - kräver koordination (fyll i avsnittet nedan)
 
 ## Cross-team påverkan
 

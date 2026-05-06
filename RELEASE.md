@@ -1,9 +1,9 @@
-# RELEASE.md — Team RedFox spelbok
+# RELEASE.md - Team RedFox spelbok
 
 Intern spelbok för team RedFox (release & deploy). Laddas när Claude arbetar
 med filer under RedFox ägarskap (se `TEAMS.md`).
 
-GreenLion behöver inte läsa detta i detalj — referera hit när gränsytor
+GreenLion behöver inte läsa detta i detalj - referera hit när gränsytor
 diskuteras.
 
 ## Ansvarsområde
@@ -32,7 +32,7 @@ Scriptet körs som root, är idempotent, och gör:
 - `unattended-upgrades` (security-only) + `fail2ban`.
 - Docker CE + compose-plugin.
 
-Scriptet rör **inte** repot, `.env`, eller compose — det är hostnivå
+Scriptet rör **inte** repot, `.env`, eller compose - det är hostnivå
 enbart. Efter provisioning: git clone + scp `<din-fylld-fil> host:~/malarkrets/.env`
 + `docker compose up`.
 
@@ -41,13 +41,13 @@ enbart. Efter provisioning: git clone + scp `<din-fylld-fil> host:~/malarkrets/.
 Caddy kör som container i `docker-compose.yml`, terminerar TLS, och
 proxy:ar till app:3000. Konfiguration: `Caddyfile` + två env-vars i `.env`:
 
-- `DOMAIN` — `localhost` för lokalt test, riktigt hostnamn i prod.
-- `LETSENCRYPT_EMAIL` — required när DOMAIN är riktigt hostnamn.
+- `DOMAIN` - `localhost` för lokalt test, riktigt hostnamn i prod.
+- `LETSENCRYPT_EMAIL` - required när DOMAIN är riktigt hostnamn.
 
 Med riktigt DOMAIN hämtar Caddy Let's Encrypt-cert vid första request (HTTP-01
 challenge över port 80). Cert + nycklar persist:as i `caddy_data`-volymen.
 
-App-containern exponerar `127.0.0.1:3000:3000` — bara lokal debug, aldrig
+App-containern exponerar `127.0.0.1:3000:3000` - bara lokal debug, aldrig
 publikt. All extern trafik måste gå via Caddy.
 
 ## Pipeline-översikt
@@ -98,7 +98,7 @@ Pipelinen pushar till ghcr.io:
 - `malarkrets:1.2.3`, `:1.2`, `:1`, `:sha-<hash>` (app)
 - `malarkrets:migrate-1.2.3`, `:migrate-1.2`, `:migrate-1`, `:migrate-sha-<hash>`
 
-`:latest` flyttas **inte** av en tag-push — bara av push till master. Det
+`:latest` flyttas **inte** av en tag-push - bara av push till master. Det
 gör att prod kan peka på t.ex. `:1.2` och få patch-uppdateringar automatiskt
 utan att oavsiktligt plocka upp master-HEAD.
 
@@ -121,7 +121,7 @@ docker compose pull
 docker compose up -d
 ```
 
-`app` och `migrate` MÅSTE alltid ha samma version — de körs tillsammans
+`app` och `migrate` MÅSTE alltid ha samma version - de körs tillsammans
 och `migrate`-imagen innehåller den version av SQL-filerna som matchar
 `app`-imagen. Aldrig `app:1.2.3` + `migrate:1.2.2`.
 
@@ -137,14 +137,14 @@ app-containern startar. Implementationen:
   prod-deps + migrationsfiler). Pushas i release.yml som
   `ghcr.io/anome-ab/malarkrets:migrate-latest` / `:migrate-sha-<hash>`.
 - `app` i compose har `depends_on: migrate: condition: service_completed_successfully`,
-  så en trasig migration stoppar hela stacken (medvetet — hellre ner än
+  så en trasig migration stoppar hela stacken (medvetet - hellre ner än
   schemadrift).
 
 **Rollback vid trasig migration:** pinna både `app`- och `migrate`-imagen
 till föregående gröna sha i `.env` (eller direkt i compose) och kör
 `docker compose up -d`. Backup tas via pg_dump-cron (se TODOS).
 
-**Prod-postgres** binder `127.0.0.1:5432:5432` — endast loopback, aldrig
+**Prod-postgres** binder `127.0.0.1:5432:5432` - endast loopback, aldrig
 internet. För DB-klient-åtkomst från workstation: SSH-tunnel.
 
 ```bash
@@ -166,7 +166,7 @@ health poll. Läs scriptet innan ändringar.
 
 Varje deploy drar in en ny sha-taggad image (~300 MB app + ~150 MB
 migrate). Gamla taggade versioner plockas **inte** bort av `docker system
-prune` — bara dangling (otagged). För att hålla disken nere:
+prune` - bara dangling (otagged). För att hålla disken nere:
 
 ```bash
 bash scripts/cleanup-docker.sh              # default: 7 dagars retention
@@ -176,7 +176,7 @@ DRY_RUN=1 bash scripts/cleanup-docker.sh    # visa kandidater utan att ta bort
 
 Scriptet tar bort oanvända images äldre än retention-fönstret + stoppade
 containers + build-cache + oanvända nätverk. **Volymer rörs aldrig.**
-Retention-fönstret är ditt rollback-fönster — sänk inte under hur långt
+Retention-fönstret är ditt rollback-fönster - sänk inte under hur långt
 tillbaka du kan tänka dig att behöva rulla.
 
 Rekommenderad cron (söndag 04:00):
@@ -188,8 +188,8 @@ Rekommenderad cron (söndag 04:00):
 
 **Gotcha:** `env_file` i docker-compose läses bara vid **container-skapande**,
 inte vid omstart. Följande *räcker inte* för att nya env-värden ska nå appen:
-- `docker compose restart app` — behåller samma container, samma env.
-- `docker compose up -d app` — återanvänder oftast existerande container.
+- `docker compose restart app` - behåller samma container, samma env.
+- `docker compose up -d app` - återanvänder oftast existerande container.
 
 Använd `--force-recreate` (eller full `down` + `up`):
 
@@ -199,33 +199,33 @@ docker compose up -d --force-recreate app
 docker compose exec app env | grep <VAR_NAME>
 ```
 
-Samma gäller när env för postgres/migrate ändras — rekreera motsvarande
+Samma gäller när env för postgres/migrate ändras - rekreera motsvarande
 service.
 
 ### Env-fil-konventionen
 
 Den körande env-filen på varje host heter **`.env`**, inget annat.
 
-- På VPS:n: `/home/deploy/malarkrets/.env` — innehåller prod-värden.
+- På VPS:n: `/home/deploy/malarkrets/.env` - innehåller prod-värden.
 - På staging: motsvarande fil heter `.env` (med staging-värden).
 - I repo:t ligger templates under sina beskrivande namn:
   `.env.prod.example` och `.env.staging.example`. Kopiera till `.env` på
   respektive host.
 
-Fördelen är att docker-compose:s default-beteende funkar rakt av —
+Fördelen är att docker-compose:s default-beteende funkar rakt av -
 `${VAR}`-interpolering i compose-filer + `env_file:`-direktivet läser
 samma fil utan `--env-file`-flagga.
 
-### Telemetri — Dash0 via OTel Collector
+### Telemetri - Dash0 via OTel Collector
 
 `otel-collector`-servicen i compose shippar traces + metrics via OTLP/HTTP
 till Dash0. Instrumentering i appen görs av `@vercel/otel` (se
 `src/instrumentation.ts`) och skickar till collectorn på docker-nätverket.
 
 **Krav i `.env` på VPS:**
-- `DASH0_AUTH_TOKEN` — ingestion-scoped token från Dash0-UI:t.
-- `DEPLOYMENT_ENV` — `production` (eller `staging`). Taggar all telemetri.
-- `DOCKER_GID` — docker-gruppens GID på *just den host:en*. Skrivs ut av
+- `DASH0_AUTH_TOKEN` - ingestion-scoped token från Dash0-UI:t.
+- `DEPLOYMENT_ENV` - `production` (eller `staging`). Taggar all telemetri.
+- `DOCKER_GID` - docker-gruppens GID på *just den host:en*. Skrivs ut av
   `scripts/provision-vps.sh`. Utan den kan collectorn (som är distroless och
   kör som UID 10001) inte läsa `docker.sock` för `docker_stats`-receivern.
 
@@ -234,14 +234,14 @@ till Dash0. Instrumentering i appen görs av `@vercel/otel` (se
   in passwd"). Vi använder `group_add: ["${DOCKER_GID}"]` istället.
 - `docker_stats`-receivern default:ar till Docker API 1.25; Docker 25+
   kräver minst 1.40. Vi pinnar `api_version: "1.40"` i collector-configen.
-- `filelog` mot `/var/lib/docker/containers` är medvetet inte påslaget —
+- `filelog` mot `/var/lib/docker/containers` är medvetet inte påslaget -
   mappen är mode 710 `root:root` och kräver faktisk root för att läsa.
   App-logs ska istället skickas via OTel SDK när det blir aktuellt.
 
 ## Säkerhet
 
 - `.env` committas **aldrig** (.gitignore fångar `.env*` utom templates).
-- Postgres binder `127.0.0.1:5432:5432` i prod-compose — endast loopback,
+- Postgres binder `127.0.0.1:5432:5432` i prod-compose - endast loopback,
   aldrig internet. Extern åtkomst sker via SSH-tunnel (se "Databas-
   migrationer" ovan). UFW blockerar ändå allt utom 22/80/443.
 - Google Maps-nyckel är `NEXT_PUBLIC_*` → exponeras i klient-bundeln.
@@ -250,11 +250,11 @@ till Dash0. Instrumentering i appen görs av `@vercel/otel` (se
 
 ## Commit-konvention (RedFox)
 
-- `ci:` — GitHub Actions workflow-ändringar
-- `chore(deploy):` — deploy-scripts, compose, Dockerfile
-- `chore(infra):` — infrastruktur, secrets-strategi
-- `chore(dev):` — dev-only verktyg (t.ex. portmappning)
-- `docs(release):` — denna fil, release-dokumentation
+- `ci:` - GitHub Actions workflow-ändringar
+- `chore(deploy):` - deploy-scripts, compose, Dockerfile
+- `chore(infra):` - infrastruktur, secrets-strategi
+- `chore(dev):` - dev-only verktyg (t.ex. portmappning)
+- `docs(release):` - denna fil, release-dokumentation
 
 ## Release notes / Nyheter
 
@@ -269,7 +269,7 @@ den är aktiv (under PRE-GO-LIVE med `SITE_BANNER_TEXT` satt).
    git log $(git describe --tags --abbrev=0)..HEAD --oneline
    ```
 
-2. **Översätt till användar-språk** — grupperat i sektionerna `added`,
+2. **Översätt till användar-språk** - grupperat i sektionerna `added`,
    `improved`, `fixed`. Plain language, undvik kod-jargon och fil-namn.
    Antingen själv eller genom att be Claude sammanfatta commits:en.
 
@@ -288,7 +288,7 @@ den är aktiv (under PRE-GO-LIVE med `SITE_BANNER_TEXT` satt).
      }
    }
    ```
-   Lämna tomma sektioner som `[]` — sidan visar bara det som har innehåll.
+   Lämna tomma sektioner som `[]` - sidan visar bara det som har innehåll.
 
 4. **Commit + PR + merge**.
 
@@ -301,11 +301,11 @@ den är aktiv (under PRE-GO-LIVE med `SITE_BANNER_TEXT` satt).
    Pipeline (release.yml) bygger en docker-image med tag `:0.2.0`,
    `:0.2`, `:0` + migrate-motsvarigheter. Användbart vid rollback.
 
-6. **Skapa GitHub Release** — samma innehåll som i `/nyheter`, fast
+6. **Skapa GitHub Release** - samma innehåll som i `/nyheter`, fast
    paketerat på repo:ts Releases-sida:
    ```bash
    gh release create v0.2.0 \
-     --title "v0.2.0 — Kort titel på svenska" \
+     --title "v0.2.0 - Kort titel på svenska" \
      --notes "$(cat <<'EOF'
    En-mening sammanfattning av releasen.
 
@@ -329,9 +329,9 @@ den är aktiv (under PRE-GO-LIVE med `SITE_BANNER_TEXT` satt).
 
 ### Versions-schema (PRE-GO-LIVE)
 
-- `v0.X.0` — ny feature-nivå
-- `v0.X.Y` — bug-fixar / småjusteringar inom samma feature-linje (t.ex. v0.1.1 = nyheter-länk-fix)
-- `v1.0.0` — första stabila POST-GO-LIVE-release
+- `v0.X.0` - ny feature-nivå
+- `v0.X.Y` - bug-fixar / småjusteringar inom samma feature-linje (t.ex. v0.1.1 = nyheter-länk-fix)
+- `v1.0.0` - första stabila POST-GO-LIVE-release
 
 Detta signalerar "pre-GA, saker förändras" och ger ett tydligt kontrakt
 när vi bumpar till 1.0.
@@ -339,7 +339,7 @@ när vi bumpar till 1.0.
 ### Vad ska INTE stå i release notes
 
 Infra/CI/deploy-förbättringar, refactors, test-tillägg, dokumentation.
-Allt som är osynligt för testaren utelämnas. Om det är osäkert — tumregel:
+Allt som är osynligt för testaren utelämnas. Om det är osäkert - tumregel:
 "skulle en icke-teknisk Västerås-bo förstå att det här påverkar deras
 upplevelse?" Om nej → utelämna.
 
