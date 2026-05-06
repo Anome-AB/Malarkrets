@@ -72,7 +72,10 @@ export default async function ProfilePage() {
       isAdmin={shellData.isAdmin}
     >
       <div className="px-6 py-8">
-        <h1 className="text-2xl font-bold text-heading mb-6">Min profil</h1>
+        <h1 className="text-2xl font-bold text-heading">Min profil</h1>
+        <p className="text-sm text-dimmed mt-1 mb-6">
+          Ändringar sparas automatiskt.
+        </p>
         <ProfileClient
           profile={{
             firstName: profile.firstName ?? "",
