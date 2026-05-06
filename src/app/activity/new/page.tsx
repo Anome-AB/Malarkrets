@@ -253,13 +253,20 @@ export default function CreateActivityPage() {
                   )}
                 </div>
                 <PlacesAutocomplete
-                  value={locationText}
-                  onChange={setLocationText}
-                  onPlaceSelect={(place) => {
-                    setLocationText(place.address);
-                    setCoordinates({ lat: place.lat, lng: place.lng });
+                  value={{
+                    address: locationText,
+                    lat: coordinates?.lat ?? null,
+                    lng: coordinates?.lng ?? null,
                   }}
-                  placeholder="Var ska det hållas?"
+                  onChange={(loc) => {
+                    setLocationText(loc.address);
+                    setCoordinates(
+                      loc.lat !== null && loc.lng !== null
+                        ? { lat: loc.lat, lng: loc.lng }
+                        : null,
+                    );
+                  }}
+                  placeholder="Sök eller klicka på kartan..."
                 />
                 <Input
                   label="Datum"
