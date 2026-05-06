@@ -253,8 +253,8 @@ export default function CreateActivityPage() {
     <div className="px-6 pt-8 flex flex-col min-h-full">
       <h1 className="text-2xl font-bold text-heading mb-6">Skapa ny aktivitet</h1>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1">
-          <div className="grid grid-cols-activity-form gap-6 items-start">
-              <Card title="Grundläggande information" className="space-y-4">
+          <div className="cols-activity-form">
+              <Card title="Grundläggande information" className="space-y-4 break-inside-avoid mb-6">
                 <Input
                   label="Titel"
                   placeholder="Vad ska ni göra?"
@@ -343,7 +343,7 @@ export default function CreateActivityPage() {
               </Card>
 
               {/* Image upload */}
-              <Card title="Bild eller färg">
+              <Card title="Bild eller färg" className="break-inside-avoid mb-6">
                 <ImageUpload
                   thumbUrl={image.thumbUrl}
                   mediumUrl={image.mediumUrl}
@@ -355,7 +355,7 @@ export default function CreateActivityPage() {
               </Card>
 
               {/* What to expect */}
-              <Card title="Vad kan deltagare förvänta sig?" className="space-y-4">
+              <Card title="Vad kan deltagare förvänta sig?" className="space-y-4 break-inside-avoid mb-6">
                 {/* Courage message - top of card since it shows at top of CourageSection */}
                 <div>
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -467,7 +467,7 @@ export default function CreateActivityPage() {
                 </div>
               </Card>
 
-              <Card title="Begränsningar" className="space-y-4">
+              <Card title="Begränsningar" className="space-y-4 break-inside-avoid mb-6">
                 <Input
                   label="Max antal deltagare?"
                   type="number"
@@ -515,7 +515,7 @@ export default function CreateActivityPage() {
                 )}
               </Card>
 
-              <Card title="Intressetaggar">
+              <Card title="Intressetaggar" className="break-inside-avoid mb-6">
                 {loadingTags ? (
                   <p className="text-sm text-secondary">Laddar taggar...</p>
                 ) : userInterests.length === 0 ? (

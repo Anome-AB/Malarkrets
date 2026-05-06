@@ -72,6 +72,17 @@
 @utility grid-cols-activity-form {
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
 }
+/* Masonry-pack via CSS multi-column. CSS grid lämnar dödyta under korta
+   kort när ett kort i samma rad är högt; column-flow paketerar istället
+   korten top-to-bottom per kolumn och balanserar höjder automatiskt.
+   Ordningen i källan blir kolumn 1 först, sedan kolumn 2, osv - vilket
+   är OK för aktivitetsformulärets kort eftersom varje Card är fristående
+   (ingen tvingad läsordning mellan dem). break-inside-avoid på korten
+   hindrar att ett kort splittas mellan kolumner. */
+@utility cols-activity-form {
+  column-width: 380px;
+  column-gap: 1.5rem;
+}
 /* Activity-listor (my-activities) - auto-fill istället för auto-fit så
    ensamma kort stannar på sin 500px min-bredd istället för att sträckas
    ut. Skiljer sig från grid-cols-activity-feed där auto-fit är önskvärt
