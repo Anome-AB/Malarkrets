@@ -78,10 +78,29 @@
    Ordningen i källan blir kolumn 1 först, sedan kolumn 2, osv - vilket
    är OK för aktivitetsformulärets kort eftersom varje Card är fristående
    (ingen tvingad läsordning mellan dem). break-inside-avoid på korten
-   hindrar att ett kort splittas mellan kolumner. */
+   hindrar att ett kort splittas mellan kolumner.
+
+   Vi sätter column-count via responsiva breakpoints istället för att
+   förlita oss på column-width. Med column-count expanderar varje kolumn
+   garanterat till (container - gap*N)/N - browsern kan inte lämna
+   horisontell dödyta. column-width är en hint som vissa engines tolkar
+   strikt och då kapar kolumnerna vid 380px även när containern är 1900px.
+   Breakpoints följer Tailwinds defaults så de matchar resten av appen. */
 @utility cols-activity-form {
-  column-width: 380px;
+  column-count: 1;
   column-gap: 1.5rem;
+}
+@media (min-width: 768px) {
+  .cols-activity-form { column-count: 2; }
+}
+@media (min-width: 1280px) {
+  .cols-activity-form { column-count: 3; }
+}
+@media (min-width: 1700px) {
+  .cols-activity-form { column-count: 4; }
+}
+@media (min-width: 2200px) {
+  .cols-activity-form { column-count: 5; }
 }
 /* Activity-listor (my-activities) - auto-fill istället för auto-fit så
    ensamma kort stannar på sin 500px min-bredd istället för att sträckas
