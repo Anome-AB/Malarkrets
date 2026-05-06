@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useTransition, useEffect, useCallback } from "react";
+import { useState, useTransition, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tag } from "@/components/ui/tag";
 import { useToast } from "@/components/ui/toast";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { updateActivity, cancelOrDeleteActivity } from "@/actions/activities";
 import { Card } from "@/components/ui/card";
 import { PlacesAutocomplete } from "@/components/ui/places-autocomplete";
@@ -121,8 +122,83 @@ export default function EditActivityPage() {
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty: rhfDirty },
   } = useForm<FormValues>();
+
+  // Dirty-tracking: jämför nuvarande non-RHF-state mot snapshot taget när
+  // formuläret är färdig-laddat. RHF-fälten täcks separat av rhfDirty.
+  // initialSnapshotRef sätts en gång; sen flippar isDirty om något skiljer sig.
+  const initialSnapshotRef = useRef<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+
+  const nonRhfSnapshot = useMemo(
+    () =>
+      JSON.stringify({
+        loc: locationText,
+        coords: coordinates,
+        img: image,
+        color: colorTheme,
+        tags: [...selectedTags].sort(),
+        audience,
+        genderOpen,
+        courageEnabled,
+        courageText,
+      }),
+    [
+      locationText,
+      coordinates,
+      image,
+      colorTheme,
+      selectedTags,
+      audience,
+      genderOpen,
+      courageEnabled,
+      courageText,
+    ],
+  );
+
+  const isDirty =
+    !submitted &&
+    initialSnapshotRef.current !== null &&
+    (nonRhfSnapshot !== initialSnapshotRef.current || rhfDirty);
+
+  // Leave-confirmation-state. pendingNav lagrar destinationen så vi kan
+  // navigera vidare efter att användaren klickat "Lämna utan att spara".
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [pendingNav, setPendingNav] = useState<string | null>(null);
+
+  function attemptLeave(href: string) {
+    if (isDirty) {
+      setPendingNav(href);
+      setShowLeaveConfirm(true);
+    } else {
+      router.push(href);
+    }
+  }
+
+  // Capture initial snapshot direkt efter att fetchData kört reset() och
+  // satt non-RHF-state. requestAnimationFrame ger React en chans att hinna
+  // applicera state-uppdateringen innan vi snapshot:ar, annars riskerar vi
+  // att fånga ett halvfärdigt initialvärde.
+  useEffect(() => {
+    if (loading || initialSnapshotRef.current !== null) return;
+    const raf = requestAnimationFrame(() => {
+      initialSnapshotRef.current = nonRhfSnapshot;
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [loading, nonRhfSnapshot]);
+
+  // Browser-navigation (back, refresh, close tab) - enda sättet att bevara
+  // beforeunload-prompt är att returnera tom sträng / kalla preventDefault.
+  // Browser visar sin egen native dialog; meddelandet kontrolleras inte av oss.
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
 
   useEffect(() => {
     async function fetchData() {
@@ -219,6 +295,7 @@ export default function EditActivityPage() {
 
     if (result.success) {
       setShowCancelModal(false);
+      setSubmitted(true);
       if ((result as { deleted?: boolean }).deleted) {
         toast("Aktiviteten har raderats", "success");
         router.push("/my-activities");
@@ -315,6 +392,7 @@ export default function EditActivityPage() {
       const result = await updateActivity(formData);
 
       if (result.success) {
+        setSubmitted(true);
         toast("Aktiviteten har uppdaterats!", "success");
         router.push(`/activity/${activityId}`);
       } else {
@@ -355,12 +433,13 @@ export default function EditActivityPage() {
             </p>
           )}
         </div>
-        <Link
-          href={`/activity/${activityId}`}
+        <button
+          type="button"
+          onClick={() => attemptLeave(`/activity/${activityId}`)}
           className="text-sm text-secondary hover:text-heading transition-colors"
         >
           Avbryt
-        </Link>
+        </button>
       </div>
 
       {isAdminEdit && (
@@ -668,6 +747,24 @@ export default function EditActivityPage() {
         onConfirm={handleCancel}
         participantCount={participantCount}
         loading={cancelLoading}
+      />
+
+      <ConfirmDialog
+        open={showLeaveConfirm}
+        onCancel={() => {
+          setShowLeaveConfirm(false);
+          setPendingNav(null);
+        }}
+        onConfirm={() => {
+          setShowLeaveConfirm(false);
+          setSubmitted(true);
+          if (pendingNav) router.push(pendingNav);
+        }}
+        title="Osparade ändringar"
+        message="Du har gjort ändringar som inte har sparats. Vill du lämna sidan ändå?"
+        confirmLabel="Lämna utan att spara"
+        cancelLabel="Stanna kvar"
+        variant="danger"
       />
     </div>
   );
