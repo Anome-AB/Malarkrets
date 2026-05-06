@@ -12,6 +12,7 @@ import { Card } from "@/components/ui/card";
 import { PlacesAutocomplete } from "@/components/ui/places-autocomplete";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { CancelActivityModal } from "@/components/activity/cancel-activity-modal";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { randomCourageMessage, randomFromList } from "@/lib/courage-messages";
 import {
   combineDateTime,
@@ -229,7 +230,10 @@ export default function EditActivityPage() {
     if (result.success) {
       setShowCancelModal(false);
       if ((result as { deleted?: boolean }).deleted) {
-        toast("Aktiviteten har raderats", "success");
+        toast(
+          isDraft ? "Utkastet har tagits bort" : "Aktiviteten har raderats",
+          "success",
+        );
         router.push("/my-activities");
       } else {
         toast("Aktiviteten har ställts in", "success");
@@ -238,6 +242,14 @@ export default function EditActivityPage() {
     } else {
       toast(result.error ?? "Något gick fel", "error");
     }
+  }
+
+  // Utkast raderas alltid (det finns aldrig externa deltagare på en
+  // ej publicerad aktivitet). Vi skippar reason-flödet helt och
+  // kallar cancelOrDeleteActivity med tom string - actionet tar
+  // delete-grenen så snart inga andra än creator är anmälda.
+  async function handleDeleteDraft() {
+    await handleCancel("");
   }
 
   function toggleTag(tagId: number) {
@@ -706,7 +718,11 @@ export default function EditActivityPage() {
             </p>
           ) : (
             <Button variant="danger" onClick={() => setShowCancelModal(true)}>
-              {participantCount > 0 ? "Ställ in aktivitet" : "Radera aktivitet"}
+              {isDraft
+                ? "Ta bort aktivitet"
+                : participantCount > 0
+                  ? "Ställ in aktivitet"
+                  : "Radera aktivitet"}
             </Button>
           )}
           <div className="flex gap-3">
@@ -734,13 +750,27 @@ export default function EditActivityPage() {
         </div>
       </form>
 
-      <CancelActivityModal
-        open={showCancelModal}
-        onClose={() => setShowCancelModal(false)}
-        onConfirm={handleCancel}
-        participantCount={participantCount}
-        loading={cancelLoading}
-      />
+      {isDraft ? (
+        <ConfirmDialog
+          open={showCancelModal}
+          onCancel={() => !cancelLoading && setShowCancelModal(false)}
+          onConfirm={handleDeleteDraft}
+          title="Ta bort utkast?"
+          message="Är du säker på att du vill ta bort utkastet? Det kan inte återställas."
+          confirmLabel="Ta bort"
+          cancelLabel="Avbryt"
+          variant="danger"
+          loading={cancelLoading}
+        />
+      ) : (
+        <CancelActivityModal
+          open={showCancelModal}
+          onClose={() => setShowCancelModal(false)}
+          onConfirm={handleCancel}
+          participantCount={participantCount}
+          loading={cancelLoading}
+        />
+      )}
     </div>
   );
 }
