@@ -719,7 +719,7 @@ export default function EditActivityPage() {
           ) : (
             <Button variant="danger" onClick={() => setShowCancelModal(true)}>
               {isDraft
-                ? "Ta bort aktivitet"
+                ? "Ta bort utkast"
                 : participantCount > 0
                   ? "Ställ in aktivitet"
                   : "Radera aktivitet"}
