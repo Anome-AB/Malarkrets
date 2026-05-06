@@ -84,6 +84,13 @@ export const updateActivitySchema = baseActivitySchema
       .min(10, "Ange en anledning (minst 10 tecken)")
       .max(500, "Max 500 tecken")
       .optional(),
+    // Vid spara-ändringar (publish=false, t.ex. utkast under arbete) får
+    // taggar vara tom - användaren kanske inte är klar med tagg-valet än.
+    // .partial() från baseActivitySchema gör fältet optional men .min(1)
+    // hänger kvar vilket blockar tomt array. Skriv över med ren array.
+    // Vid publicering används createActivitySchema istället där .min(1)
+    // fortfarande gäller.
+    tags: z.array(z.number().int()).optional(),
   })
   .refine(
     (data) => {

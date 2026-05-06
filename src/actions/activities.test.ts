@@ -381,6 +381,25 @@ describe("Own activity (creator perspective)", () => {
       expect(result.success).toBe(true);
     });
 
+    it("allows updating draft with empty tags array", async () => {
+      // Regression: updateActivitySchema ärvde .min(1) på tags från
+      // baseActivitySchema vilket blockade spara-utkast med 0 taggar.
+      mockDbQueryActivitiesFindFirst.mockResolvedValue(
+        makeActivity({ publishedAt: null }),
+      );
+      mockDbQueryUsersFindFirst.mockResolvedValue(makeCreatorProfile());
+      selectQueue.push([]);
+
+      const fd = makeFormData({
+        id: ACTIVITY_ID,
+        title: "Halvfärdigt utkast",
+        tags: JSON.stringify([]),
+      });
+
+      const result = await updateActivity(fd, { publish: false });
+      expect(result.success).toBe(true);
+    });
+
     it("rejects non-creator trying to update", async () => {
       mockRequireAuth.mockResolvedValue(OTHER_USER);
       mockDbQueryActivitiesFindFirst.mockResolvedValue(makeActivity({ creatorId: CREATOR.id }));
