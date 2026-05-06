@@ -114,7 +114,7 @@ describe("Comments on own activity (creator)", () => {
       userId: PARTICIPANT.id,
       content: "En fråga",
     });
-    // Activity lookup — creator check
+    // Activity lookup - creator check
     mockDbQueryActivitiesFindFirst.mockResolvedValue({
       id: ACTIVITY_ID,
       creatorId: CREATOR.id,
@@ -218,7 +218,7 @@ describe("Comments on other's activity (participant)", () => {
       userId: CREATOR.id,
       content: "Arrangörens kommentar",
     });
-    // Activity creator check — participant is not creator
+    // Activity creator check - participant is not creator
     mockDbQueryActivitiesFindFirst.mockResolvedValue({
       id: ACTIVITY_ID,
       creatorId: CREATOR.id,

@@ -1,11 +1,11 @@
 import { registerOTel } from "@vercel/otel";
 
 /**
- * Next.js instrumentation hook — runs once at server startup.
+ * Next.js instrumentation hook - runs once at server startup.
  *
  * We register two separate OTel subsystems:
- *   1. @vercel/otel — traces (auto-instrumentation for HTTP, fetch, etc.)
- *   2. @opentelemetry/sdk-logs — logs (manual wiring, since @vercel/otel
+ *   1. @vercel/otel - traces (auto-instrumentation for HTTP, fetch, etc.)
+ *   2. @opentelemetry/sdk-logs - logs (manual wiring, since @vercel/otel
  *      doesn't cover logs as of v2.x).
  *
  * Both export OTLP/HTTP to the collector on the docker network
@@ -14,7 +14,7 @@ import { registerOTel } from "@vercel/otel";
  *
  * When OTEL_EXPORTER_OTLP_ENDPOINT is unset (e.g. `bun dev` on dev
  * machine without the otel-collector running), log emission silently
- * no-ops — `log.*` calls still print to stdout via src/lib/logger.ts.
+ * no-ops - `log.*` calls still print to stdout via src/lib/logger.ts.
  */
 export async function register() {
   registerOTel({

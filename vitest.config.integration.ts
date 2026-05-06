@@ -1,4 +1,4 @@
-// Vitest config for INTEGRATION tests — they talk to a real Postgres
+// Vitest config for INTEGRATION tests - they talk to a real Postgres
 // (CI service container, or local docker compose postgres).
 //
 // Differences from vitest.config.ts:

@@ -1,4 +1,4 @@
-# Data migrations — when to use what
+# Data migrations - when to use what
 
 Två spår för att få data in i databasen. Var disciplinerad: blandar du dem
 hamnar prod och dev i otakt.

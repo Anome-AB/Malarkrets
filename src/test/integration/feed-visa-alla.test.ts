@@ -195,7 +195,7 @@ describe('getMatchedActivities "Visa alla" (showAll)', () => {
     const creator = await seedUser(db, { email: "c@x.se" });
     const viewer = await seedUser(db, { email: "v@x.se", gender: "man" });
 
-    // viewer has NO userInterests rows — no tag overlap
+    // viewer has NO userInterests rows - no tag overlap
     await seedActivity(db, creator.id, tag.id, {
       title: "Obekant aktivitet",
       genderRestriction: "alla",

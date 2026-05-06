@@ -175,7 +175,7 @@ export function ImageUpload({ thumbUrl, mediumUrl, ogUrl, colorTheme, onChange, 
         </div>
       )}
 
-      {/* Color picker — only when no image */}
+      {/* Color picker - only when no image */}
       {!hasImage && (
         <div className="mt-4">
           <ColorPicker value={colorTheme} onChange={onColorChange} />

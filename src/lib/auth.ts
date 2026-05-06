@@ -49,21 +49,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         });
 
         if (!user) {
-          log.info("auth: login failed — unknown email", { email });
+          log.info("auth: login failed - unknown email", { email });
           return null;
         }
         if (!user.emailVerified) {
-          log.info("auth: login blocked — email not verified", { email });
+          log.info("auth: login blocked - email not verified", { email });
           return null;
         }
         if (user.isBanned) {
-          log.warn("auth: login blocked — user is banned", { userId: user.id });
+          log.warn("auth: login blocked - user is banned", { userId: user.id });
           return null;
         }
 
         const passwordMatch = await bcrypt.compare(password, user.passwordHash);
         if (!passwordMatch) {
-          log.info("auth: login failed — bad password", { email });
+          log.info("auth: login failed - bad password", { email });
           return null;
         }
 

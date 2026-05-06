@@ -13,7 +13,7 @@ export async function GET() {
     await sql.end();
     return NextResponse.json({ status: "ok" });
   } catch (err) {
-    // This endpoint is polled frequently by Caddy's healthcheck — a
+    // This endpoint is polled frequently by Caddy's healthcheck - a
     // single failure is noisy but a sustained stream means real DB
     // trouble. Dash0 alerts should fire on >N/minute.
     log.error("health: db ping failed", errAttrs(err));

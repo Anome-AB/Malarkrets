@@ -1,20 +1,20 @@
 /**
- * Courage messages — fetched from the database via API.
+ * Courage messages - fetched from the database via API.
  * Hardcoded fallbacks used only if the API call fails.
  */
 
 const FALLBACK_MESSAGES: Record<string, string[]> = {
   alla: [
-    "Du behöver inte känna någon för att komma — många som dyker upp gör det för första gången.",
+    "Du behöver inte känna någon för att komma - många som dyker upp gör det för första gången.",
     "Alla är välkomna oavsett erfarenhet. Vi ses där!",
     "Kom som du är. Det spelar ingen roll om du är nybörjare eller inte känner någon.",
   ],
   par: [
-    "Kom med en partner, en vän, en kollega — alla sorts par är välkomna!",
+    "Kom med en partner, en vän, en kollega - alla sorts par är välkomna!",
     "Perfekt att göra något nytt ihop, oavsett om ni är bästisar eller partners.",
   ],
   familj: [
-    "Alla familjer är välkomna — stora som små, en förälder eller två.",
+    "Alla familjer är välkomna - stora som små, en förälder eller två.",
     "Kom som er familj ser ut. Det enda som krävs är att ni vill ha kul tillsammans.",
   ],
 };

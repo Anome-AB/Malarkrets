@@ -47,4 +47,4 @@ Tools /health runs when scoring code quality. Skip a tool = drop its weight from
 - typecheck: `npx tsc --noEmit`
 - lint: `bun run lint`
 - test: `bun run test -- --run`
-- shell: `shellcheck scripts/*.sh` (optional — install shellcheck locally to enable)
+- shell: `shellcheck scripts/*.sh` (optional - install shellcheck locally to enable)

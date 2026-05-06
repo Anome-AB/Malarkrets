@@ -24,7 +24,7 @@ interface ShareButtonProps {
  * visas en toast som bekräftar att länken är kopierad.
  *
  * Open Graph-metadata på destinationssidan styr vilken bild/titel som syns
- * när URL:en klistras in i sociala medier — knappen själv ändrar inte vad
+ * när URL:en klistras in i sociala medier - knappen själv ändrar inte vad
  * som hämtas av crawlers, bara hur användaren får ut URL:en.
  */
 export function ShareButton({

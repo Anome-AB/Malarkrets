@@ -271,6 +271,7 @@ export default function CreateActivityPage() {
                 <Input
                   label="Datum"
                   type="date"
+                  min={new Date().toISOString().split("T")[0]}
                   {...register("date", { required: "Datum krävs" })}
                   error={errors.date?.message}
                 />
@@ -305,7 +306,7 @@ export default function CreateActivityPage() {
 
               {/* What to expect */}
               <Card title="Vad kan deltagare förvänta sig?" className="space-y-4">
-                {/* Courage message — top of card since it shows at top of CourageSection */}
+                {/* Courage message - top of card since it shows at top of CourageSection */}
                 <div>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -490,7 +491,7 @@ export default function CreateActivityPage() {
               </Card>
           </div>
 
-          {/* Sticky footer — pushed to bottom of viewport */}
+          {/* Sticky footer - pushed to bottom of viewport */}
           <div className="sticky bottom-0 -mx-6 px-6 py-3 bg-white border-t border-border shadow-sticky-footer mt-auto pt-3 flex justify-end z-10">
             <Button type="submit" variant="primary" loading={isPending}>
               Skapa aktivitet

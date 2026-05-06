@@ -69,7 +69,7 @@ export function ActivityDetailClient({
   }
 
   function handleLeave() {
-    // Only confirm for attending (not interested — they can ångra freely)
+    // Only confirm for attending (not interested - they can ångra freely)
     if (participationStatus === "attending") {
       setShowLeaveConfirm(true);
     } else {
@@ -195,7 +195,7 @@ export function ActivityDetailClient({
   return (
     <>
       <div className="space-y-8">
-        {/* Comments — hidden for cancelled activities */}
+        {/* Comments - hidden for cancelled activities */}
         {isAuthenticated && !isCancelled && (
           <CommentList
             comments={comments}
@@ -209,7 +209,7 @@ export function ActivityDetailClient({
         )}
       </div>
 
-      {/* Floating CTA bar — mobile only, above BottomNav */}
+      {/* Floating CTA bar - mobile only, above BottomNav */}
       {!isCancelled && actionButtons && (
         <div className="fixed bottom-bottomnav left-0 right-0 lg:hidden bg-white border-t border-border px-4 py-3 z-40 shadow-action-bar">
           <div className="flex items-center gap-2 [&>div]:flex-wrap [&>div]:w-full [&_button]:flex-1 [&_a]:flex-1 [&_a]:text-center">

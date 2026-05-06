@@ -27,7 +27,7 @@ export function notificationMessage(
     case "activity_updated":
       return "Aktiviteten har uppdaterats";
     case "activity_cancelled":
-      return `Aktiviteten har avbokats${asString((p as Record<string, unknown>).reason) ? ` — ${asString((p as Record<string, unknown>).reason)}` : ""}`;
+      return `Aktiviteten har avbokats${asString((p as Record<string, unknown>).reason) ? ` - ${asString((p as Record<string, unknown>).reason)}` : ""}`;
     case "activity_deleted":
       return asString((p as Record<string, unknown>).isForCreator)
         ? "Din aktivitet har tagits bort av en administratör"

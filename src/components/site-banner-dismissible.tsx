@@ -58,7 +58,7 @@ export function SiteBannerDismissible({ text }: { text: string }) {
           try {
             sessionStorage.setItem(key, "1");
           } catch {
-            // sessionStorage unavailable — fall back to dispatching the event
+            // sessionStorage unavailable - fall back to dispatching the event
             // so any other same-page subscribers still react.
           }
           window.dispatchEvent(new Event(CHANGE_EVENT));

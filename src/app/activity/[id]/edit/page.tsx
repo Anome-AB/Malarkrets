@@ -147,13 +147,13 @@ export default function EditActivityPage() {
         setCreatorDisplayName(activity.creatorDisplayName ?? null);
 
         // Tag picker must show the creator's interests when an admin edits,
-        // not the admin's own — otherwise the admin's tags would leak in and
+        // not the admin's own - otherwise the admin's tags would leak in and
         // the creator's existing tags could disappear from the picker.
         const interestsForPicker = adminEditing
           ? (activity.creatorInterests ?? [])
           : (intData.interests ?? []);
         setUserInterests(interestsForPicker);
-        // Gender toggle UI reflects the creator's gender when an admin is editing —
+        // Gender toggle UI reflects the creator's gender when an admin is editing -
         // otherwise gender semantics would be incorrect (toggle would read "Endast kvinnor"
         // based on the admin's gender, not the creator's).
         const genderForToggle = adminEditing
@@ -462,7 +462,7 @@ export default function EditActivityPage() {
             </Card>
 
             <Card title="Vad kan deltagare förvänta sig?" className="space-y-4">
-              {/* Courage message — top of card since it shows at top of CourageSection */}
+              {/* Courage message - top of card since it shows at top of CourageSection */}
               <div>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -645,7 +645,7 @@ export default function EditActivityPage() {
             </Card>
         </div>
 
-        {/* Sticky footer — pushed to bottom of viewport */}
+        {/* Sticky footer - pushed to bottom of viewport */}
         <div className="sticky bottom-0 -mx-6 px-6 py-3 bg-white border-t border-border shadow-sticky-footer mt-auto pt-3 flex justify-between items-center gap-3 z-10">
           {isAdminEdit ? (
             <p className="text-xs text-dimmed">

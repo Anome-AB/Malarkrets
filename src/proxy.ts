@@ -9,10 +9,10 @@ export async function proxy(request: NextRequest) {
   // /api/images: activity images are served as bytea from the DB via a public
   //   endpoint (same publicness model as the old MinIO bucket). UUIDs are
   //   unguessable, so "unlisted public" is fine for this content.
-  // /api/health: container healthcheck and external monitoring — must not
+  // /api/health: container healthcheck and external monitoring - must not
   //   redirect (a 307 passes `wget --spider` but hides real failures).
   // /nyheter: release notes for testers. Linked from the site-banner which
-  //   also renders for unauthenticated visitors — login-wall makes no sense.
+  //   also renders for unauthenticated visitors - login-wall makes no sense.
   const publicPatterns = [
     /^\/auth(\/|$)/,
     /^\/api\/auth(\/|$)/,

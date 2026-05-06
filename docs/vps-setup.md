@@ -16,7 +16,7 @@ cat ~/.ssh/id_rsa.pub
 
 Har du ingen? Generera en: `ssh-keygen -t ed25519 -C "hakan@anome.se"`.
 
-Kopiera hela raden (`ssh-ed25519 AAAA... hakan@host`) — du klistrar in
+Kopiera hela raden (`ssh-ed25519 AAAA... hakan@host`) - du klistrar in
 den som `SSH_PUBKEY` i nästa steg.
 
 **2. Ha VPS:n provisionerad hos Loopia**
@@ -33,11 +33,11 @@ timmar att propagera, så starta det tidigt.
 
 ## Ditt val: TTY eller SSH?
 
-**TTY (Loopias webb-konsol / VNC) — rekommenderat för första körningen.**
+**TTY (Loopias webb-konsol / VNC) - rekommenderat för första körningen.**
 Om något går snett med SSH-hardeningen (t.ex. nyckeln klistrades in fel)
 står du inte utan åtkomst.
 
-**SSH fungerar också** — `systemctl reload ssh` i scriptet kickar *inte* din
+**SSH fungerar också** - `systemctl reload ssh` i scriptet kickar *inte* din
 existerande session, den påverkar bara nya inloggningar. Men worst case
 (trasig nyckel + stängd session) är att du måste gå via TTY eller
 snapshot-rollback ändå.
@@ -72,9 +72,9 @@ SSH_PUBKEY="ssh-ed25519 AAAA...din-nyckel... hakan@host" \
   bash scripts/provision-vps.sh
 ```
 
-Tar ungefär 2-3 minuter. Scriptet är verbose — du ser varje steg (1/7 ... 7/7).
+Tar ungefär 2-3 minuter. Scriptet är verbose - du ser varje steg (1/7 ... 7/7).
 
-## Efter körningen — verifiera
+## Efter körningen - verifiera
 
 Från din **workstation** (ny terminal, lämna TTY öppen tills det här funkar):
 
@@ -113,7 +113,7 @@ git clone https://github.com/Anome-AB/Malarkrets.git ~/malarkrets
 
 ### 2. Skicka upp `.env` från din workstation
 
-Env-filen ligger aldrig i git. På hosten heter den alltid `.env` —
+Env-filen ligger aldrig i git. På hosten heter den alltid `.env` -
 docker compose läser den automatiskt.
 
 ```bash
@@ -126,12 +126,12 @@ Redigera `.env` på VPS:n och sätt åtminstone:
 
 - `DOMAIN=malarkrets.se`
 - `LETSENCRYPT_EMAIL=hakan.froling@anome.se`
-- `AUTH_SECRET`, `POSTGRES_PASSWORD` — riktiga secrets (aldrig `CHANGE_ME`)
-- `DOCKER_GID` — värdet som `scripts/provision-vps.sh` skrev ut på slutet
+- `AUTH_SECRET`, `POSTGRES_PASSWORD` - riktiga secrets (aldrig `CHANGE_ME`)
+- `DOCKER_GID` - värdet som `scripts/provision-vps.sh` skrev ut på slutet
 
 ### 3. Logga in mot ghcr.io (engångsjobb)
 
-Imagen är privat — Docker-daemonen måste ha en PAT sparad för att kunna
+Imagen är privat - Docker-daemonen måste ha en PAT sparad för att kunna
 pulla. Tokenen sparas i `~/.docker/config.json` på VPS:n.
 
 **Skapa token på GitHub:**
@@ -140,7 +140,7 @@ pulla. Tokenen sparas i `~/.docker/config.json` på VPS:n.
 2. Generate new token (classic)
 3. Namn: t.ex. `vps-ghcr-pull`
 4. Scope: kryssa bara i `read:packages`
-5. Kopiera tokenen — visas bara en gång
+5. Kopiera tokenen - visas bara en gång
 
 **Logga in på VPS:n:**
 
@@ -164,7 +164,7 @@ Scriptet hanterar alla steg idempotent:
 5. `docker compose up -d --remove-orphans` (migrate → app → caddy via depends_on)
 6. Pollar `/api/health` och visar log-tail om healthcheck failar
 
-Första körningen tar några minuter — app- och migrate-imagen totalt
+Första körningen tar några minuter - app- och migrate-imagen totalt
 ~1 GB, plus Let's Encrypt-cert-hämtning via Caddy.
 
 ### 5. Verifiera
@@ -193,7 +193,7 @@ faktiskt förändrats.
 ```bash
 ssh deploy@malarkrets.se
 cd ~/malarkrets
-# Editera .env — sätt APP_TAG och MIGRATE_TAG till önskad semver
+# Editera .env - sätt APP_TAG och MIGRATE_TAG till önskad semver
 # Exempel: APP_TAG=1.2.2 MIGRATE_TAG=migrate-1.2.2
 SKIP_GIT_PULL=1 bash scripts/deploy-local.sh
 ```
@@ -204,17 +204,17 @@ SKIP_GIT_PULL=1 bash scripts/deploy-local.sh
 
 | Symptom | Orsak | Fix |
 |---|---|---|
-| `ssh deploy@` frågar efter lösenord | Nyckel inte installerad rätt | TTY in som root, `cat /home/deploy/.ssh/authorized_keys` — verifiera exakt match |
+| `ssh deploy@` frågar efter lösenord | Nyckel inte installerad rätt | TTY in som root, `cat /home/deploy/.ssh/authorized_keys` - verifiera exakt match |
 | `docker: permission denied` | Deploy-user inte i docker-gruppen ännu | Logga ut + in (gruppmedlemskap laddas vid login) |
 | Caddy får inte Let's Encrypt-cert | DNS pekar inte på VPS ännu, eller port 80 är blockerad | `dig malarkrets.se` + `sudo ufw status` |
 | `docker compose pull` failar med `unauthorized` | ghcr.io-imagen är privat | `docker login ghcr.io` med GitHub PAT med `read:packages` |
 | `deploy-local.sh`: "Lokala ändringar finns i arbetsträdet" | Någon har hand-editerat filer på VPS:n | `git status` för att se vad, sedan `git stash` eller `git checkout .` för att kasta |
-| `deploy-local.sh`: healthcheck timeouts efter 60s | App kommer inte upp | Scriptet tailar `app` och `migrate`-loggar automatiskt — läs dem för orsak |
+| `deploy-local.sh`: healthcheck timeouts efter 60s | App kommer inte upp | Scriptet tailar `app` och `migrate`-loggar automatiskt - läs dem för orsak |
 | "Caddyfile saknas" vid deploy | Repot inte klonat, eller fel arbetskatalog | Kör scriptet från `~/malarkrets` (eller var repot ligger) |
 
 ## Om något går helt snett
 
-Scriptet är idempotent — kör om det. Det bygger inte upp dubbla users,
+Scriptet är idempotent - kör om det. Det bygger inte upp dubbla users,
 dubbla UFW-regler, eller dubbla swap-filer.
 
 Sista utvägen: Loopia har snapshot/backup i kontrollpanelen. Ta en
@@ -234,4 +234,4 @@ Hetzner, DigitalOcean eller liknande:
 7. Peka om DNS A-record till nya IP:n.
 
 Räkna med 1-2 timmar inklusive DNS-propagering. Allt gör samma script
-— samma kommando som vid första deploy och varje vanlig uppdatering.
+- samma kommando som vid första deploy och varje vanlig uppdatering.

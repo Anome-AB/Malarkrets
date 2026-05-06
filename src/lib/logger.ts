@@ -9,9 +9,9 @@ import { logs, SeverityNumber } from "@opentelemetry/api-logs";
  *     alerts, and correlation with traces.
  *
  * When OTEL_EXPORTER_OTLP_ENDPOINT is unset (dev without collector),
- * the OTel side no-ops silently — stdout remains the canonical output.
+ * the OTel side no-ops silently - stdout remains the canonical output.
  *
- * Usage (server-side only — Server Components, Route Handlers, Server
+ * Usage (server-side only - Server Components, Route Handlers, Server
  * Actions, lib code):
  *
  *   import { log } from "@/lib/logger";
@@ -21,9 +21,9 @@ import { logs, SeverityNumber } from "@opentelemetry/api-logs";
  *   log.error("db connection failed", { err: err.message });
  *
  * Attribute values are stringified when emitted, so keep them small and
- * searchable (ids, counts, error messages — not full objects).
+ * searchable (ids, counts, error messages - not full objects).
  *
- * Do NOT use this in client components — it imports Node-only OTel
+ * Do NOT use this in client components - it imports Node-only OTel
  * modules. Use console.* client-side; those already show up in browser
  * devtools.
  */
@@ -39,7 +39,7 @@ function emit(
   attrs?: Attrs,
 ) {
   // When attrs contains a `stack` field (usually from errAttrs), pull it
-  // out so the stdout mirror can print it on separate lines — JSON-
+  // out so the stdout mirror can print it on separate lines - JSON-
   // escaped newlines are unreadable in a dev terminal. The full attrs
   // object (stack included) is still sent to OTel so Dash0 has it.
   const stack =
@@ -97,7 +97,7 @@ export function errMsg(err: unknown): string {
 }
 
 /**
- * Full error context for catch blocks — message, type name, and stack.
+ * Full error context for catch blocks - message, type name, and stack.
  * The `emit` function pulls the stack out to print it on separate lines
  * in the stdout mirror so dev terminals show real, readable stack
  * traces. In Dash0 the stack remains a queryable attribute.

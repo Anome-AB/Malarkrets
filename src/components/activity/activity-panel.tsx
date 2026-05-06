@@ -249,7 +249,7 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
 
           {!loading && detail && (
             <>
-              {/* Image — shown only if uploaded. Wider banner ratio than the feed card
+              {/* Image - shown only if uploaded. Wider banner ratio than the feed card
                   so the panel's vertical budget goes to content, not the hero. */}
               {detail.imageMediumUrl && (
                 <img
@@ -398,7 +398,7 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
           )}
         </div>
 
-        {/* Participant footer — sticky join/leave for non-creator viewers, including
+        {/* Participant footer - sticky join/leave for non-creator viewers, including
             admins (admins also get the admin footer below this one). Rendered first in
             DOM so it stacks above any role-specific footer in the visual order. */}
         {detail && !detail.isCreator && !detail.deletedAt && !detail.cancelledAt && (
@@ -433,7 +433,7 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
           </div>
         )}
 
-        {/* Admin moderation footer — sticky, visible only to non-creator admins on live activities */}
+        {/* Admin moderation footer - sticky, visible only to non-creator admins on live activities */}
         {detail && detail.viewerIsAdmin && !detail.isCreator && !detail.deletedAt && (
           <div className="shrink-0 bg-info-light border-t-2 border-info/40 px-6 py-3 shadow-admin-footer">
             <AdminActivityControls
@@ -448,7 +448,7 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
           </div>
         )}
 
-        {/* Creator tools footer — sticky, mirrors the admin footer pattern. Only the
+        {/* Creator tools footer - sticky, mirrors the admin footer pattern. Only the
             edit action lives here; cancel/delete stay on the edit page. */}
         {detail && detail.isCreator && !detail.deletedAt && (
           <div className="shrink-0 bg-primary-light border-t-2 border-primary/30 px-6 py-3 shadow-admin-footer">

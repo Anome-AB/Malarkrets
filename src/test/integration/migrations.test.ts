@@ -39,7 +39,7 @@ describe("drizzle migrations", () => {
         "activity_participants",
         "activity_tags",
         "admin_actions",
-        "courage_messages", // added in 0008 — the one that silently skipped
+        "courage_messages", // added in 0008 - the one that silently skipped
         "images", // added in 0007
         "interest_tags",
         "notifications",

@@ -1,7 +1,7 @@
-# Dash0 — observability manual
+# Dash0 - observability manual
 
 Hur Mälarkrets-appens telemetri samlas in, skeppas till Dash0, och hur
-man läser ut den via queries och dashboards. Levande dokument — uppdatera
+man läser ut den via queries och dashboards. Levande dokument - uppdatera
 när uppsättningen ändras.
 
 ## Översikt av uppsättningen
@@ -49,10 +49,10 @@ server components och route handlers.
 **Källa:** `src/lib/logger.ts` → OTLP Logs SDK.
 **Konfig:** `src/instrumentation.ts` sätter upp `LoggerProvider` med
 `BatchLogRecordProcessor` som exporterar till collectorns `/v1/logs`.
-**Vad som fångas:** Allt som anropar `log.info/warn/error/debug` — auth
+**Vad som fångas:** Allt som anropar `log.info/warn/error/debug` - auth
 events, API-fel, health-check failures.
 **Dev-mode:** när `OTEL_EXPORTER_OTLP_ENDPOINT` är unset (vanligt vid
-`bun dev`) no-op:ar OTel-sidan — loggar syns bara i stdout.
+`bun dev`) no-op:ar OTel-sidan - loggar syns bara i stdout.
 
 ### 3. Per-container-stats
 **Källa:** `docker_stats`-receiver läser `/var/run/docker.sock`.
@@ -66,7 +66,7 @@ via bindmount `/:/hostfs:ro`.
 **Samplingsintervall:** 30s.
 **Vad som fångas:** Total RAM/swap, CPU (inkl. `.utilization`), load
 average, disk, filesystem, network.
-**Medvetet utelämnat:** per-process-metrics — skulle kräva `CAP_SYS_PTRACE`
+**Medvetet utelämnat:** per-process-metrics - skulle kräva `CAP_SYS_PTRACE`
 eller root, onödigt på distroless-imagen.
 
 ## Konfigurationsfiler
@@ -89,7 +89,7 @@ eller root, onödigt på distroless-imagen.
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | Compose-level på app-tjänsten | Default `http://otel-collector:4318`, appen pushar hit |
 | `OTEL_SERVICE_NAME` | Compose-level på app-tjänsten | Default `malarkrets-app`, sätts som `service.name` på alla signaler |
 
-## PromQL — query-referens
+## PromQL - query-referens
 
 Dash0 tar PromQL med OTel semantic conventions. Två syntaxvarianter:
 
@@ -125,7 +125,7 @@ Unit: `MB`. Rekommenderad alert: `> 500 for 5m`.
 ```
 Unit: `%`. Alert: `> 80`.
 **Obs:** om `mountpoint="/"` returnerar tomt, kolla i metric explorer
-vad labeln faktiskt heter — kan vara `/hostfs` beroende på receiverns
+vad labeln faktiskt heter - kan vara `/hostfs` beroende på receiverns
 beteende med `root_path`.
 
 #### CPU utilization % (alla cores aggregerat)
@@ -165,7 +165,7 @@ Unit: `packets/s`. Alert: `> 5/s`.
 
 ### Per-container-panels (från `docker_stats`)
 
-#### Container memory (MB) — alla
+#### Container memory (MB) - alla
 ```promql
 {otel_metric_name="container.memory.usage", deployment_environment_name="production"} / 1024 / 1024
 ```
@@ -205,9 +205,9 @@ metric-paneler.
 
 | Alert | Query | Tröskel | Varför |
 |---|---|---|---|
-| RAM nära taket | `system.memory.utilization` | `> 0.8 for 5m` | 2 GB VPS — reser fahnan innan OOM |
+| RAM nära taket | `system.memory.utilization` | `> 0.8 for 5m` | 2 GB VPS - reser fahnan innan OOM |
 | Swap används | `system.paging.usage{state="used"}` | `> 500MB for 5m` | Latens-katastrof, uppgradera RAM |
-| Disk nära fullt | `system.filesystem.utilization{mountpoint="/"}` | `> 0.8` | 50 GB disk — minst 10 GB headroom måste finnas |
+| Disk nära fullt | `system.filesystem.utilization{mountpoint="/"}` | `> 0.8` | 50 GB disk - minst 10 GB headroom måste finnas |
 | CPU-kö | `system.cpu.load_average.5m / core_count` | `> 1.5 for 5m` | Processer köar, latens stiger |
 | DB-ping failar | log body `"health: db ping failed"` | `> 3 per minut` | DB-kontakt problematisk |
 | Failed login brute-force | log body `"auth: login failed"` same email | `> 10 per minut` | Misstänkt attack |
@@ -258,7 +258,7 @@ automatiskt. Om `otel-collector-config.yaml` ändrats i git krävs:
 ```bash
 docker compose up -d --force-recreate otel-collector
 ```
-`scripts/deploy-local.sh` gör inte detta idag — lägg som follow-up.
+`scripts/deploy-local.sh` gör inte detta idag - lägg som follow-up.
 
 ### 6. Sista utvägen: rulla tillbaka config
 
@@ -276,12 +276,12 @@ Uppdatera när nya behov dyker upp eller när nåt blir aktuellt:
 
 ### Deploy-annotations
 Skicka en anteckning till Dash0 efter varje deploy så vertikala linjer
-visas i dashboards — gör "det började efter den här deployen"-debugging
+visas i dashboards - gör "det började efter den här deployen"-debugging
 trivial.
 
 **Konkret:** curl POST till `/api/v2/annotations` som steg i
 `release.yml` efter att CI-builden klarat. ~5 rader YAML + 1 GitHub
-Secret (`DASH0_API_TOKEN` — separat från ingest-token som redan finns).
+Secret (`DASH0_API_TOKEN` - separat från ingest-token som redan finns).
 
 ### Collector healthcheck fixad
 Nuvarande healthcheck (`wget --spider http://localhost:13133/`) kraschar
@@ -292,7 +292,7 @@ till en non-distroless-variant för just healthcheck.
 ### System.*.utilization för fler scrapers
 Idag aktiverade: cpu, memory, filesystem. Inte aktiverade: disk
 (förvirrande definition), network (ingen meningsfull "taknivå"),
-paging (rå bytes tydligare). Behov kan dyka upp — lätt att aktivera
+paging (rå bytes tydligare). Behov kan dyka upp - lätt att aktivera
 per scraper i `otel-collector-config.yaml`.
 
 ### Logg-retention per severity
@@ -305,7 +305,7 @@ Nuvarande `log.*`-täckning: auth (lib/auth.ts), server actions
 (actions/*), health (api/health). Saknas:
 - Route handlers i `src/app/api/*` (förutom health)
 - Client-error boundary reporting (via en liten `/api/client-error`-endpoint)
-- Migrations (scripts/migrate.mjs) — just nu console.log
+- Migrations (scripts/migrate.mjs) - just nu console.log
 
 ### Automatisk dashboard-provisioning
 Dashboards byggs idag manuellt i UI. Dash0 har en Infrastructure-as-Code-
@@ -315,9 +315,9 @@ en dashboard, eller vid onboarding av nytt team) blir en copy-paste-sak.
 
 ## Relaterade filer
 
-- `src/instrumentation.ts` — OTel-setup för appen
-- `src/lib/logger.ts` — Logger-API
-- `otel-collector-config.yaml` — Collector-pipeline
-- `docker-compose.yml` — `otel-collector`-servicedefinition
-- `.env.prod.example` — vilka env-variabler som krävs
-- `docs/vps-setup.md` — VPS-provisioning, inkl. var `DOCKER_GID` kommer ifrån
+- `src/instrumentation.ts` - OTel-setup för appen
+- `src/lib/logger.ts` - Logger-API
+- `otel-collector-config.yaml` - Collector-pipeline
+- `docker-compose.yml` - `otel-collector`-servicedefinition
+- `.env.prod.example` - vilka env-variabler som krävs
+- `docs/vps-setup.md` - VPS-provisioning, inkl. var `DOCKER_GID` kommer ifrån
