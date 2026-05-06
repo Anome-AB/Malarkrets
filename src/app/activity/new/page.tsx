@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tag } from "@/components/ui/tag";
+import { TagPicker } from "@/components/activity/tag-picker";
 import { useToast } from "@/components/ui/toast";
 import { Card } from "@/components/ui/card";
 import { PlacesAutocomplete } from "@/components/ui/places-autocomplete";
@@ -516,28 +516,21 @@ export default function CreateActivityPage() {
               </Card>
 
               <Card title="Intressetaggar" className="break-inside-avoid mb-6">
-                {loadingTags ? (
-                  <p className="text-sm text-secondary">Laddar taggar...</p>
-                ) : userInterests.length === 0 ? (
-                  <p className="text-sm text-secondary">
-                    Du har inga intressen valda.{" "}
-                    <a href="/onboarding" className="text-primary underline">Välj intressen</a>
-                  </p>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {userInterests.map((tag) => (
-                      <Tag
-                        key={tag.id}
-                        label={tag.name}
-                        active={selectedTags.includes(tag.id)}
-                        onClick={() => toggleTag(tag.id)}
-                      />
-                    ))}
-                  </div>
-                )}
-                {selectedTags.length === 0 && (
-                  <p className="text-xs text-dimmed mt-2">Välj minst en tagg</p>
-                )}
+                <TagPicker
+                  userInterests={userInterests}
+                  selectedTags={selectedTags}
+                  onToggle={toggleTag}
+                  loading={loadingTags}
+                  emptyMessage={
+                    <p className="text-sm text-secondary">
+                      Du har inga intressen valda.{" "}
+                      <a href="/onboarding" className="text-primary underline">
+                        Välj intressen
+                      </a>{" "}
+                      eller lägg till taggar nedan.
+                    </p>
+                  }
+                />
               </Card>
           </div>
 
