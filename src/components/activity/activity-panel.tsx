@@ -374,10 +374,8 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
 
               </div>
 
-              {/* Description */}
-              <p className="text-heading whitespace-pre-wrap leading-relaxed">
-                {detail.description}
-              </p>
+              {/* Description med expand/collapse för långa texter */}
+              <PanelDescription text={detail.description} />
 
               {/* Courage section */}
               {detail.whatToExpect && (
@@ -484,6 +482,40 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
         variant="danger"
         loading={isPending}
       />
+    </div>
+  );
+}
+
+// Panelens utrymme är trångt; långa beskrivningar (>= 350 tecken) klippas
+// till sex rader med en "Visa mer"-länk. Korta texter renderas oförändrat
+// så vi inte visar onödig UI för en två-radsbeskrivning. Toggle-state är
+// per-panel-instans så det återställs vid byte av aktivitet.
+function PanelDescription({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = text.length >= 350;
+
+  if (!isLong) {
+    return (
+      <p className="text-heading whitespace-pre-wrap leading-relaxed">{text}</p>
+    );
+  }
+
+  return (
+    <div>
+      <p
+        className={`text-heading whitespace-pre-wrap leading-relaxed ${
+          expanded ? "" : "line-clamp-6"
+        }`}
+      >
+        {text}
+      </p>
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="mt-2 text-sm text-primary hover:underline"
+      >
+        {expanded ? "Visa mindre" : "Visa mer"}
+      </button>
     </div>
   );
 }
