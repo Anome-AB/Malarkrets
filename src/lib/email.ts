@@ -17,6 +17,14 @@ function getFrom(): string {
   return process.env.EMAIL_FROM ?? "noreply@malarkrets.se";
 }
 
+// Reply-To pekar på en bevakad mailbox (Office 365 shared mailbox), så
+// password-reset-mottagare som svarar på mailet faktiskt når någon — och
+// så strikta corporate-spam-filter (särskilt EOP) viktar inte ner mailet
+// för att from-adressen är obesvarbar.
+function getReplyTo(): string {
+  return process.env.EMAIL_REPLY_TO ?? "support@malarkrets.se";
+}
+
 function getBaseUrl(): string {
   return process.env.AUTH_URL ?? "http://localhost:3000";
 }
@@ -55,6 +63,7 @@ async function sendAuthEmail(input: AuthEmailInput): Promise<void> {
 
   const { error } = await getClient().emails.send({
     from: getFrom(),
+    replyTo: getReplyTo(),
     to,
     subject,
     html,
