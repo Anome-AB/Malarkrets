@@ -11,6 +11,7 @@ import { AdminActivityControls } from "@/components/activity/admin-activity-cont
 import { useToast } from "@/components/ui/toast";
 import { joinActivity, leaveActivity, getActivityDetail } from "@/actions/activities";
 import { createComment, deleteComment } from "@/actions/comments";
+import { ShareButton } from "@/components/ui/share-button";
 
 interface ActivityDetail {
   id: string;
@@ -203,7 +204,7 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
         className={`relative bg-white w-full max-w-slide-panel h-full flex flex-col shadow-xl focus:outline-none transition-transform duration-250 ease-out ${visible ? "translate-x-0" : "translate-x-full"}`}
       >
         {/* Header */}
-        <div className="shrink-0 bg-white border-b border-border px-6 py-4 flex items-center justify-between">
+        <div className="shrink-0 bg-white border-b border-border px-6 py-4 flex items-center justify-between gap-4">
           <button
             onClick={onClose}
             className="p-1 rounded-control text-dimmed hover:text-heading hover:bg-primary-light transition-colors"
@@ -213,12 +214,22 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
               <path d="M15 5L5 15M5 5l10 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
-          <Link
-            href={`/activity/${activityId}`}
-            className="text-xs text-primary hover:underline"
-          >
-            Öppna fullständig sida
-          </Link>
+          <div className="flex items-center gap-3">
+            <ShareButton
+              url={`/activity/${activityId}`}
+              title={detail?.title}
+              text={detail?.title ? `Kolla in "${detail.title}" på Mälarkrets` : undefined}
+              iconOnly
+              variant="ghost"
+              size="compact"
+            />
+            <Link
+              href={`/activity/${activityId}`}
+              className="text-xs text-primary hover:underline"
+            >
+              Öppna fullständig sida
+            </Link>
+          </div>
         </div>
 
         {/* Content */}

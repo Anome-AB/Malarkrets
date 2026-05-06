@@ -18,6 +18,7 @@ import { eq, and, count, sql } from "drizzle-orm";
 import { CourageSection } from "@/components/activity/courage-section";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ShareButton } from "@/components/ui/share-button";
 import { getColorHex } from "@/lib/color-themes";
 import { AppShell } from "@/components/layout/app-shell";
 import { ActivityDetailClient } from "./activity-detail-client";
@@ -343,9 +344,20 @@ export default async function ActivityDetailPage({
               {/* Top row: metadata + map side by side */}
               <div className="flex flex-col sm:flex-row gap-6">
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-2xl font-bold text-heading">
-                    {activity.title}
-                  </h2>
+                  <div className="flex items-start justify-between gap-3">
+                    <h2 className="text-2xl font-bold text-heading">
+                      {activity.title}
+                    </h2>
+                    <ShareButton
+                      url={`/activity/${id}`}
+                      title={activity.title}
+                      text={`Kolla in "${activity.title}" på Mälarkrets`}
+                      iconOnly
+                      variant="ghost"
+                      size="compact"
+                      className="shrink-0"
+                    />
+                  </div>
 
                   <div className="mt-3 space-y-1 text-sm text-secondary">
                     <p>
