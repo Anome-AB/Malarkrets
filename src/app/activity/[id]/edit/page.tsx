@@ -432,9 +432,15 @@ export default function EditActivityPage() {
                 label="Titel"
                 placeholder="Vad ska ni göra?"
                 {...register("title", {
-                  required: "Titel krävs",
-                  minLength: { value: 3, message: "Minst 3 tecken" },
-                  maxLength: { value: 200, message: "Max 200 tecken" },
+                  // Vid utkast räcker det med 1 tecken; vid publicering 3.
+                  // submitMode kollas vid validering så vi får rätt regel
+                  // beroende på vilken knapp som triggade submit.
+                  validate: (value) => {
+                    if (!value || value.length === 0) return "Titel krävs";
+                    if (value.length > 200) return "Max 200 tecken";
+                    if (submitMode === "publish" && value.length < 3) return "Minst 3 tecken";
+                    return true;
+                  },
                 })}
                 error={errors.title?.message}
               />
@@ -446,9 +452,13 @@ export default function EditActivityPage() {
                   placeholder="Berätta mer om aktiviteten..."
                   className="w-full px-3 py-2 min-h-touch-target rounded-control border border-border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
                   {...register("description", {
-                    required: "Beskrivning krävs",
-                    minLength: { value: 10, message: "Minst 10 tecken" },
-                    maxLength: { value: 5000, message: "Max 5000 tecken" },
+                    validate: (value) => {
+                      if (value && value.length > 5000) return "Max 5000 tecken";
+                      if (submitMode === "draft") return true;
+                      if (!value) return "Beskrivning krävs";
+                      if (value.length < 10) return "Minst 10 tecken";
+                      return true;
+                    },
                   })}
                 />
                 {errors.description && <p className="text-sm text-error">{errors.description.message}</p>}
@@ -465,7 +475,12 @@ export default function EditActivityPage() {
               <Input
                 label="Datum"
                 type="date"
-                {...register("date", { required: "Datum krävs" })}
+                {...register("date", {
+                  validate: (value) => {
+                    if (submitMode === "draft") return true;
+                    return !!value || "Datum krävs";
+                  },
+                })}
                 error={errors.date?.message}
               />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -473,7 +488,10 @@ export default function EditActivityPage() {
                   label="Starttid"
                   type="time"
                   {...register("startTimeOfDay", {
-                    required: "Starttid krävs",
+                    validate: (value) => {
+                      if (submitMode === "draft") return true;
+                      return !!value || "Starttid krävs";
+                    },
                   })}
                   error={errors.startTimeOfDay?.message}
                 />

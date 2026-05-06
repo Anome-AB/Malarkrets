@@ -259,9 +259,14 @@ export default function CreateActivityPage() {
                   label="Titel"
                   placeholder="Vad ska ni göra?"
                   {...register("title", {
-                    required: "Titel krävs",
-                    minLength: { value: 3, message: "Minst 3 tecken" },
-                    maxLength: { value: 200, message: "Max 200 tecken" },
+                    // Vid utkast räcker det med 1 tecken (matchar
+                    // draftActivitySchema). Vid publicering kräver vi 3.
+                    validate: (value) => {
+                      if (!value || value.length === 0) return "Titel krävs";
+                      if (value.length > 200) return "Max 200 tecken";
+                      if (submitMode === "publish" && value.length < 3) return "Minst 3 tecken";
+                      return true;
+                    },
                   })}
                   error={errors.title?.message}
                 />
@@ -273,9 +278,15 @@ export default function CreateActivityPage() {
                     placeholder="Berätta mer om aktiviteten..."
                     className="w-full px-3 py-2 min-h-touch-target rounded-control border border-border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
                     {...register("description", {
-                      required: "Beskrivning krävs",
-                      minLength: { value: 10, message: "Minst 10 tecken" },
-                      maxLength: { value: 5000, message: "Max 5000 tecken" },
+                      // Beskrivning är fri vid utkast. Vid publicering
+                      // kräver vi minst 10 tecken precis som tidigare.
+                      validate: (value) => {
+                        if (value && value.length > 5000) return "Max 5000 tecken";
+                        if (submitMode === "draft") return true;
+                        if (!value) return "Beskrivning krävs";
+                        if (value.length < 10) return "Minst 10 tecken";
+                        return true;
+                      },
                     })}
                   />
                   {errors.description && (
@@ -302,7 +313,12 @@ export default function CreateActivityPage() {
                   label="Datum"
                   type="date"
                   min={new Date().toISOString().split("T")[0]}
-                  {...register("date", { required: "Datum krävs" })}
+                  {...register("date", {
+                    validate: (value) => {
+                      if (submitMode === "draft") return true;
+                      return !!value || "Datum krävs";
+                    },
+                  })}
                   error={errors.date?.message}
                 />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -310,7 +326,11 @@ export default function CreateActivityPage() {
                     label="Starttid"
                     type="time"
                     {...register("startTimeOfDay", {
-                      required: "Starttid krävs",
+                      // Vid utkast: ingen tid behövs (onSubmit fyller på 12:00).
+                      validate: (value) => {
+                        if (submitMode === "draft") return true;
+                        return !!value || "Starttid krävs";
+                      },
                     })}
                     error={errors.startTimeOfDay?.message}
                   />
