@@ -72,6 +72,45 @@
 @utility grid-cols-activity-form {
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
 }
+/* Masonry-pack via CSS multi-column. CSS grid lämnar dödyta under korta
+   kort när ett kort i samma rad är högt; column-flow paketerar istället
+   korten top-to-bottom per kolumn och balanserar höjder automatiskt.
+   Ordningen i källan blir kolumn 1 först, sedan kolumn 2, osv - vilket
+   är OK för aktivitetsformulärets kort eftersom varje Card är fristående
+   (ingen tvingad läsordning mellan dem). break-inside-avoid på korten
+   hindrar att ett kort splittas mellan kolumner.
+
+   Vi sätter column-count via responsiva breakpoints istället för att
+   förlita oss på column-width. Med column-count expanderar varje kolumn
+   garanterat till (container - gap*N)/N - browsern kan inte lämna
+   horisontell dödyta. column-width är en hint som vissa engines tolkar
+   strikt och då kapar kolumnerna vid 380px även när containern är 1900px.
+   Breakpoints följer Tailwinds defaults så de matchar resten av appen. */
+@utility cols-activity-form {
+  /* Cappar containern vid 2000px. På ultrawide-skärmar (3440, 5120, ...)
+     skulle 4 kolumner annars sträckas till 1000-1200px per kort - men
+     formuläret har smala input-fält som ser fattiga ut i så vid yta.
+     Vid 2000px får 4 kolumner ~470px var, vilket matchar designens
+     målbredd för korten. Under 2000px expanderar containern fritt så
+     hela bredden nyttjas på vanliga skärmar. */
+  max-width: 2000px;
+  column-count: 1;
+  column-gap: 1.5rem;
+}
+@media (min-width: 768px) {
+  .cols-activity-form { column-count: 2; }
+}
+@media (min-width: 1280px) {
+  .cols-activity-form { column-count: 3; }
+}
+@media (min-width: 1700px) {
+  .cols-activity-form { column-count: 4; }
+}
+/* Vi cappar vid 4 kolumner trots att containern är 2000px bred. Med
+   bara 5 kort försöker CSS column-fill: balance jämna höjderna - vid
+   column-count: 5 paketerar browsern korten i 4 visuella kolumner och
+   lämnar den 5:e tom. Med exakt 4 kolumner fylls varje kolumn av minst
+   ett kort, ingen dödyta uppstår. */
 /* Activity-listor (my-activities) - auto-fill istället för auto-fit så
    ensamma kort stannar på sin 500px min-bredd istället för att sträckas
    ut. Skiljer sig från grid-cols-activity-feed där auto-fit är önskvärt

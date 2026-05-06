@@ -16,8 +16,12 @@ export async function getUserShellData(userId: string) {
     })
     .from(userInterests)
     .innerJoin(interestTags, eq(interestTags.id, userInterests.tagId))
-    .where(eq(userInterests.userId, userId))
-    .orderBy(interestTags.name);
+    .where(eq(userInterests.userId, userId));
+
+  // Sortera i JS med svenskt locale så å/ä/ö hamnar sist. Postgres
+  // default-collation i dev (C/POSIX) sorterar dem efter ASCII vilket
+  // ger fel ordning för svenska. Konsekvent med API-endpoints.
+  interests.sort((a, b) => a.name.localeCompare(b.name, "sv"));
 
   const unreadCount = await getNotificationCount(userId);
 

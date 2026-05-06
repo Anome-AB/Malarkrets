@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tag } from "@/components/ui/tag";
+import { TagPicker } from "@/components/activity/tag-picker";
+import { useTrackUnsavedChanges } from "@/contexts/unsaved-changes";
 import { useToast } from "@/components/ui/toast";
 import { Card } from "@/components/ui/card";
 import { PlacesAutocomplete } from "@/components/ui/places-autocomplete";
@@ -110,7 +111,7 @@ export default function CreateActivityPage() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isDirty: rhfDirty },
   } = useForm<FormValues>({
     defaultValues: {
       genderRestriction: "alla",
@@ -119,6 +120,23 @@ export default function CreateActivityPage() {
       date: toDateInput(new Date()),
     },
   });
+
+  // Sidan flaggas dirty om något betydande har fyllts i. Defaults för date,
+  // genderRestriction, experienceLevel räknas inte (de är fördefinierade,
+  // inte användarinmatning). När create-action lyckats sätts submitted=true
+  // så confirm-dialogen inte triggas mitt under success-redirect:en.
+  const [submitted, setSubmitted] = useState(false);
+  const isDirty =
+    !submitted &&
+    (rhfDirty ||
+      selectedTags.length > 0 ||
+      locationText.trim().length > 0 ||
+      coordinates !== null ||
+      image.thumbUrl !== null ||
+      courageEnabled ||
+      audience !== "alla" ||
+      genderOpen);
+  useTrackUnsavedChanges(isDirty);
 
   // Fetch user interests client-side
   useEffect(() => {
@@ -147,24 +165,47 @@ export default function CreateActivityPage() {
     );
   }
 
+  // Vilken knapp triggade submit. Sätts strax innan handleSubmit kallas så
+  // onSubmit vet om vi sparar utkast (lös validering, ingen feed) eller
+  // publicerar (full validering, syns för alla).
+  const [submitMode, setSubmitMode] = useState<"draft" | "publish">("publish");
+
   function onSubmit(values: FormValues) {
-    if (selectedTags.length === 0) {
-      toast("Välj minst en intressetagg", "error");
-      return;
-    }
-    if (!locationText.trim()) {
-      toast("Ange en plats", "error");
-      return;
-    }
-    if (!image.thumbUrl && !colorTheme) {
-      toast("Välj en bild eller en bakgrundsfärg", "error");
-      return;
+    const isPublish = submitMode === "publish";
+
+    if (isPublish) {
+      // Full validering vid publicering. Vid utkast hoppar vi över allt
+      // detta så användaren kan spara halvfärdigt arbete.
+      if (selectedTags.length === 0) {
+        toast("Välj minst en intressetagg", "error");
+        return;
+      }
+      if (!locationText.trim()) {
+        toast("Ange en plats", "error");
+        return;
+      }
+      if (!image.thumbUrl && !colorTheme) {
+        toast("Välj en bild eller en bakgrundsfärg", "error");
+        return;
+      }
     }
 
-    const startCombined = combineDateTime(values.date, values.startTimeOfDay);
+    // Vid draft: tillåt avsaknad starttid genom att falla tillbaka till
+    // dagens datum kl 12:00. DB-kolumnen är NOT NULL, så vi måste alltid
+    // skicka något. Vid publicering kräver vi att användaren faktiskt
+    // valt tid.
+    let startCombined = combineDateTime(values.date, values.startTimeOfDay);
     if (!startCombined) {
-      toast("Ange datum och starttid", "error");
-      return;
+      if (isPublish) {
+        toast("Ange datum och starttid", "error");
+        return;
+      }
+      const fallbackDate = values.date || toDateInput(new Date());
+      startCombined = combineDateTime(fallbackDate, "12:00");
+      if (!startCombined) {
+        toast("Ogiltigt datum", "error");
+        return;
+      }
     }
     const endCombined = combineEndDateTime(
       values.date,
@@ -208,11 +249,21 @@ export default function CreateActivityPage() {
         }),
       );
 
-      const result = await createActivity(formData);
+      const result = await createActivity(formData, { publish: isPublish });
 
       if (result.success && result.activityId) {
-        toast("Aktiviteten har skapats!", "success");
-        router.push(`/activity/${result.activityId}`);
+        // Markera som submitted så useTrackUnsavedChanges slutar rapportera
+        // dirty - annars triggar success-redirect:en bekräftelsedialogen.
+        setSubmitted(true);
+        toast(
+          isPublish ? "Aktiviteten har publicerats!" : "Utkast sparat",
+          "success",
+        );
+        router.push(
+          isPublish
+            ? `/activity/${result.activityId}`
+            : `/activity/${result.activityId}/edit`,
+        );
       } else {
         toast(result.error ?? "Något gick fel", "error");
       }
@@ -223,15 +274,20 @@ export default function CreateActivityPage() {
     <div className="px-6 pt-8 flex flex-col min-h-full">
       <h1 className="text-2xl font-bold text-heading mb-6">Skapa ny aktivitet</h1>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1">
-          <div className="grid grid-cols-activity-form gap-6 items-start">
-              <Card title="Grundläggande information" className="space-y-4">
+          <div className="cols-activity-form">
+              <Card title="Grundläggande information" className="space-y-4 break-inside-avoid mb-6">
                 <Input
                   label="Titel"
                   placeholder="Vad ska ni göra?"
                   {...register("title", {
-                    required: "Titel krävs",
-                    minLength: { value: 3, message: "Minst 3 tecken" },
-                    maxLength: { value: 200, message: "Max 200 tecken" },
+                    // Vid utkast räcker det med 1 tecken (matchar
+                    // draftActivitySchema). Vid publicering kräver vi 3.
+                    validate: (value) => {
+                      if (!value || value.length === 0) return "Titel krävs";
+                      if (value.length > 200) return "Max 200 tecken";
+                      if (submitMode === "publish" && value.length < 3) return "Minst 3 tecken";
+                      return true;
+                    },
                   })}
                   error={errors.title?.message}
                 />
@@ -243,9 +299,15 @@ export default function CreateActivityPage() {
                     placeholder="Berätta mer om aktiviteten..."
                     className="w-full px-3 py-2 min-h-touch-target rounded-control border border-border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
                     {...register("description", {
-                      required: "Beskrivning krävs",
-                      minLength: { value: 10, message: "Minst 10 tecken" },
-                      maxLength: { value: 5000, message: "Max 5000 tecken" },
+                      // Beskrivning är fri vid utkast. Vid publicering
+                      // kräver vi minst 10 tecken precis som tidigare.
+                      validate: (value) => {
+                        if (value && value.length > 5000) return "Max 5000 tecken";
+                        if (submitMode === "draft") return true;
+                        if (!value) return "Beskrivning krävs";
+                        if (value.length < 10) return "Minst 10 tecken";
+                        return true;
+                      },
                     })}
                   />
                   {errors.description && (
@@ -272,7 +334,12 @@ export default function CreateActivityPage() {
                   label="Datum"
                   type="date"
                   min={new Date().toISOString().split("T")[0]}
-                  {...register("date", { required: "Datum krävs" })}
+                  {...register("date", {
+                    validate: (value) => {
+                      if (submitMode === "draft") return true;
+                      return !!value || "Datum krävs";
+                    },
+                  })}
                   error={errors.date?.message}
                 />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -280,7 +347,11 @@ export default function CreateActivityPage() {
                     label="Starttid"
                     type="time"
                     {...register("startTimeOfDay", {
-                      required: "Starttid krävs",
+                      // Vid utkast: ingen tid behövs (onSubmit fyller på 12:00).
+                      validate: (value) => {
+                        if (submitMode === "draft") return true;
+                        return !!value || "Starttid krävs";
+                      },
                     })}
                     error={errors.startTimeOfDay?.message}
                   />
@@ -293,7 +364,7 @@ export default function CreateActivityPage() {
               </Card>
 
               {/* Image upload */}
-              <Card title="Bild eller färg">
+              <Card title="Bild eller färg" className="break-inside-avoid mb-6">
                 <ImageUpload
                   thumbUrl={image.thumbUrl}
                   mediumUrl={image.mediumUrl}
@@ -305,7 +376,7 @@ export default function CreateActivityPage() {
               </Card>
 
               {/* What to expect */}
-              <Card title="Vad kan deltagare förvänta sig?" className="space-y-4">
+              <Card title="Vad kan deltagare förvänta sig?" className="space-y-4 break-inside-avoid mb-6">
                 {/* Courage message - top of card since it shows at top of CourageSection */}
                 <div>
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -417,7 +488,7 @@ export default function CreateActivityPage() {
                 </div>
               </Card>
 
-              <Card title="Begränsningar" className="space-y-4">
+              <Card title="Begränsningar" className="space-y-4 break-inside-avoid mb-6">
                 <Input
                   label="Max antal deltagare?"
                   type="number"
@@ -465,36 +536,44 @@ export default function CreateActivityPage() {
                 )}
               </Card>
 
-              <Card title="Intressetaggar">
-                {loadingTags ? (
-                  <p className="text-sm text-secondary">Laddar taggar...</p>
-                ) : userInterests.length === 0 ? (
-                  <p className="text-sm text-secondary">
-                    Du har inga intressen valda.{" "}
-                    <a href="/onboarding" className="text-primary underline">Välj intressen</a>
-                  </p>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {userInterests.map((tag) => (
-                      <Tag
-                        key={tag.id}
-                        label={tag.name}
-                        active={selectedTags.includes(tag.id)}
-                        onClick={() => toggleTag(tag.id)}
-                      />
-                    ))}
-                  </div>
-                )}
-                {selectedTags.length === 0 && (
-                  <p className="text-xs text-dimmed mt-2">Välj minst en tagg</p>
-                )}
+              <Card title="Intressetaggar" className="break-inside-avoid mb-6">
+                <TagPicker
+                  userInterests={userInterests}
+                  selectedTags={selectedTags}
+                  onToggle={toggleTag}
+                  loading={loadingTags}
+                  emptyMessage={
+                    <p className="text-sm text-secondary">
+                      Du har inga intressen valda.{" "}
+                      <a href="/onboarding" className="text-primary underline">
+                        Välj intressen
+                      </a>{" "}
+                      eller lägg till taggar nedan.
+                    </p>
+                  }
+                />
               </Card>
           </div>
 
           {/* Sticky footer - pushed to bottom of viewport */}
-          <div className="sticky bottom-0 -mx-6 px-6 py-3 bg-white border-t border-border shadow-sticky-footer mt-auto pt-3 flex justify-end z-10">
-            <Button type="submit" variant="primary" loading={isPending}>
-              Skapa aktivitet
+          <div className="sticky bottom-0 -mx-6 px-6 py-3 bg-white border-t border-border shadow-sticky-footer mt-auto pt-3 flex justify-end gap-3 z-10">
+            <Button
+              type="submit"
+              variant="secondary"
+              loading={isPending && submitMode === "draft"}
+              disabled={isPending}
+              onClick={() => setSubmitMode("draft")}
+            >
+              Spara utkast
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={isPending && submitMode === "publish"}
+              disabled={isPending}
+              onClick={() => setSubmitMode("publish")}
+            >
+              Publicera
             </Button>
           </div>
         </form>

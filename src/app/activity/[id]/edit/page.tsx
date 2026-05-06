@@ -5,7 +5,8 @@ import { useRouter, useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tag } from "@/components/ui/tag";
+import { TagPicker } from "@/components/activity/tag-picker";
+import { useTrackUnsavedChanges } from "@/contexts/unsaved-changes";
 import { useToast } from "@/components/ui/toast";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { updateActivity, cancelOrDeleteActivity } from "@/actions/activities";
@@ -21,6 +22,7 @@ import {
   toTimeInput,
 } from "@/lib/datetime";
 import Link from "next/link";
+import { GuardedLink } from "@/components/layout/guarded-link";
 
 interface InterestTag {
   id: number;
@@ -77,6 +79,13 @@ export default function EditActivityPage() {
   // Audience state
   const [audience, setAudience] = useState<string>("alla");
 
+  // Draft state - när publishedAt är null är aktiviteten ett utkast.
+  // Då visas både Spara utkast och Publicera-knappar; när den redan är
+  // publicerad finns bara Spara ändringar.
+  const [isDraft, setIsDraft] = useState(false);
+  const [isCancelled, setIsCancelled] = useState(false);
+  const [submitMode, setSubmitMode] = useState<"draft" | "publish">("draft");
+
   // Image state
   const [image, setImage] = useState<{
     thumbUrl: string | null;
@@ -127,7 +136,12 @@ export default function EditActivityPage() {
 
   // Dirty-tracking: jämför nuvarande non-RHF-state mot snapshot taget när
   // formuläret är färdig-laddat. RHF-fälten täcks separat av rhfDirty.
-  // initialSnapshotRef sätts en gång; sen flippar isDirty om något skiljer sig.
+  // initialSnapshotRef sätts en gång (av fetchData-effekten ELLER via raf-
+  // fallback nedan), sen flippar isDirty så fort något skiljer sig.
+  //
+  // beforeunload + sidebar/topnav-navigation hanteras globalt av
+  // UnsavedChangesProvider via useTrackUnsavedChanges-hooken längst ned -
+  // ingen lokal listener eller egen ConfirmDialog behövs.
   const initialSnapshotRef = useRef<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
@@ -162,24 +176,12 @@ export default function EditActivityPage() {
     initialSnapshotRef.current !== null &&
     (nonRhfSnapshot !== initialSnapshotRef.current || rhfDirty);
 
-  // Leave-confirmation-state. pendingNav lagrar destinationen så vi kan
-  // navigera vidare efter att användaren klickat "Lämna utan att spara".
-  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
-  const [pendingNav, setPendingNav] = useState<string | null>(null);
-
-  function attemptLeave(href: string) {
-    if (isDirty) {
-      setPendingNav(href);
-      setShowLeaveConfirm(true);
-    } else {
-      router.push(href);
-    }
-  }
+  useTrackUnsavedChanges(isDirty);
 
   // Capture initial snapshot direkt efter att fetchData kört reset() och
   // satt non-RHF-state. requestAnimationFrame ger React en chans att hinna
-  // applicera state-uppdateringen innan vi snapshot:ar, annars riskerar vi
-  // att fånga ett halvfärdigt initialvärde.
+  // applicera setState-batchen innan vi snapshot:ar - annars riskerar vi
+  // att fånga ett halvfärdigt initialvärde och flagga dirty falskt.
   useEffect(() => {
     if (loading || initialSnapshotRef.current !== null) return;
     const raf = requestAnimationFrame(() => {
@@ -187,18 +189,6 @@ export default function EditActivityPage() {
     });
     return () => cancelAnimationFrame(raf);
   }, [loading, nonRhfSnapshot]);
-
-  // Browser-navigation (back, refresh, close tab) - enda sättet att bevara
-  // beforeunload-prompt är att returnera tom sträng / kalla preventDefault.
-  // Browser visar sin egen native dialog; meddelandet kontrolleras inte av oss.
-  useEffect(() => {
-    if (!isDirty) return;
-    const handler = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-    };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, [isDirty]);
 
   useEffect(() => {
     async function fetchData() {
@@ -238,6 +228,8 @@ export default function EditActivityPage() {
         setUserGender(genderForToggle);
         setSelectedTags(activity.tags ?? []);
         setParticipantCount(activity.participantCount ?? 0);
+        setIsDraft(!activity.publishedAt);
+        setIsCancelled(!!activity.cancelledAt);
         setLocationText(activity.location ?? "");
         if (activity.latitude && activity.longitude) {
           setCoordinates({ lat: activity.latitude, lng: activity.longitude });
@@ -279,6 +271,11 @@ export default function EditActivityPage() {
           latePolicy: wte.latePolicy ?? "",
           adminReason: "",
         });
+
+        // initialSnapshotRef sätts via raf-effekten nedan när loading=false,
+        // inte här - så vi garanterat fångar samma serialiserade form som
+        // nonRhfSnapshot använder för jämförelse (annars riskerar olika
+        // nyckelnamn att ge falsk dirty direkt vid load).
       } catch {
         setLoadError("Kunde inte ladda aktiviteten");
       } finally {
@@ -294,10 +291,14 @@ export default function EditActivityPage() {
     setCancelLoading(false);
 
     if (result.success) {
+      setSubmitted(true);
       setShowCancelModal(false);
       setSubmitted(true);
       if ((result as { deleted?: boolean }).deleted) {
-        toast("Aktiviteten har raderats", "success");
+        toast(
+          isDraft ? "Utkastet har tagits bort" : "Aktiviteten har raderats",
+          "success",
+        );
         router.push("/my-activities");
       } else {
         toast("Aktiviteten har ställts in", "success");
@@ -306,6 +307,14 @@ export default function EditActivityPage() {
     } else {
       toast(result.error ?? "Något gick fel", "error");
     }
+  }
+
+  // Utkast raderas alltid (det finns aldrig externa deltagare på en
+  // ej publicerad aktivitet). Vi skippar reason-flödet helt och
+  // kallar cancelOrDeleteActivity med tom string - actionet tar
+  // delete-grenen så snart inga andra än creator är anmälda.
+  async function handleDeleteDraft() {
+    await handleCancel("");
   }
 
   function toggleTag(tagId: number) {
@@ -327,17 +336,24 @@ export default function EditActivityPage() {
   );
 
   function onSubmit(values: FormValues) {
-    if (selectedTags.length === 0) {
-      toast("Välj minst en intressetagg", "error");
-      return;
-    }
-    if (!locationText.trim()) {
-      toast("Ange en plats", "error");
-      return;
-    }
-    if (!image.thumbUrl && !colorTheme) {
-      toast("Välj en bild eller en bakgrundsfärg", "error");
-      return;
+    const isPublish = submitMode === "publish";
+
+    // Vid publicering: kör full klient-validering så vi fångar luckor i
+    // utkastet innan servern blir inblandad. Vid vanlig spara-utkast på en
+    // draft skippar vi detta så användaren kan fortsätta jobba halvfärdigt.
+    if (isPublish) {
+      if (selectedTags.length === 0) {
+        toast("Välj minst en intressetagg", "error");
+        return;
+      }
+      if (!locationText.trim()) {
+        toast("Ange en plats", "error");
+        return;
+      }
+      if (!image.thumbUrl && !colorTheme) {
+        toast("Välj en bild eller en bakgrundsfärg", "error");
+        return;
+      }
     }
 
     startTransition(async () => {
@@ -360,16 +376,21 @@ export default function EditActivityPage() {
         values.startTimeOfDay,
       );
       if (!startCombined) {
-        toast("Ange datum och starttid", "error");
-        return;
+        if (isPublish) {
+          toast("Ange datum och starttid", "error");
+          return;
+        }
+        // Draft-spara utan tid: hoppa över start/end så servern lämnar
+        // det orört. Updateaction:en kräver bara id på draft-läge.
+      } else {
+        formData.set("startTime", startCombined);
+        const endCombined = combineEndDateTime(
+          values.date,
+          values.startTimeOfDay,
+          values.endTimeOfDay,
+        );
+        if (endCombined) formData.set("endTime", endCombined);
       }
-      const endCombined = combineEndDateTime(
-        values.date,
-        values.startTimeOfDay,
-        values.endTimeOfDay,
-      );
-      formData.set("startTime", startCombined);
-      if (endCombined) formData.set("endTime", endCombined);
       if (values.maxParticipants) formData.set("maxParticipants", values.maxParticipants);
       const restriction = genderOpen
         ? (userGender === "kvinna" ? "kvinnor" : userGender === "man" ? "man" : "alla")
@@ -389,11 +410,16 @@ export default function EditActivityPage() {
         formData.set("adminReason", values.adminReason);
       }
 
-      const result = await updateActivity(formData);
+      const result = await updateActivity(formData, { publish: isPublish });
 
       if (result.success) {
         setSubmitted(true);
-        toast("Aktiviteten har uppdaterats!", "success");
+        toast(
+          isPublish
+            ? "Aktiviteten har publicerats!"
+            : "Aktiviteten har uppdaterats!",
+          "success",
+        );
         router.push(`/activity/${activityId}`);
       } else {
         toast(result.error ?? "Något gick fel", "error");
@@ -425,21 +451,29 @@ export default function EditActivityPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-heading">
-            {isAdminEdit ? "Redigera aktivitet som admin" : "Redigera aktivitet"}
+            {isAdminEdit
+              ? "Redigera aktivitet som admin"
+              : isDraft
+                ? "Redigera utkast"
+                : "Redigera aktivitet"}
           </h1>
+          {isDraft && !isAdminEdit && (
+            <p className="text-sm text-secondary mt-1">
+              Utkastet är inte synligt för andra. Klicka på Publicera när du är klar.
+            </p>
+          )}
           {isAdminEdit && creatorDisplayName && (
             <p className="text-sm text-secondary mt-1">
               Arrangör: <span className="font-medium text-heading">{creatorDisplayName}</span>
             </p>
           )}
         </div>
-        <button
-          type="button"
-          onClick={() => attemptLeave(`/activity/${activityId}`)}
+        <GuardedLink
+          href={`/activity/${activityId}`}
           className="text-sm text-secondary hover:text-heading transition-colors"
         >
           Avbryt
-        </button>
+        </GuardedLink>
       </div>
 
       {isAdminEdit && (
@@ -470,15 +504,21 @@ export default function EditActivityPage() {
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1">
-        <div className="grid grid-cols-activity-form gap-6 items-start">
-            <Card title="Grundläggande information" className="space-y-4">
+        <div className="cols-activity-form">
+            <Card title="Grundläggande information" className="space-y-4 break-inside-avoid mb-6">
               <Input
                 label="Titel"
                 placeholder="Vad ska ni göra?"
                 {...register("title", {
-                  required: "Titel krävs",
-                  minLength: { value: 3, message: "Minst 3 tecken" },
-                  maxLength: { value: 200, message: "Max 200 tecken" },
+                  // Vid utkast räcker det med 1 tecken; vid publicering 3.
+                  // submitMode kollas vid validering så vi får rätt regel
+                  // beroende på vilken knapp som triggade submit.
+                  validate: (value) => {
+                    if (!value || value.length === 0) return "Titel krävs";
+                    if (value.length > 200) return "Max 200 tecken";
+                    if (submitMode === "publish" && value.length < 3) return "Minst 3 tecken";
+                    return true;
+                  },
                 })}
                 error={errors.title?.message}
               />
@@ -490,9 +530,13 @@ export default function EditActivityPage() {
                   placeholder="Berätta mer om aktiviteten..."
                   className="w-full px-3 py-2 min-h-touch-target rounded-control border border-border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
                   {...register("description", {
-                    required: "Beskrivning krävs",
-                    minLength: { value: 10, message: "Minst 10 tecken" },
-                    maxLength: { value: 5000, message: "Max 5000 tecken" },
+                    validate: (value) => {
+                      if (value && value.length > 5000) return "Max 5000 tecken";
+                      if (submitMode === "draft") return true;
+                      if (!value) return "Beskrivning krävs";
+                      if (value.length < 10) return "Minst 10 tecken";
+                      return true;
+                    },
                   })}
                 />
                 {errors.description && <p className="text-sm text-error">{errors.description.message}</p>}
@@ -509,7 +553,12 @@ export default function EditActivityPage() {
               <Input
                 label="Datum"
                 type="date"
-                {...register("date", { required: "Datum krävs" })}
+                {...register("date", {
+                  validate: (value) => {
+                    if (submitMode === "draft") return true;
+                    return !!value || "Datum krävs";
+                  },
+                })}
                 error={errors.date?.message}
               />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -517,7 +566,10 @@ export default function EditActivityPage() {
                   label="Starttid"
                   type="time"
                   {...register("startTimeOfDay", {
-                    required: "Starttid krävs",
+                    validate: (value) => {
+                      if (submitMode === "draft") return true;
+                      return !!value || "Starttid krävs";
+                    },
                   })}
                   error={errors.startTimeOfDay?.message}
                 />
@@ -529,7 +581,7 @@ export default function EditActivityPage() {
               </div>
             </Card>
 
-            <Card title="Bild eller färg">
+            <Card title="Bild eller färg" className="break-inside-avoid mb-6">
               <ImageUpload
                 thumbUrl={image.thumbUrl}
                 mediumUrl={image.mediumUrl}
@@ -540,7 +592,7 @@ export default function EditActivityPage() {
               />
             </Card>
 
-            <Card title="Vad kan deltagare förvänta sig?" className="space-y-4">
+            <Card title="Vad kan deltagare förvänta sig?" className="space-y-4 break-inside-avoid mb-6">
               {/* Courage message - top of card since it shows at top of CourageSection */}
               <div>
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -650,7 +702,7 @@ export default function EditActivityPage() {
               </div>
             </Card>
 
-            <Card title="Begränsningar" className="space-y-4">
+            <Card title="Begränsningar" className="space-y-4 break-inside-avoid mb-6">
               <Input
                 label="Max antal deltagare?"
                 type="number"
@@ -700,27 +752,21 @@ export default function EditActivityPage() {
               )}
             </Card>
 
-            <Card title="Intressetaggar">
-              {userInterests.length === 0 ? (
-                <p className="text-sm text-secondary">
-                  Du har inga intressen valda.{" "}
-                  <a href="/onboarding" className="text-primary underline">Välj intressen</a>
-                </p>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {userInterests.map((tag) => (
-                    <Tag
-                      key={tag.id}
-                      label={tag.name}
-                      active={selectedTags.includes(tag.id)}
-                      onClick={() => toggleTag(tag.id)}
-                    />
-                  ))}
-                </div>
-              )}
-              {selectedTags.length === 0 && (
-                <p className="text-xs text-dimmed mt-2">Välj minst en tagg</p>
-              )}
+            <Card title="Intressetaggar" className="break-inside-avoid mb-6">
+              <TagPicker
+                userInterests={userInterests}
+                selectedTags={selectedTags}
+                onToggle={toggleTag}
+                emptyMessage={
+                  <p className="text-sm text-secondary">
+                    Du har inga intressen valda.{" "}
+                    <a href="/onboarding" className="text-primary underline">
+                      Välj intressen
+                    </a>{" "}
+                    eller lägg till taggar nedan.
+                  </p>
+                }
+              />
             </Card>
         </div>
 
@@ -732,40 +778,59 @@ export default function EditActivityPage() {
             </p>
           ) : (
             <Button variant="danger" onClick={() => setShowCancelModal(true)}>
-              {participantCount > 0 ? "Ställ in aktivitet" : "Radera aktivitet"}
+              {isDraft
+                ? "Ta bort utkast"
+                : participantCount > 0
+                  ? "Ställ in aktivitet"
+                  : "Radera aktivitet"}
             </Button>
           )}
-          <Button type="submit" variant="primary" loading={isPending}>
-            Spara ändringar
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              type="submit"
+              variant={isDraft && !isAdminEdit ? "secondary" : "primary"}
+              loading={isPending && submitMode === "draft"}
+              disabled={isPending}
+              onClick={() => setSubmitMode("draft")}
+            >
+              Spara ändringar
+            </Button>
+            {isDraft && !isAdminEdit && !isCancelled && (
+              <Button
+                type="submit"
+                variant="primary"
+                loading={isPending && submitMode === "publish"}
+                disabled={isPending}
+                onClick={() => setSubmitMode("publish")}
+              >
+                Publicera
+              </Button>
+            )}
+          </div>
         </div>
       </form>
 
-      <CancelActivityModal
-        open={showCancelModal}
-        onClose={() => setShowCancelModal(false)}
-        onConfirm={handleCancel}
-        participantCount={participantCount}
-        loading={cancelLoading}
-      />
-
-      <ConfirmDialog
-        open={showLeaveConfirm}
-        onCancel={() => {
-          setShowLeaveConfirm(false);
-          setPendingNav(null);
-        }}
-        onConfirm={() => {
-          setShowLeaveConfirm(false);
-          setSubmitted(true);
-          if (pendingNav) router.push(pendingNav);
-        }}
-        title="Osparade ändringar"
-        message="Du har gjort ändringar som inte har sparats. Vill du lämna sidan ändå?"
-        confirmLabel="Lämna utan att spara"
-        cancelLabel="Stanna kvar"
-        variant="danger"
-      />
+      {isDraft ? (
+        <ConfirmDialog
+          open={showCancelModal}
+          onCancel={() => !cancelLoading && setShowCancelModal(false)}
+          onConfirm={handleDeleteDraft}
+          title="Ta bort utkast?"
+          message="Är du säker på att du vill ta bort utkastet? Det kan inte återställas."
+          confirmLabel="Ta bort"
+          cancelLabel="Avbryt"
+          variant="danger"
+          loading={cancelLoading}
+        />
+      ) : (
+        <CancelActivityModal
+          open={showCancelModal}
+          onClose={() => setShowCancelModal(false)}
+          onConfirm={handleCancel}
+          participantCount={participantCount}
+          loading={cancelLoading}
+        />
+      )}
     </div>
   );
 }

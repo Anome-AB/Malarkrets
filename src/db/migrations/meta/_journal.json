@@ -22,6 +22,20 @@
 			"when": 1777089600000,
 			"tag": "0002_add_user_tokens_password_reset",
 			"breakpoints": true
+		},
+		{
+			"idx": 3,
+			"version": "7",
+			"when": 1778457600000,
+			"tag": "0003_add_activity_published_at",
+			"breakpoints": true
+		},
+		{
+			"idx": 4,
+			"version": "7",
+			"when": 1778544000000,
+			"tag": "0004_add_motion_traning_tag",
+			"breakpoints": true
 		}
 	]
 }

@@ -98,6 +98,8 @@ export async function GET(
       genderRestriction: activity.genderRestriction,
       minAge: activity.minAge,
       whatToExpect,
+      publishedAt: activity.publishedAt,
+      cancelledAt: activity.cancelledAt,
       tags: tags.map((t) => t.id),
       participantCount,
       creatorId: activity.creatorId,

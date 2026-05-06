@@ -63,6 +63,9 @@ async function seedActivity(
       creatorId,
       startTime,
       genderRestriction: "alla",
+      // Feed-queryn filtrerar bort drafts (publishedAt IS NULL).
+      // Testfixturer är publika aktiviteter, så sätt publishedAt direkt.
+      publishedAt: new Date(),
     })
     .returning();
   await db.insert(activityTags).values({ activityId: a.id, tagId });

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import Link from "next/link";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FeedLink } from "@/components/layout/feed-link";
+import { GuardedLink } from "@/components/layout/guarded-link";
 import { NotificationDropdown } from "@/components/notifications/notification-dropdown";
 import { logOut } from "@/actions/auth";
 
@@ -60,13 +60,13 @@ export function TopNav({ unreadCount, userInitials, userAvatarUrl }: TopNavProps
 
           {menuOpen && (
             <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-border py-1 z-50">
-              <Link
+              <GuardedLink
                 href="/profile"
                 onClick={() => setMenuOpen(false)}
                 className="block px-4 py-2.5 text-sm text-heading hover:bg-background transition-colors"
               >
                 Min profil
-              </Link>
+              </GuardedLink>
               <div className="border-t border-border-light my-1" />
               <button
                 onClick={() => {

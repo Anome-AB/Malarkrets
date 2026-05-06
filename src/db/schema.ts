@@ -225,6 +225,7 @@ export const activities = pgTable(
     ),
     minAge: integer("min_age"),
     whatToExpect: jsonb("what_to_expect"),
+    publishedAt: timestamp("published_at"),
     cancelledAt: timestamp("cancelled_at"),
     cancelledReason: text("cancelled_reason"),
     deletedAt: timestamp("deleted_at"),
@@ -243,6 +244,7 @@ export const activities = pgTable(
       table.startTime,
     ),
     index("activities_deleted_at_idx").on(table.deletedAt),
+    index("activities_published_at_idx").on(table.publishedAt),
   ],
 );
 

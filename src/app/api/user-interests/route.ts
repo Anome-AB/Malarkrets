@@ -25,6 +25,10 @@ export async function GET() {
     }),
   ]);
 
+  // Alfabetiskt med svenskt locale så listorna i tag-pickern och profilvyn
+  // alltid är konsekvent ordnade oavsett när användaren markerade taggen.
+  interests.sort((a, b) => a.name.localeCompare(b.name, "sv"));
+
   return Response.json({
     interests,
     gender: profile?.gender ?? "ej_angett",

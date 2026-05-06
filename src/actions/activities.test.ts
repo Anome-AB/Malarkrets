@@ -273,6 +273,65 @@ describe("Own activity (creator perspective)", () => {
       expect(result.success).toBe(false);
     });
 
+    it("saves draft with loose validation (publish=false)", async () => {
+      mockDbQueryUsersFindFirst.mockResolvedValue(makeCreatorProfile());
+      selectQueue.push([{ count: 0 }]);
+      // Tom tag-array hoppar över tag-inserten i actionet, så vi sätter
+      // bara 3 mockReturnValueOnce: aktivitet, participants, analytics.
+      // Att lämna en oanvänd mockReturnValueOnce läcker över till nästa
+      // test (clearAllMocks rör inte den kön).
+      mockInsert
+        .mockReturnValueOnce(chain([{ id: "draft-id" }]))
+        .mockReturnValueOnce(chain())
+        .mockReturnValueOnce(chain());
+
+      // Utkastet får sakna både description, location-koordinater och taggar.
+      // Schemat tillåter det; servern accepterar och sparar publishedAt=null.
+      const fd = makeFormData({
+        title: "Halvfärdigt utkast",
+        startTime: "2099-04-20T09:00:00Z",
+        tags: JSON.stringify([]),
+      });
+
+      const result = await createActivity(fd, { publish: false });
+      expect(result.success).toBe(true);
+
+      // Verifiera att publishedAt sätts till null vid utkast. Första
+      // mockInsert-anropet är aktivitets-inserten där värdet ska finnas.
+      const insertCall = mockInsert.mock.results[0].value;
+      const insertedValues = insertCall.values.mock.calls[0][0];
+      expect(insertedValues.publishedAt).toBeNull();
+    });
+
+    it("publishes activity when publish=true (default)", async () => {
+      mockDbQueryUsersFindFirst.mockResolvedValue(makeCreatorProfile());
+      selectQueue.push([{ count: 0 }]);
+      mockInsert
+        .mockReturnValueOnce(chain([{ id: "published-id" }]))
+        .mockReturnValueOnce(chain())
+        .mockReturnValueOnce(chain())
+        .mockReturnValueOnce(chain());
+
+      const fd = makeFormData({
+        title: "Färdig aktivitet",
+        description: "En komplett beskrivning av aktiviteten",
+        location: "Djäkneberget, Västerås",
+        latitude: "59.6140",
+        longitude: "16.5380",
+        startTime: "2099-04-20T09:00:00Z",
+        colorTheme: "sage",
+        tags: JSON.stringify([1]),
+        whatToExpect: JSON.stringify({ audience: "alla", experienceLevel: "alla" }),
+      });
+
+      const result = await createActivity(fd);
+      expect(result.success).toBe(true);
+
+      const insertCall = mockInsert.mock.results[0].value;
+      const insertedValues = insertCall.values.mock.calls[0][0];
+      expect(insertedValues.publishedAt).toBeInstanceOf(Date);
+    });
+
     it("rejects man creating kvinnor-only activity", async () => {
       mockRequireAuth.mockResolvedValue(OTHER_USER);
       mockDbQueryUsersFindFirst.mockResolvedValue(makeOtherProfile({ gender: "man" }));
@@ -319,6 +378,25 @@ describe("Own activity (creator perspective)", () => {
       });
 
       const result = await updateActivity(fd);
+      expect(result.success).toBe(true);
+    });
+
+    it("allows updating draft with empty tags array", async () => {
+      // Regression: updateActivitySchema ärvde .min(1) på tags från
+      // baseActivitySchema vilket blockade spara-utkast med 0 taggar.
+      mockDbQueryActivitiesFindFirst.mockResolvedValue(
+        makeActivity({ publishedAt: null }),
+      );
+      mockDbQueryUsersFindFirst.mockResolvedValue(makeCreatorProfile());
+      selectQueue.push([]);
+
+      const fd = makeFormData({
+        id: ACTIVITY_ID,
+        title: "Halvfärdigt utkast",
+        tags: JSON.stringify([]),
+      });
+
+      const result = await updateActivity(fd, { publish: false });
       expect(result.success).toBe(true);
     });
 
