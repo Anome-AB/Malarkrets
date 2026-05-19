@@ -62,7 +62,18 @@ if (days === 0) {
   console.error("ERROR: --days=0 har ingen effekt.");
   process.exit(2);
 }
+// Cap så pathological input inte skapar interval som spränger Date-konstruktorn
+// i dry-run-projektionen eller producerar absurda timestamps.
+if (Math.abs(days) > 36500) {
+  console.error(`ERROR: --days måste ligga inom ±36500 (100 år), fick: ${days}`);
+  process.exit(2);
+}
 
+// --apply är boolean-only. `--apply=foo` ska inte tyst falla tillbaka till dry-run.
+if (args.apply !== undefined && args.apply !== true) {
+  console.error(`ERROR: --apply tar inget värde (fick: ${args.apply}). Använd bara --apply.`);
+  process.exit(2);
+}
 const apply = args.apply === true;
 
 const connectionString = process.env.DATABASE_URL;
@@ -90,6 +101,15 @@ const targets = [
 const client = postgres(connectionString, { max: 1 });
 
 try {
+  await run();
+} catch (err) {
+  console.error("\nbounce misslyckades:", err);
+  process.exitCode = 1;
+} finally {
+  await client.end({ timeout: 5 }).catch(() => {});
+}
+
+async function run() {
   const [before] = await client`
     SELECT MIN(start_time) AS min_s,
            MAX(start_time) AS max_s,
@@ -104,6 +124,10 @@ try {
   console.log(`          start_time max=${fmt(before.max_s)}`);
 
   if (!apply) {
+    // Postgres `timestamp without time zone` (schemat här) tolkar `+ INTERVAL 'N
+    // days'` som exakt N*24h, så ms-aritmetik nedan matchar apply-resultatet.
+    // Skulle schemat byta till `timestamptz` blir prediktionen approximativ vid
+    // DST-övergångar.
     const ms = days * 86_400_000;
     const projMin = before.min_s ? new Date(before.min_s.getTime() + ms) : null;
     const projMax = before.max_s ? new Date(before.max_s.getTime() + ms) : null;
@@ -111,19 +135,28 @@ try {
     console.log(`          start_time min=${fmt(projMin)}`);
     console.log(`          start_time max=${fmt(projMax)}`);
     console.log(`\nDry-run. Kör om med --apply för att skriva.`);
-    process.exit(0);
+    return;
   }
 
-  // days är validerat som heltal via regex ovan - säkert att inline:a i SQL.
+  console.log(`\nFlyttar tidsstämplar på ALLA ${before.n} aktiviteter och relaterade rader.`);
+
+  // days är validerat som heltal via regex ovan, säkert att inline:a i SQL.
   // Tabell/kolumn-namn kommer från hardkodade `targets`.
   const interval = `INTERVAL '${days} days'`;
 
   const counts = await client.begin(async (tx) => {
+    // Konsistenslås så samtidiga writes inte ser activities flyttade men
+    // comments/participants/feedback orörda mitt i transaktionen. SHARE ROW
+    // EXCLUSIVE blockar UPDATE/INSERT/DELETE men inte SELECT.
+    await tx.unsafe(
+      `LOCK TABLE ${targets.map((t) => `"${t.table}"`).join(", ")} IN SHARE ROW EXCLUSIVE MODE`,
+    );
+
     const out = {};
     for (const { table, cols } of targets) {
       const set = cols.map((c) => `"${c}" = "${c}" + ${interval}`).join(", ");
       const r = await tx.unsafe(`UPDATE "${table}" SET ${set}`);
-      out[table] = r.count;
+      out[table] = r.count ?? r.length ?? 0;
     }
     return out;
   });
@@ -139,11 +172,6 @@ try {
   }
   console.log(`Efter:    start_time min=${fmt(after.min_s)}`);
   console.log(`          start_time max=${fmt(after.max_s)}`);
-} catch (err) {
-  console.error("\nbounce misslyckades:", err);
-  process.exitCode = 1;
-} finally {
-  await client.end({ timeout: 5 });
 }
 
 function fmt(d) {
