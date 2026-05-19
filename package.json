@@ -14,7 +14,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx --env-file .env.local src/db/seed.ts",
     "db:studio": "drizzle-kit studio",
-    "cleanup:tokens": "node --env-file=.env.local scripts/cleanup-expired-tokens.mjs"
+    "cleanup:tokens": "node --env-file=.env.local scripts/cleanup-expired-tokens.mjs",
+    "bounce:dates": "node --env-file=.env.local scripts/bounce-test-data.mjs"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.1",
