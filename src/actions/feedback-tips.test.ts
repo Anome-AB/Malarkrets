@@ -63,6 +63,14 @@ vi.mock("@/db/schema", () => ({
     tipId: "tip_id",
     lastViewedAt: "last_viewed_at",
   },
+  feedbackTipInterestSuggestions: {
+    id: "id",
+    tipId: "tip_id",
+    name: "name",
+    status: "status",
+    createdAt: "created_at",
+  },
+  interestTags: { id: "id", name: "name", slug: "slug" },
   users: {
     id: "id",
     displayName: "display_name",
@@ -226,6 +234,51 @@ describe("getMyTips", () => {
     expect(result).toEqual([]);
     // Andra anropet (counts) ska aldrig göras
     expect(mockSelect).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("submitTip (interest)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockRequireAuth.mockResolvedValue({ id: "user-1", email: "tester@example.com" });
+  });
+
+  it("avvisar interest-tip utan föreslagna namn", async () => {
+    const result = await submitTip({
+      kind: "interest",
+      description: "",
+      interestNames: [],
+    });
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/minst ett intresse/i);
+  });
+
+  it("avvisar interest-tip med bara whitespace-namn", async () => {
+    const result = await submitTip({
+      kind: "interest",
+      description: "",
+      interestNames: ["x"], // < min 2 tecken
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("godkänner interest-tip med minst ett namn även om description är tom", async () => {
+    // submitTip gör tre inserts vid kind=interest:
+    // 1) feedback_tips, 2) feedback_tip_interest_suggestions, 3) feedback_tip_views
+    mockInsert
+      .mockReturnValueOnce(chain([{ id: "tip-int-1" }]))
+      .mockReturnValueOnce(chain([]))
+      .mockReturnValueOnce(chain([]));
+
+    const result = await submitTip({
+      kind: "interest",
+      description: "",
+      interestNames: ["Schack på torget", "Akvarellmålning"],
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.tipId).toBe("tip-int-1");
+    expect(mockInsert).toHaveBeenCalledTimes(3);
   });
 });
 
