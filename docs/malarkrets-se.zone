@@ -1,0 +1,27 @@
+$ORIGIN malarkrets.se.
+$TTL 300
+@ SOA ns1.loopia.se. registry.loopia.se. (
+                                1778112000
+                                3H  ; Refresh after three hours
+                                1H  ; Retry after one hour
+                                1W  ; Expire after one week
+                                1D )    ; Minimum one day TTL
+
+@                               IN      3600    NS      ns1.loopia.se.
+@                               IN      3600    NS      ns2.loopia.se.
+
+@                               IN      3600    A       213.188.155.69
+@                               IN      3600    MX      10 malarkrets-se.mail.protection.outlook.com.
+@                               IN      3600    TXT     MS=ms91582532
+@                               IN      3600    TXT     v=spf1 include:_spf.resend.com include:spf.protection.outlook.com ~all
+
+
+_dmarc                          IN      300     TXT     v=DMARC1; p=none; rua=mailto:support@malarkrets.se; fo=1; adkim=r; aspf=r;
+autodiscover                    IN      3600    CNAME   autodiscover.outlook.com.
+resend._domainkey               IN      300     TXT     p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC8z+mEhzkspPJz6KYyQ/LzsUhE5i3/FqL1leqPMb1MQSUviG0lMTeYMpx9YWKkX/wMzty7qk85FqkLlcvTQugN4dt8KpAl3roswXxYfYLjw3tb8PRozQMijL0G/3oMyYH4PdaSjRlWC6tUi4+3cqzEDKcWSBKok+SOmGlyMW0oxQIDAQAB
+selector1._domainkey            IN      3600    CNAME   selector1-malarkrets-se._domainkey.anome.w-v1.dkim.mail.microsoft.com.
+selector2._domainkey            IN      3600    CNAME   selector2-malarkrets-se._domainkey.anome.w-v1.dkim.mail.microsoft.com.
+send                            IN      300     MX      10 feedback-smtp.eu-west-1.amazonses.com.
+send                            IN      300     TXT     v=spf1 include:amazonses.com ~all
+www                             IN      3600    A       213.188.155.69
+
