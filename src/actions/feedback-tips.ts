@@ -166,12 +166,10 @@ export type MyTip = Pick<
   | "status"
   | "description"
   | "createdAt"
-  | "adminNotes"
   | "resolvedAt"
   | "lastActivityAt"
 > & {
   commentCount: number;
-  adminNotesAuthorName: string | null;
   hasUnread: boolean;
 };
 
@@ -185,14 +183,11 @@ export async function getMyTips(): Promise<MyTip[]> {
       status: feedbackTips.status,
       description: feedbackTips.description,
       createdAt: feedbackTips.createdAt,
-      adminNotes: feedbackTips.adminNotes,
       resolvedAt: feedbackTips.resolvedAt,
       lastActivityAt: feedbackTips.lastActivityAt,
-      adminNotesAuthorName: users.displayName,
       lastViewedAt: feedbackTipViews.lastViewedAt,
     })
     .from(feedbackTips)
-    .leftJoin(users, eq(feedbackTips.adminNotesAuthorId, users.id))
     .leftJoin(
       feedbackTipViews,
       and(
@@ -268,14 +263,6 @@ export async function getMyTipDetail(tipId: string): Promise<MyTipDetail | null>
     });
   revalidatePath("/mina-tips");
 
-  let adminNotesAuthorName: string | null = null;
-  if (tip.adminNotesAuthorId) {
-    const author = await db.query.users.findFirst({
-      where: eq(users.id, tip.adminNotesAuthorId),
-    });
-    adminNotesAuthorName = author?.displayName ?? null;
-  }
-
   const comments = await db
     .select({
       id: feedbackTipComments.id,
@@ -296,11 +283,9 @@ export async function getMyTipDetail(tipId: string): Promise<MyTipDetail | null>
     status: tip.status,
     description: tip.description,
     createdAt: tip.createdAt,
-    adminNotes: tip.adminNotes,
     resolvedAt: tip.resolvedAt,
     lastActivityAt: tip.lastActivityAt,
     commentCount: comments.length,
-    adminNotesAuthorName,
     hasUnread: false, // markerades just som läst i sidoeffekten ovan
     canEdit: tip.status === "open",
     comments: comments.map((c) => ({

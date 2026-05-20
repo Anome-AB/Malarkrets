@@ -234,7 +234,6 @@ function TipDetailModal({ tip, onClose }: TipDetailModalProps) {
   const { toast } = useToast();
   const [status, setStatus] = useState<StatusKey>(tip.status);
   const [severity, setSeverity] = useState<SeverityKey>(tip.severity);
-  const [notes, setNotes] = useState(tip.adminNotes ?? "");
   const [comments, setComments] = useState<TipComment[] | null>(null);
   const [commentBody, setCommentBody] = useState("");
   const [sendingComment, startSendComment] = useTransition();
@@ -242,8 +241,7 @@ function TipDetailModal({ tip, onClose }: TipDetailModalProps) {
 
   const statusChanged = status !== tip.status;
   const severityChanged = severity !== tip.severity;
-  const notesChanged = notes !== (tip.adminNotes ?? "");
-  const hasChanges = statusChanged || severityChanged || notesChanged;
+  const hasChanges = statusChanged || severityChanged;
 
   function handleSaveAll() {
     if (!hasChanges) return;
@@ -255,13 +253,8 @@ function TipDetailModal({ tip, onClose }: TipDetailModalProps) {
         if (!r.success) allOk = false;
       }
 
-      // updateTipStatus hanterar både status och anteckning i en transaktion.
-      if (statusChanged || notesChanged) {
-        const r = await updateTipStatus({
-          tipId: tip.id,
-          status,
-          adminNotes: notes,
-        });
+      if (statusChanged) {
+        const r = await updateTipStatus({ tipId: tip.id, status });
         if (!r.success) allOk = false;
       }
 
@@ -336,6 +329,49 @@ function TipDetailModal({ tip, onClose }: TipDetailModalProps) {
           )}
         </div>
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label
+              htmlFor={`status-${tip.id}`}
+              className="block text-sm font-medium text-heading mb-1"
+            >
+              Status
+            </label>
+            <select
+              id={`status-${tip.id}`}
+              value={status}
+              onChange={(e) => setStatus(e.target.value as StatusKey)}
+              className="w-full rounded-control border border-border px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              {(Object.keys(STATUS_LABEL) as StatusKey[]).map((s) => (
+                <option key={s} value={s}>
+                  {STATUS_LABEL[s]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label
+              htmlFor={`severity-${tip.id}`}
+              className="block text-sm font-medium text-heading mb-1"
+            >
+              Severity
+            </label>
+            <select
+              id={`severity-${tip.id}`}
+              value={severity}
+              onChange={(e) => setSeverity(e.target.value as SeverityKey)}
+              className="w-full rounded-control border border-border px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              {(Object.keys(SEVERITY_LABEL) as SeverityKey[]).map((s) => (
+                <option key={s} value={s}>
+                  {SEVERITY_LABEL[s]}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         <Card>
           <p className="text-heading whitespace-pre-wrap">{tip.description}</p>
         </Card>
@@ -395,67 +431,6 @@ function TipDetailModal({ tip, onClose }: TipDetailModalProps) {
             </pre>
           </details>
         )}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-border">
-          <div>
-            <label
-              htmlFor={`status-${tip.id}`}
-              className="block text-sm font-medium text-heading mb-1"
-            >
-              Status
-            </label>
-            <select
-              id={`status-${tip.id}`}
-              value={status}
-              onChange={(e) => setStatus(e.target.value as StatusKey)}
-              className="w-full rounded-control border border-border px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              {(Object.keys(STATUS_LABEL) as StatusKey[]).map((s) => (
-                <option key={s} value={s}>
-                  {STATUS_LABEL[s]}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label
-              htmlFor={`severity-${tip.id}`}
-              className="block text-sm font-medium text-heading mb-1"
-            >
-              Severity
-            </label>
-            <select
-              id={`severity-${tip.id}`}
-              value={severity}
-              onChange={(e) => setSeverity(e.target.value as SeverityKey)}
-              className="w-full rounded-control border border-border px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              {(Object.keys(SEVERITY_LABEL) as SeverityKey[]).map((s) => (
-                <option key={s} value={s}>
-                  {SEVERITY_LABEL[s]}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label
-            htmlFor={`notes-${tip.id}`}
-            className="block text-sm font-medium text-heading mb-1"
-          >
-            Anteckning till testaren
-          </label>
-          <textarea
-            id={`notes-${tip.id}`}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={3}
-            placeholder="Frivilligt. Syns för testaren på Mina tips-sidan."
-            className="w-full rounded-control border border-border px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary"
-            maxLength={4000}
-          />
-        </div>
 
         <div className="pt-3 border-t border-border space-y-3">
           <h3 className="text-sm font-semibold text-heading">

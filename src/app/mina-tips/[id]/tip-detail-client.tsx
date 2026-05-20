@@ -176,15 +176,6 @@ export function TipDetailClient({ tip }: TipDetailClientProps) {
             </span>
           </div>
 
-          {tip.adminNotes && (
-            <div className="rounded-control bg-primary-light px-4 py-3 text-sm text-heading">
-              <span className="font-semibold">
-                Svar från{" "}
-                {tip.adminNotesAuthorName ?? "Mälarkrets"}:
-              </span>{" "}
-              {tip.adminNotes}
-            </div>
-          )}
         </div>
       </Card>
 

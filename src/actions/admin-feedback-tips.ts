@@ -25,17 +25,11 @@ const updateStatusSchema = z.object({
     "wont_fix",
     "duplicate",
   ]),
-  adminNotes: z.string().max(4000).optional(),
 });
 
 const updateSeveritySchema = z.object({
   tipId: z.string().uuid(),
   severity: z.enum(["blocker", "high", "medium", "low"]),
-});
-
-const updateNotesSchema = z.object({
-  tipId: z.string().uuid(),
-  adminNotes: z.string().max(4000),
 });
 
 const FINAL_STATUSES: ReadonlySet<string> = new Set([
@@ -59,18 +53,13 @@ export async function updateTipStatus(
       return { success: false, error: "Ogiltig statusändring" };
     }
 
-    const { tipId, status, adminNotes } = parsed.data;
+    const { tipId, status } = parsed.data;
     const isFinal = FINAL_STATUSES.has(status);
 
     await db
       .update(feedbackTips)
       .set({
         status,
-        // Bara sätt notes + author om admin faktiskt skickat med notes-text.
-        // Annars tar vi inte över en existerande not.
-        ...(adminNotes !== undefined
-          ? { adminNotes, adminNotesAuthorId: user.id }
-          : {}),
         resolvedAt: isFinal ? new Date() : null,
         resolvedBy: isFinal ? user.id : null,
         updatedAt: new Date(),
@@ -115,33 +104,6 @@ export async function updateTipSeverity(
   }
 }
 
-export async function updateTipNotes(
-  input: z.infer<typeof updateNotesSchema>,
-): Promise<ActionResult> {
-  try {
-    const { user } = await requireAdmin();
-    const parsed = updateNotesSchema.safeParse(input);
-    if (!parsed.success) {
-      return { success: false, error: "Ogiltig anteckning" };
-    }
-
-    await db
-      .update(feedbackTips)
-      .set({
-        adminNotes: parsed.data.adminNotes,
-        adminNotesAuthorId: user.id,
-        updatedAt: new Date(),
-      })
-      .where(eq(feedbackTips.id, parsed.data.tipId));
-
-    revalidatePath("/admin/feedback");
-    revalidatePath("/mina-tips");
-    return { success: true };
-  } catch (error) {
-    log.error("updateTipNotes error", errAttrs(error));
-    return { success: false, error: "Något gick fel" };
-  }
-}
 
 export interface AdminTipRow extends FeedbackTip {
   reporterEmail: string | null;

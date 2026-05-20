@@ -47,7 +47,6 @@ vi.mock("@/db/schema", () => ({
     status: "status",
     description: "description",
     createdAt: "created_at",
-    adminNotes: "admin_notes",
     resolvedAt: "resolved_at",
     lastActivityAt: "last_activity_at",
     updatedAt: "updated_at",
@@ -68,7 +67,6 @@ vi.mock("@/db/schema", () => ({
     id: "id",
     displayName: "display_name",
     isAdmin: "is_admin",
-    adminNotesAuthorId: "admin_notes_author_id",
   },
   images: { id: "id" },
 }));
@@ -195,15 +193,12 @@ describe("getMyTips", () => {
         status: "open",
         description: "x",
         createdAt: baseTime,
-        adminNotes: null,
         resolvedAt: null,
         lastActivityAt: baseTime,
-        adminNotesAuthorName: null,
         // Sedan användaren submitat har de en view-rad efteråt
         lastViewedAt: baseTime,
       },
     ];
-    // Två select-anrop: först raderna, sedan counts. counts blir tomt här.
     mockSelect
       .mockReturnValueOnce(chain(tipRows))
       .mockReturnValueOnce(chain([]));
@@ -216,10 +211,8 @@ describe("getMyTips", () => {
         status: "open",
         description: "x",
         createdAt: baseTime,
-        adminNotes: null,
         resolvedAt: null,
         lastActivityAt: baseTime,
-        adminNotesAuthorName: null,
         commentCount: 0,
         hasUnread: false,
       },
