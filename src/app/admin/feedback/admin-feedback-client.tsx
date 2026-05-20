@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
@@ -10,7 +10,6 @@ import type { AdminTipRow } from "@/actions/admin-feedback-tips";
 import {
   updateTipStatus,
   updateTipSeverity,
-  updateTipNotes,
   getTipCommentsForAdmin,
 } from "@/actions/admin-feedback-tips";
 import { addTipComment, type TipComment } from "@/actions/feedback-tips";
@@ -73,9 +72,7 @@ export function AdminFeedbackClient({
   initialKind,
 }: AdminFeedbackClientProps) {
   const router = useRouter();
-  const { toast } = useToast();
   const [openTip, setOpenTip] = useState<AdminTipRow | null>(null);
-  const [, startTransition] = useTransition();
 
   function setFilter(next: { status?: StatusFilter; kind?: KindFilter }) {
     const status = next.status ?? initialStatus;
@@ -181,18 +178,6 @@ export function AdminFeedbackClient({
         <TipDetailModal
           tip={openTip}
           onClose={() => setOpenTip(null)}
-          onAction={(fn) =>
-            startTransition(async () => {
-              const result = await fn();
-              if (result.success) {
-                toast("Sparat", "success");
-                router.refresh();
-                setOpenTip(null);
-              } else {
-                toast(result.error ?? "Något gick fel", "error");
-              }
-            })
-          }
         />
       )}
     </div>
@@ -242,10 +227,9 @@ function FilterChips<T extends string>({
 interface TipDetailModalProps {
   tip: AdminTipRow;
   onClose: () => void;
-  onAction: (fn: () => Promise<{ success: boolean; error?: string }>) => void;
 }
 
-function TipDetailModal({ tip, onClose, onAction }: TipDetailModalProps) {
+function TipDetailModal({ tip, onClose }: TipDetailModalProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [status, setStatus] = useState<StatusKey>(tip.status);
@@ -254,6 +238,42 @@ function TipDetailModal({ tip, onClose, onAction }: TipDetailModalProps) {
   const [comments, setComments] = useState<TipComment[] | null>(null);
   const [commentBody, setCommentBody] = useState("");
   const [sendingComment, startSendComment] = useTransition();
+  const [saving, startSaving] = useTransition();
+
+  const statusChanged = status !== tip.status;
+  const severityChanged = severity !== tip.severity;
+  const notesChanged = notes !== (tip.adminNotes ?? "");
+  const hasChanges = statusChanged || severityChanged || notesChanged;
+
+  function handleSaveAll() {
+    if (!hasChanges) return;
+    startSaving(async () => {
+      let allOk = true;
+
+      if (severityChanged) {
+        const r = await updateTipSeverity({ tipId: tip.id, severity });
+        if (!r.success) allOk = false;
+      }
+
+      // updateTipStatus hanterar både status och anteckning i en transaktion.
+      if (statusChanged || notesChanged) {
+        const r = await updateTipStatus({
+          tipId: tip.id,
+          status,
+          adminNotes: notes,
+        });
+        if (!r.success) allOk = false;
+      }
+
+      if (allOk) {
+        toast("Sparat", "success");
+        router.refresh();
+        onClose();
+      } else {
+        toast("Något gick fel", "error");
+      }
+    });
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -478,57 +498,24 @@ function TipDetailModal({ tip, onClose, onAction }: TipDetailModalProps) {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2 sm:justify-end pt-2">
+        <div className="sticky bottom-0 -mx-6 -mb-6 px-6 py-3 bg-white border-t border-border flex flex-col sm:flex-row gap-2 sm:justify-end">
           <Button
             type="button"
             variant="ghost"
             onClick={onClose}
             size="compact"
+            disabled={saving}
           >
             Avbryt
           </Button>
-          {severity !== tip.severity && (
-            <Button
-              type="button"
-              variant="secondary"
-              size="compact"
-              onClick={() =>
-                onAction(() =>
-                  updateTipSeverity({ tipId: tip.id, severity }),
-                )
-              }
-            >
-              Spara severity
-            </Button>
-          )}
-          {notes !== (tip.adminNotes ?? "") && (
-            <Button
-              type="button"
-              variant="secondary"
-              size="compact"
-              onClick={() =>
-                onAction(() =>
-                  updateTipNotes({ tipId: tip.id, adminNotes: notes }),
-                )
-              }
-            >
-              Spara anteckning
-            </Button>
-          )}
           <Button
             type="button"
             size="compact"
-            onClick={() =>
-              onAction(() =>
-                updateTipStatus({
-                  tipId: tip.id,
-                  status,
-                  adminNotes: notes || undefined,
-                }),
-              )
-            }
+            onClick={handleSaveAll}
+            loading={saving}
+            disabled={!hasChanges}
           >
-            Sätt status
+            Spara
           </Button>
         </div>
       </div>
