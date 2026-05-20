@@ -16,7 +16,10 @@ import {
   getAllInterestTags,
   type ExistingInterestTag,
 } from "@/actions/feedback-tips";
-import { slugifyInterest } from "@/lib/slugify-interest";
+import {
+  findExistingInterestMatch,
+  type InterestMatch,
+} from "@/lib/slugify-interest";
 
 type Kind = "bug" | "idea" | "interest";
 
@@ -84,10 +87,8 @@ export function TipsaForm() {
     };
   }, [kind, existingTags.length]);
 
-  function findExistingMatch(name: string): ExistingInterestTag | null {
-    const slug = slugifyInterest(name);
-    if (!slug) return null;
-    return existingTags.find((t) => t.slug === slug) ?? null;
+  function matchFor(name: string): InterestMatch {
+    return findExistingInterestMatch(name, existingTags);
   }
 
   const validNames = interestNames
@@ -190,7 +191,7 @@ export function TipsaForm() {
           <Card title="Vilka intressen saknar du?">
             <ul className="space-y-3">
               {interestNames.map((name, i) => {
-                const match = findExistingMatch(name);
+                const match = matchFor(name);
                 return (
                   <li key={i}>
                     <div className="flex gap-2">
@@ -201,7 +202,11 @@ export function TipsaForm() {
                         placeholder="T.ex. Motorsport, Dans, Musik"
                         maxLength={60}
                         className={`flex-1 rounded-control border px-4 py-2.5 text-base text-heading bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
-                          match ? "border-warning" : "border-border"
+                          match?.kind === "exact"
+                            ? "border-warning"
+                            : match?.kind === "fuzzy"
+                              ? "border-accent"
+                              : "border-border"
                         }`}
                       />
                       <button
@@ -217,12 +222,22 @@ export function TipsaForm() {
                         </svg>
                       </button>
                     </div>
-                    {match && (
+                    {match?.kind === "exact" && (
                       <p className="mt-1 ml-1 text-xs text-warning">
                         Det finns redan ett intresse som heter{" "}
                         <span className="font-semibold">{match.name}</span>.
                         Välj något annat eller låt det stå om du vill att vi
                         ska titta på det ändå.
+                      </p>
+                    )}
+                    {match?.kind === "fuzzy" && (
+                      <p className="mt-1 ml-1 text-xs text-secondary">
+                        Liknar{" "}
+                        <span className="font-semibold text-heading">
+                          {match.name}
+                        </span>
+                        {" "}som redan finns. Du kan skicka in ändå om du
+                        tycker det är något annat.
                       </p>
                     )}
                   </li>
