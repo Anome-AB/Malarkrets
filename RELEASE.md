@@ -162,6 +162,34 @@ Se `README.md` för user-facing steg. Internt:
 `scripts/deploy-local.sh` gör pull → postgres-wait → db-probe → app →
 health poll. Läs scriptet innan ändringar.
 
+### Ops-jobb (admin-scripts mot körande DB)
+
+För engångskörningar som inte är migrationer — `bounce-test-data.mjs`,
+`cleanup-expired-tokens.mjs`, ad-hoc-scripts — finns en `ops`-service i
+docker-compose.yml. Den återanvänder `migrate`-imagen (samma minimala
+Node + postgres + drizzle-deps), ligger bakom `tools`-profilen så den
+inte startas av `docker compose up`, och har `node` som hårdkodad
+entrypoint så att glömt scriptnamn failar fast.
+
+```bash
+# Dry-run + apply (default är dry-run, --apply skriver)
+docker compose run --rm ops scripts/bounce-test-data.mjs --days=20
+docker compose run --rm ops scripts/bounce-test-data.mjs --days=20 --apply
+
+# Andra ops-scripts
+docker compose run --rm ops scripts/cleanup-expired-tokens.mjs
+docker compose run --rm ops scripts/check-migration-journal.mjs
+```
+
+`scripts/*.mjs` kopieras med i migrate-imagen via Dockerfile, så när
+release.yml bygger en ny migrate-image följer alla ops-scripts med
+automatiskt. Lägg nytt ops-script → committa → nästa release har det
+tillgängligt via `docker compose run --rm ops scripts/<name>.mjs`.
+
+**Varför inte `docker compose exec app ...`?** App-imagen är slim Next.js
+standalone — `postgres`-paketet är bundlat i `.next/server/` och inte
+tillgängligt för fristående scripts. Ops-imagen är rätt verktyg.
+
 ### Städa disk efter deploys
 
 Varje deploy drar in en ny sha-taggad image (~300 MB app + ~150 MB

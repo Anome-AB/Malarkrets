@@ -38,7 +38,11 @@ RUN addgroup --system --gid 1001 nodejs \
 COPY --chown=nextjs:nodejs package.json package-lock.json* ./
 RUN npm ci --omit=dev && npm cache clean --force
 COPY --chown=nextjs:nodejs src/db/migrations ./src/db/migrations
-COPY --chown=nextjs:nodejs scripts/migrate.mjs ./scripts/migrate.mjs
+# All .mjs ops-scripts (migrate, bounce-test-data, cleanup-expired-tokens,
+# check-migration-journal) share the same minimal Node + postgres + drizzle
+# runtime. Bundled together so the `ops` service in docker-compose.yml can
+# invoke any of them via `docker compose run --rm ops scripts/<name>.mjs`.
+COPY --chown=nextjs:nodejs scripts/*.mjs ./scripts/
 USER nextjs
 CMD ["node", "scripts/migrate.mjs"]
 

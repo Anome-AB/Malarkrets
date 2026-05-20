@@ -20,12 +20,19 @@
 // Standard är dry-run. --apply commitar.
 //
 // Användning:
-//   node scripts/bounce-test-data.mjs --days=30            # dry-run
-//   node scripts/bounce-test-data.mjs --days=30 --apply    # skriv
-//   node scripts/bounce-test-data.mjs --days=-7 --apply    # bakåt
 //
-// I docker-compose-stacken (staging/prod):
-//   docker compose exec app node scripts/bounce-test-data.mjs --days=30 --apply
+// Lokalt (host-side, mot Docker Desktop's postgres):
+//   bun run bounce:dates -- --days=30            # dry-run
+//   bun run bounce:dates -- --days=30 --apply    # skriv
+//
+// I docker-compose-stacken (staging/prod på VPS) — via ops-servicen som
+// reuse:ar migrate-imagen och har postgres + drizzle-deps:
+//   docker compose run --rm ops scripts/bounce-test-data.mjs --days=30
+//   docker compose run --rm ops scripts/bounce-test-data.mjs --days=30 --apply
+//
+// OBS: app-imagen är slim Next.js standalone och har INTE postgres-paketet
+// — `docker compose exec app node scripts/...` fungerar inte. Kör alltid
+// via ops-servicen i container-läge.
 
 import postgres from "postgres";
 

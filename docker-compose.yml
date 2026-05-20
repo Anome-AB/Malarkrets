@@ -90,6 +90,26 @@ services:
     restart: "no"
     profiles: ["tools"]
 
+  ops:
+    # On-demand ops/admin scripts (bounce-test-data, cleanup-expired-tokens,
+    # check-migration-journal, ad-hoc). Reuses the migrate image — same minimal
+    # Node + postgres deps, no separate image to maintain or pull.
+    #
+    # Entrypoint forced to `node` so missing args fail fast instead of silently
+    # running migrate.mjs. Always specify the script:
+    #
+    #   docker compose run --rm ops scripts/bounce-test-data.mjs --days=20
+    #   docker compose run --rm ops scripts/bounce-test-data.mjs --days=20 --apply
+    #   docker compose run --rm ops scripts/cleanup-expired-tokens.mjs
+    image: ghcr.io/anome-ab/malarkrets:${MIGRATE_TAG:-migrate-latest}
+    entrypoint: ["node"]
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    profiles: ["tools"]
+
   otel-collector:
     # OpenTelemetry Collector. Receives OTLP from the app + docker_stats from
     # the socket, ships via OTLP/HTTP to Dash0. Auth: Bearer token från
