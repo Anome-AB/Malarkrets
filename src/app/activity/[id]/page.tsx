@@ -16,6 +16,8 @@ import {
 } from "@/db/schema";
 import { eq, and, count, sql } from "drizzle-orm";
 import { CourageSection } from "@/components/activity/courage-section";
+import { RichTextDisplay } from "@/components/ui/rich-text-display";
+import { stripHtmlForExcerpt } from "@/lib/rich-text";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ShareButton } from "@/components/ui/share-button";
@@ -137,10 +139,10 @@ export async function generateMetadata({
 
   return {
     title: `${activity.title} - Mälarkrets`,
-    description: activity.description.slice(0, 160),
+    description: stripHtmlForExcerpt(activity.description, 160),
     openGraph: {
       title: activity.title,
-      description: activity.description.slice(0, 160),
+      description: stripHtmlForExcerpt(activity.description, 160),
       images: activity.imageOgUrl
         ? [activity.imageOgUrl]
         : activity.imageMediumUrl
@@ -477,9 +479,10 @@ export default async function ActivityDetailPage({
               </div>
 
               {/* Description - full width below */}
-              <p className="mt-6 text-heading whitespace-pre-wrap leading-relaxed">
-                {activity.description}
-              </p>
+              <RichTextDisplay
+                html={activity.description}
+                className="mt-6 text-heading leading-relaxed"
+              />
 
               {/* Action buttons - desktop only, mobile uses floating bar.
                   Creators get their Edit button in a sticky card at the end of the

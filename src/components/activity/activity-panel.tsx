@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { RichTextDisplay } from "@/components/ui/rich-text-display";
 import { getColorHex } from "@/lib/color-themes";
 import { CourageSection } from "@/components/activity/courage-section";
 import { CommentList } from "@/components/activity/comment-list";
@@ -492,23 +493,28 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
 // per-panel-instans så det återställs vid byte av aktivitet.
 function PanelDescription({ text }: { text: string }) {
   const [expanded, setExpanded] = useState(false);
-  const isLong = text.length >= 350;
+  // Räkna plain-text-längd, inte HTML-taggar, så "Visa mer"-tröskeln
+  // matchar vad användaren faktiskt ser.
+  const plainLength = text.replace(/<[^>]+>/g, "").length;
+  const isLong = plainLength >= 350;
 
   if (!isLong) {
     return (
-      <p className="text-heading whitespace-pre-wrap leading-relaxed">{text}</p>
+      <RichTextDisplay
+        html={text}
+        className="text-heading leading-relaxed"
+      />
     );
   }
 
   return (
     <div>
-      <p
-        className={`text-heading whitespace-pre-wrap leading-relaxed ${
+      <RichTextDisplay
+        html={text}
+        className={`text-heading leading-relaxed ${
           expanded ? "" : "line-clamp-6"
         }`}
-      >
-        {text}
-      </p>
+      />
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}

@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TagPicker } from "@/components/activity/tag-picker";
@@ -11,6 +11,8 @@ import { useToast } from "@/components/ui/toast";
 import { Card } from "@/components/ui/card";
 import { PlacesAutocomplete } from "@/components/ui/places-autocomplete";
 import { ImageUpload } from "@/components/ui/image-upload";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { isRichTextEmpty } from "@/lib/rich-text";
 import { createActivity } from "@/actions/activities";
 import { randomCourageMessage, randomFromList } from "@/lib/courage-messages";
 import { COLOR_PRESETS } from "@/lib/color-themes";
@@ -111,11 +113,13 @@ export default function CreateActivityPage() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isDirty: rhfDirty },
   } = useForm<FormValues>({
     defaultValues: {
       genderRestriction: "alla",
       experienceLevel: "alla",
+      description: "",
       // Default to today so the date picker shows something useful on mount.
       date: toDateInput(new Date()),
     },
@@ -293,22 +297,33 @@ export default function CreateActivityPage() {
                 />
                 <div className="flex flex-col gap-1">
                   <label htmlFor="description" className="text-sm font-medium text-heading">Beskrivning</label>
-                  <textarea
-                    id="description"
-                    rows={4}
-                    placeholder="Berätta mer om aktiviteten..."
-                    className="w-full px-3 py-2 min-h-touch-target rounded-control border border-border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
-                    {...register("description", {
+                  <Controller
+                    name="description"
+                    control={control}
+                    rules={{
                       // Beskrivning är fri vid utkast. Vid publicering
-                      // kräver vi minst 10 tecken precis som tidigare.
+                      // kräver vi minst 10 tecken plain text precis som
+                      // tidigare, men nu räknat efter att HTML-taggar
+                      // strippats så <p></p> inte räknas som innehåll.
                       validate: (value) => {
-                        if (value && value.length > 5000) return "Max 5000 tecken";
+                        if (value && value.length > 50000)
+                          return "Beskrivningen är för lång";
                         if (submitMode === "draft") return true;
-                        if (!value) return "Beskrivning krävs";
-                        if (value.length < 10) return "Minst 10 tecken";
+                        if (!value || isRichTextEmpty(value))
+                          return "Beskrivning krävs";
+                        const plain = value.replace(/<[^>]+>/g, "").trim();
+                        if (plain.length < 10) return "Minst 10 tecken";
                         return true;
                       },
-                    })}
+                    }}
+                    render={({ field }) => (
+                      <RichTextEditor
+                        id="description"
+                        value={field.value ?? ""}
+                        onChange={field.onChange}
+                        placeholder="Berätta mer om aktiviteten..."
+                      />
+                    )}
                   />
                   {errors.description && (
                     <p className="text-sm text-error">{errors.description.message}</p>

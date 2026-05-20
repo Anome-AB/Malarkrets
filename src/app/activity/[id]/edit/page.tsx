@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TagPicker } from "@/components/activity/tag-picker";
@@ -13,6 +13,8 @@ import { updateActivity, cancelOrDeleteActivity } from "@/actions/activities";
 import { Card } from "@/components/ui/card";
 import { PlacesAutocomplete } from "@/components/ui/places-autocomplete";
 import { ImageUpload } from "@/components/ui/image-upload";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { isRichTextEmpty } from "@/lib/rich-text";
 import { CancelActivityModal } from "@/components/activity/cancel-activity-modal";
 import { randomCourageMessage, randomFromList } from "@/lib/courage-messages";
 import {
@@ -131,6 +133,7 @@ export default function EditActivityPage() {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors, isDirty: rhfDirty },
   } = useForm<FormValues>();
 
@@ -524,20 +527,29 @@ export default function EditActivityPage() {
               />
               <div className="flex flex-col gap-1">
                 <label htmlFor="edit-description" className="text-sm font-medium text-heading">Beskrivning</label>
-                <textarea
-                  id="edit-description"
-                  rows={4}
-                  placeholder="Berätta mer om aktiviteten..."
-                  className="w-full px-3 py-2 min-h-touch-target rounded-control border border-border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
-                  {...register("description", {
+                <Controller
+                  name="description"
+                  control={control}
+                  rules={{
                     validate: (value) => {
-                      if (value && value.length > 5000) return "Max 5000 tecken";
+                      if (value && value.length > 50000)
+                        return "Beskrivningen är för lång";
                       if (submitMode === "draft") return true;
-                      if (!value) return "Beskrivning krävs";
-                      if (value.length < 10) return "Minst 10 tecken";
+                      if (!value || isRichTextEmpty(value))
+                        return "Beskrivning krävs";
+                      const plain = value.replace(/<[^>]+>/g, "").trim();
+                      if (plain.length < 10) return "Minst 10 tecken";
                       return true;
                     },
-                  })}
+                  }}
+                  render={({ field }) => (
+                    <RichTextEditor
+                      id="edit-description"
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      placeholder="Berätta mer om aktiviteten..."
+                    />
+                  )}
                 />
                 {errors.description && <p className="text-sm text-error">{errors.description.message}</p>}
               </div>

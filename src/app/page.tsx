@@ -16,6 +16,7 @@ import {
   FEED_PAGE_SIZE,
 } from "@/lib/queries/activity-feed";
 import { enrichFeedActivities } from "@/lib/queries/activity-feed-enrich";
+import { stripHtmlForExcerpt } from "@/lib/rich-text";
 import { getNotificationCount } from "@/lib/queries/notifications";
 import { AppShell } from "@/components/layout/app-shell";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -129,7 +130,7 @@ function LandingPage({
                   {activity.title}
                 </h3>
                 <p className="text-sm text-secondary mt-1 line-clamp-2">
-                  {activity.description}
+                  {stripHtmlForExcerpt(activity.description, 200)}
                 </p>
                 <p className="text-sm text-secondary mt-2">
                   {new Date(activity.startTime).toLocaleDateString("sv-SE", {
