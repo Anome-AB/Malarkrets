@@ -1,6 +1,23 @@
 {
   "releases": [
     {
+      "version": "0.3.0",
+      "date": "2026-05-20",
+      "title": "Skicka tips till oss",
+      "summary": "Nu kan du skicka oss tips direkt från sidan — buggrapporter med skärmdump, idéer eller intressen vi borde lägga till. Du följer status på dina egna tips och kan ha en konversation med oss om dem.",
+      "sections": {
+        "added": [
+          "Glödlampe-ikon i toppen, bredvid notisklockan — klicka för att öppna tips-formuläret.",
+          "🐞 Skicka bugg: en skärmdump av sidan du var på fångas automatiskt, så vi ser exakt vad du såg när något gick fel.",
+          "💡 Skicka förslag: berätta vad du saknar eller hur vi kan göra Mälarkrets bättre.",
+          "🏷️ Föreslå nya intressetaggar: lista en eller flera intressen som borde finnas. Vi godkänner en i taget — taggen dyker upp direkt när den är godkänd.",
+          "Snabb dubbel-kontroll på intresseförslag — om något liknar en tagg som redan finns får du veta direkt. Funkar även med plural och stavfel (\"Vandrign\" matchar \"Vandring\").",
+          "\"Mina tips\"-sida där du följer status på allt du skickat in.",
+          "Konversation per tips — vi svarar direkt i tipset, du ser en \"Nytt\"-badge när det hänt något du inte sett ännu."
+        ]
+      }
+    },
+    {
       "version": "0.2.0",
       "date": "2026-05-06",
       "title": "Utkast, dela, kartnål och en putsigare profil",
