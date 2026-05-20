@@ -26,8 +26,8 @@ export default async function AdminFeedbackPage({ searchParams }: PageProps) {
     <div className="px-6 py-8">
       <h1 className="text-2xl font-bold text-heading mb-2">Tips från testare</h1>
       <p className="text-secondary mb-6">
-        Buggrapporter och idéer från PRE-GO-LIVE-testarna. Klicka på en rad för
-        att läsa hela tipset och ändra status.
+        Buggrapporter och förslag från PRE-GO-LIVE-testarna. Klicka på en rad
+        för att läsa hela tipset och ändra status.
       </p>
 
       <AdminFeedbackClient

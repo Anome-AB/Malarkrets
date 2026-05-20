@@ -19,6 +19,24 @@ type Kind = "bug" | "idea";
 
 const MIN_DESCRIPTION = 10;
 
+const KIND_COPY: Record<
+  Kind,
+  { label: string; placeholder: string; help: string }
+> = {
+  bug: {
+    label: "Vad hände? Vad försökte du göra?",
+    placeholder:
+      "Till exempel: Jag försökte gå med i vandringen på lördag, men knappen gjorde ingenting när jag klickade på den.",
+    help: "Skriv som du skulle berätta för en kompis. Vi fyller i det tekniska åt dig.",
+  },
+  idea: {
+    label: "Vad har du för förslag?",
+    placeholder:
+      "Till exempel: Det vore kul att se aktiviteter på en kalender, så jag kan planera in flera samma vecka.",
+    help: "Berätta så konkret du kan vad du saknar eller vill se. Vi tar med oss alla förslag i planeringen.",
+  },
+};
+
 function dataUrlToBlob(dataUrl: string): Blob | null {
   try {
     const [header, base64] = dataUrl.split(",");
@@ -37,7 +55,7 @@ function dataUrlToBlob(dataUrl: string): Blob | null {
 export function TipsaForm() {
   const router = useRouter();
   const { toast } = useToast();
-  const [kind, setKind] = useState<Kind | null>(null);
+  const [kind, setKind] = useState<Kind>("bug");
   const [description, setDescription] = useState("");
   const [snapshot, setSnapshot] = useState<FeedbackSnapshot | null>(null);
   const [includeScreenshot, setIncludeScreenshot] = useState(true);
@@ -49,11 +67,12 @@ export function TipsaForm() {
   }, []);
 
   const descTooShort = description.trim().length < MIN_DESCRIPTION;
-  const canSubmit = !!kind && !descTooShort && !submitting;
+  const canSubmit = !descTooShort && !submitting;
+  const copy = KIND_COPY[kind];
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!canSubmit || !kind) return;
+    if (!canSubmit) return;
     setSubmitting(true);
 
     let screenshotImageId: string | undefined;
@@ -103,36 +122,34 @@ export function TipsaForm() {
             current={kind}
             onSelect={setKind}
             emoji="🐞"
-            label="Något funkar inte"
+            label="Något fungerar inte"
           />
           <KindButton
             value="idea"
             current={kind}
             onSelect={setKind}
             emoji="💡"
-            label="En idé"
+            label="Ett förslag"
           />
         </div>
       </Card>
 
       <Card title="Berätta">
         <label htmlFor="tip-description" className="block text-sm font-medium text-heading mb-2">
-          Vad hände? Vad försökte du göra?
+          {copy.label}
         </label>
         <textarea
           id="tip-description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={6}
-          placeholder="Till exempel: Jag försökte gå med i vandringen på lördag, men knappen gjorde ingenting när jag tryckte."
+          placeholder={copy.placeholder}
           className="w-full rounded-control border border-border px-4 py-3 text-base text-heading bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-y"
           required
           minLength={MIN_DESCRIPTION}
           maxLength={8000}
         />
-        <p className="text-xs text-secondary mt-2">
-          Skriv som du skulle berätta för en kompis. Vi fyller i det tekniska åt dig.
-        </p>
+        <p className="text-xs text-secondary mt-2">{copy.help}</p>
       </Card>
 
       {snapshot?.screenshotDataUrl && (
@@ -176,7 +193,7 @@ export function TipsaForm() {
 
 interface KindButtonProps {
   value: Kind;
-  current: Kind | null;
+  current: Kind;
   onSelect: (k: Kind) => void;
   emoji: string;
   label: string;

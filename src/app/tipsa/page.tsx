@@ -14,8 +14,8 @@ export default async function TipsaPage() {
         Tipsa oss
       </h1>
       <p className="text-secondary mt-2 max-w-2xl">
-        Hittade du något konstigt eller har en idé? Skriv som du skulle berätta
-        för en kompis. Vi läser allt själva.
+        Hittade du något konstigt, ett fel, eller har du ett förslag? Skriv
+        till oss så kikar vi på det så snart som möjligt!
       </p>
 
       <div className="mt-8">
