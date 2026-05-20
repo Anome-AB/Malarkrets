@@ -96,12 +96,6 @@ export default async function MinaTipsPage() {
             <p className="text-secondary">
               Du har inte skickat något tips än.
             </p>
-            <Link
-              href="/tipsa"
-              className="inline-flex items-center justify-center min-h-touch-target rounded-control px-5 py-2.5 text-sm font-medium bg-primary text-white hover:bg-primary-hover transition-colors"
-            >
-              Skicka ditt första tips
-            </Link>
           </div>
         </Card>
       ) : (
