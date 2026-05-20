@@ -345,7 +345,7 @@ export function CommentBubble({ comment, viewerIsReporter }: CommentBubbleProps)
   const fromMe = viewerIsReporter ? comment.isReporter : !comment.isReporter;
   const name = comment.authorIsAdmin
     ? `${comment.authorDisplayName ?? "Admin"} (admin)`
-    : comment.authorDisplayName ?? "Testare";
+    : comment.authorDisplayName ?? "Användare";
 
   return (
     <li className={`flex ${fromMe ? "justify-end" : "justify-start"}`}>

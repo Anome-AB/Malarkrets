@@ -3,7 +3,7 @@ import { listFeedbackTips } from "@/actions/admin-feedback-tips";
 import { AdminFeedbackClient } from "./admin-feedback-client";
 
 export const metadata = {
-  title: "Tips från testare - Admin",
+  title: "Tips från användare - Admin",
 };
 
 interface PageProps {
@@ -24,10 +24,10 @@ export default async function AdminFeedbackPage({ searchParams }: PageProps) {
 
   return (
     <div className="px-6 py-8">
-      <h1 className="text-2xl font-bold text-heading mb-2">Tips från testare</h1>
+      <h1 className="text-2xl font-bold text-heading mb-2">Tips från användare</h1>
       <p className="text-secondary mb-6">
-        Buggrapporter och förslag från PRE-GO-LIVE-testarna. Klicka på en rad
-        för att läsa hela tipset och ändra status.
+        Buggrapporter och förslag från PRE-GO-LIVE-användarna. Klicka på en
+        rad för att läsa hela tipset och ändra status.
       </p>
 
       <AdminFeedbackClient

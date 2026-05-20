@@ -169,7 +169,16 @@ export function AdminFeedbackClient({
                     </td>
                     <td className="py-3 pr-3 text-heading">
                       <div className="truncate max-w-md">
-                        {firstLine(tip.description)}
+                        {tip.kind === "interest" ? (
+                          <span>
+                            <span className="font-medium">Intresseförslag:</span>{" "}
+                            {tip.interestSuggestionNames.length > 0
+                              ? tip.interestSuggestionNames.join(", ")
+                              : "(inga namn)"}
+                          </span>
+                        ) : (
+                          firstLine(tip.description)
+                        )}
                       </div>
                     </td>
                     <td className="py-3 pr-3 text-secondary text-xs">
@@ -341,7 +350,7 @@ function TipDetailModal({ tip, onClose }: TipDetailModalProps) {
     <Modal
       open
       onClose={onClose}
-      title="Tips från testare"
+      title="Tips från användare"
       size="xl"
       footer={
         <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
@@ -490,7 +499,7 @@ function TipDetailModal({ tip, onClose }: TipDetailModalProps) {
             >
               <img
                 src={`/api/images/${tip.screenshotImageId}`}
-                alt="Skärmdump från testaren"
+                alt="Skärmdump från användaren"
                 className="w-full"
               />
             </a>
@@ -556,7 +565,7 @@ function TipDetailModal({ tip, onClose }: TipDetailModalProps) {
               value={commentBody}
               onChange={(e) => setCommentBody(e.target.value)}
               rows={3}
-              placeholder="Svara till testaren..."
+              placeholder="Svara till användaren..."
               className="w-full rounded-control border border-border px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary"
               maxLength={4000}
             />

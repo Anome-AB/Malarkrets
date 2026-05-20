@@ -121,6 +121,9 @@ export interface AdminTipRow extends FeedbackTip {
   reporterDisplayName: string | null;
   commentCount: number;
   hasUnread: boolean;
+  // För kind="interest" listar vi de föreslagna namnen så admin ser
+  // dem direkt i listan utan att klicka in på modalen.
+  interestSuggestionNames: string[];
 }
 
 export type AdminStatusFilter =
@@ -213,12 +216,35 @@ export async function listFeedbackTips(
 
   const countMap = new Map(counts.map((c) => [c.tipId, c.count]));
 
+  // För interest-tips: hämta första 3 föreslagna namn per tip så att de
+  // syns i listan utan att admin behöver klicka in.
+  const interestTipIds = rows
+    .filter((r) => r.tip.kind === "interest")
+    .map((r) => r.tip.id);
+  const suggestionMap = new Map<string, string[]>();
+  if (interestTipIds.length > 0) {
+    const suggestionRows = await db
+      .select({
+        tipId: feedbackTipInterestSuggestions.tipId,
+        name: feedbackTipInterestSuggestions.name,
+      })
+      .from(feedbackTipInterestSuggestions)
+      .where(inArray(feedbackTipInterestSuggestions.tipId, interestTipIds))
+      .orderBy(feedbackTipInterestSuggestions.createdAt);
+    for (const s of suggestionRows) {
+      const list = suggestionMap.get(s.tipId) ?? [];
+      list.push(s.name);
+      suggestionMap.set(s.tipId, list);
+    }
+  }
+
   return rows.map((r) => ({
     ...r.tip,
     reporterEmail: r.reporterEmail,
     reporterDisplayName: r.reporterDisplayName,
     commentCount: countMap.get(r.tip.id) ?? 0,
     hasUnread: r.hasUnread,
+    interestSuggestionNames: suggestionMap.get(r.tip.id) ?? [],
   }));
 }
 
