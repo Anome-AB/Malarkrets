@@ -416,11 +416,6 @@ export const feedbackTips = pgTable(
     screenshotImageId: uuid("screenshot_image_id").references(() => images.id, {
       onDelete: "set null",
     }),
-    adminNotes: text("admin_notes"),
-    adminNotesAuthorId: uuid("admin_notes_author_id").references(
-      () => users.id,
-      { onDelete: "set null" },
-    ),
     resolvedAt: timestamp("resolved_at"),
     resolvedBy: uuid("resolved_by").references(() => users.id, {
       onDelete: "set null",
