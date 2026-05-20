@@ -27,7 +27,7 @@ type KindFilter = "bug" | "idea" | "interest" | "all";
 
 const STATUS_LABEL: Record<StatusKey, string> = {
   open: "Ny",
-  triaged: "Sett",
+  triaged: "Läst",
   in_progress: "Accepterat",
   done: "Klart",
   wont_fix: "Avslaget",
@@ -51,7 +51,7 @@ const SEVERITY_BADGE: Record<SeverityKey, string> = {
 const STATUS_FILTERS: Array<{ value: StatusFilter; label: string }> = [
   { value: "unread", label: "Oläst" },
   { value: "open", label: "Ny" },
-  { value: "triaged", label: "Sett" },
+  { value: "triaged", label: "Läst" },
   { value: "in_progress", label: "Accepterat" },
   { value: "done", label: "Klart" },
   { value: "wont_fix", label: "Avslaget" },
