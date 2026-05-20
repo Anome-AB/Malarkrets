@@ -365,47 +365,6 @@ function TipDetailModal({ tip, onClose, onAction }: TipDetailModalProps) {
           </details>
         )}
 
-        <div className="pt-3 border-t border-border space-y-3">
-          <h3 className="text-sm font-semibold text-heading">
-            Konversation ({comments?.length ?? 0})
-          </h3>
-          {comments === null ? (
-            <p className="text-sm text-secondary">Laddar tråd...</p>
-          ) : comments.length === 0 ? (
-            <p className="text-sm text-secondary">
-              Inga svar ännu. Ställ en följdfråga eller bekräfta att ni tar tag i det.
-            </p>
-          ) : (
-            <ul className="space-y-3">
-              {comments.map((c) => (
-                <CommentBubble key={c.id} comment={c} viewerIsReporter={false} />
-              ))}
-            </ul>
-          )}
-
-          <div className="space-y-2">
-            <textarea
-              value={commentBody}
-              onChange={(e) => setCommentBody(e.target.value)}
-              rows={3}
-              placeholder="Svara till testaren..."
-              className="w-full rounded-control border border-border px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary"
-              maxLength={4000}
-            />
-            <div className="flex justify-end">
-              <Button
-                type="button"
-                size="compact"
-                onClick={handleSendComment}
-                loading={sendingComment}
-                disabled={commentBody.trim().length === 0}
-              >
-                Skicka svar
-              </Button>
-            </div>
-          </div>
-        </div>
-
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-border">
           <div>
             <label
@@ -465,6 +424,47 @@ function TipDetailModal({ tip, onClose, onAction }: TipDetailModalProps) {
             className="w-full rounded-control border border-border px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary"
             maxLength={4000}
           />
+        </div>
+
+        <div className="pt-3 border-t border-border space-y-3">
+          <h3 className="text-sm font-semibold text-heading">
+            Konversation ({comments?.length ?? 0})
+          </h3>
+          {comments === null ? (
+            <p className="text-sm text-secondary">Laddar tråd...</p>
+          ) : comments.length === 0 ? (
+            <p className="text-sm text-secondary">
+              Inga svar ännu. Ställ en följdfråga eller bekräfta att ni tar tag i det.
+            </p>
+          ) : (
+            <ul className="space-y-3">
+              {comments.map((c) => (
+                <CommentBubble key={c.id} comment={c} viewerIsReporter={false} />
+              ))}
+            </ul>
+          )}
+
+          <div className="space-y-2">
+            <textarea
+              value={commentBody}
+              onChange={(e) => setCommentBody(e.target.value)}
+              rows={3}
+              placeholder="Svara till testaren..."
+              className="w-full rounded-control border border-border px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary"
+              maxLength={4000}
+            />
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                size="compact"
+                onClick={handleSendComment}
+                loading={sendingComment}
+                disabled={commentBody.trim().length === 0}
+              >
+                Skicka svar
+              </Button>
+            </div>
+          </div>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-2 sm:justify-end pt-2">

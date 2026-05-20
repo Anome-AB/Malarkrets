@@ -65,7 +65,11 @@ export async function updateTipStatus(
       .update(feedbackTips)
       .set({
         status,
-        adminNotes,
+        // Bara sätt notes + author om admin faktiskt skickat med notes-text.
+        // Annars tar vi inte över en existerande not.
+        ...(adminNotes !== undefined
+          ? { adminNotes, adminNotesAuthorId: user.id }
+          : {}),
         resolvedAt: isFinal ? new Date() : null,
         resolvedBy: isFinal ? user.id : null,
         updatedAt: new Date(),
@@ -114,7 +118,7 @@ export async function updateTipNotes(
   input: z.infer<typeof updateNotesSchema>,
 ): Promise<ActionResult> {
   try {
-    await requireAdmin();
+    const { user } = await requireAdmin();
     const parsed = updateNotesSchema.safeParse(input);
     if (!parsed.success) {
       return { success: false, error: "Ogiltig anteckning" };
@@ -122,7 +126,11 @@ export async function updateTipNotes(
 
     await db
       .update(feedbackTips)
-      .set({ adminNotes: parsed.data.adminNotes, updatedAt: new Date() })
+      .set({
+        adminNotes: parsed.data.adminNotes,
+        adminNotesAuthorId: user.id,
+        updatedAt: new Date(),
+      })
       .where(eq(feedbackTips.id, parsed.data.tipId));
 
     revalidatePath("/admin/feedback");

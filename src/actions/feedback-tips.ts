@@ -163,6 +163,7 @@ export type MyTip = Pick<
   | "lastActivityAt"
 > & {
   commentCount: number;
+  adminNotesAuthorName: string | null;
 };
 
 export async function getMyTips(): Promise<MyTip[]> {
@@ -178,8 +179,10 @@ export async function getMyTips(): Promise<MyTip[]> {
       adminNotes: feedbackTips.adminNotes,
       resolvedAt: feedbackTips.resolvedAt,
       lastActivityAt: feedbackTips.lastActivityAt,
+      adminNotesAuthorName: users.displayName,
     })
     .from(feedbackTips)
+    .leftJoin(users, eq(feedbackTips.adminNotesAuthorId, users.id))
     .where(eq(feedbackTips.reporterId, user.id))
     .orderBy(desc(feedbackTips.lastActivityAt));
 
@@ -232,6 +235,14 @@ export async function getMyTipDetail(tipId: string): Promise<MyTipDetail | null>
 
   if (!tip) return null;
 
+  let adminNotesAuthorName: string | null = null;
+  if (tip.adminNotesAuthorId) {
+    const author = await db.query.users.findFirst({
+      where: eq(users.id, tip.adminNotesAuthorId),
+    });
+    adminNotesAuthorName = author?.displayName ?? null;
+  }
+
   const comments = await db
     .select({
       id: feedbackTipComments.id,
@@ -256,6 +267,7 @@ export async function getMyTipDetail(tipId: string): Promise<MyTipDetail | null>
     resolvedAt: tip.resolvedAt,
     lastActivityAt: tip.lastActivityAt,
     commentCount: comments.length,
+    adminNotesAuthorName,
     canEdit: tip.status === "open",
     comments: comments.map((c) => ({
       ...c,
