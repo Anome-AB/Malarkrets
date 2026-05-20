@@ -96,52 +96,68 @@ export default async function MinaTipsPage() {
           </div>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <ul className="space-y-4">
           {tips.map((tip) => {
             const status = STATUS_DISPLAY[tip.status];
+            const hasActivity =
+              tip.lastActivityAt.getTime() - tip.createdAt.getTime() > 1000;
             return (
-              <Card key={tip.id}>
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-2 text-sm font-medium text-heading">
-                      <span aria-hidden="true">
-                        {tip.kind === "bug" ? "🐞" : "💡"}
+              <li key={tip.id}>
+                <Link
+                  href={`/mina-tips/${tip.id}`}
+                  className="block rounded-card bg-white border border-border p-6 hover:border-primary hover:shadow-md transition-all"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-2 text-sm font-medium text-heading">
+                        <span aria-hidden="true">
+                          {tip.kind === "bug" ? "🐞" : "💡"}
+                        </span>
+                        <span>
+                          {tip.kind === "bug" ? "Bugg" : "Förslag"}
+                        </span>
+                        {tip.commentCount > 0 && (
+                          <span className="ml-2 inline-flex items-center gap-1 text-xs text-secondary">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                            </svg>
+                            {tip.commentCount} svar
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs text-secondary font-mono">
+                        {formatRelative(tip.lastActivityAt)}
                       </span>
-                      <span>{tip.kind === "bug" ? "Bugg" : "Idé"}</span>
                     </div>
-                    <span className="text-xs text-secondary font-mono">
-                      {formatRelative(tip.createdAt)}
-                    </span>
-                  </div>
 
-                  <p className="text-heading whitespace-pre-wrap">
-                    {tip.description}
-                  </p>
+                    <p className="text-heading whitespace-pre-wrap line-clamp-3">
+                      {tip.description}
+                    </p>
 
-                  <div className="flex items-center gap-2 pt-2 border-t border-border-light">
-                    <span
-                      className={`inline-block w-2.5 h-2.5 rounded-full ${status.dot}`}
-                      aria-hidden="true"
-                    />
-                    <span className="text-sm font-medium text-heading">
-                      {status.label}
-                    </span>
-                    <span className="text-sm text-secondary">
-                      · {status.description}
-                    </span>
-                  </div>
-
-                  {tip.adminNotes && (
-                    <div className="rounded-control bg-primary-light px-4 py-3 text-sm text-heading">
-                      <span className="font-semibold">Svar från oss:</span>{" "}
-                      {tip.adminNotes}
+                    <div className="flex items-center gap-2 pt-2 border-t border-border-light">
+                      <span
+                        className={`inline-block w-2.5 h-2.5 rounded-full ${status.dot}`}
+                        aria-hidden="true"
+                      />
+                      <span className="text-sm font-medium text-heading">
+                        {status.label}
+                      </span>
+                      <span className="text-sm text-secondary">
+                        · {status.description}
+                      </span>
                     </div>
-                  )}
-                </div>
-              </Card>
+
+                    {hasActivity && (
+                      <p className="text-xs text-primary font-medium">
+                        Senaste aktivitet {formatRelative(tip.lastActivityAt)} →
+                      </p>
+                    )}
+                  </div>
+                </Link>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
     </div>
   );

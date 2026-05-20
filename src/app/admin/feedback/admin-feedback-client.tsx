@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
@@ -11,7 +11,10 @@ import {
   updateTipStatus,
   updateTipSeverity,
   updateTipNotes,
+  getTipCommentsForAdmin,
 } from "@/actions/admin-feedback-tips";
+import { addTipComment, type TipComment } from "@/actions/feedback-tips";
+import { CommentBubble } from "@/app/mina-tips/[id]/tip-detail-client";
 
 type StatusKey = "open" | "triaged" | "in_progress" | "done" | "wont_fix" | "duplicate";
 type SeverityKey = "blocker" | "high" | "medium" | "low";
@@ -52,9 +55,9 @@ const STATUS_FILTERS: Array<{ value: StatusFilter; label: string }> = [
 ];
 
 const KIND_FILTERS: Array<{ value: KindFilter; label: string }> = [
-  { value: "all", label: "Bugg + idé" },
+  { value: "all", label: "Bugg + förslag" },
   { value: "bug", label: "Bugg" },
-  { value: "idea", label: "Idé" },
+  { value: "idea", label: "Förslag" },
 ];
 
 interface AdminFeedbackClientProps {
@@ -115,9 +118,10 @@ export function AdminFeedbackClient({
                   <th className="py-2 pr-3 w-12">Typ</th>
                   <th className="py-2 pr-3 w-24">Severity</th>
                   <th className="py-2 pr-3">Sammanfattning</th>
+                  <th className="py-2 pr-3 w-16">Svar</th>
                   <th className="py-2 pr-3 w-44">Rapportör</th>
                   <th className="py-2 pr-3 w-32">Status</th>
-                  <th className="py-2 pr-3 w-28 font-mono">Inkom</th>
+                  <th className="py-2 pr-3 w-28 font-mono">Aktivitet</th>
                 </tr>
               </thead>
               <tbody>
@@ -142,6 +146,9 @@ export function AdminFeedbackClient({
                         {firstLine(tip.description)}
                       </div>
                     </td>
+                    <td className="py-3 pr-3 text-secondary text-xs">
+                      {tip.commentCount > 0 ? `${tip.commentCount}` : "—"}
+                    </td>
                     <td className="py-3 pr-3 text-secondary">
                       {tip.reporterDisplayName ?? tip.reporterEmail ?? "okänd"}
                     </td>
@@ -149,7 +156,7 @@ export function AdminFeedbackClient({
                       {STATUS_LABEL[tip.status]}
                     </td>
                     <td className="py-3 pr-3 text-secondary font-mono text-xs">
-                      {formatDate(tip.createdAt)}
+                      {formatDate(tip.lastActivityAt)}
                     </td>
                   </tr>
                 ))}
@@ -228,9 +235,45 @@ interface TipDetailModalProps {
 }
 
 function TipDetailModal({ tip, onClose, onAction }: TipDetailModalProps) {
+  const router = useRouter();
+  const { toast } = useToast();
   const [status, setStatus] = useState<StatusKey>(tip.status);
   const [severity, setSeverity] = useState<SeverityKey>(tip.severity);
   const [notes, setNotes] = useState(tip.adminNotes ?? "");
+  const [comments, setComments] = useState<TipComment[] | null>(null);
+  const [commentBody, setCommentBody] = useState("");
+  const [sendingComment, startSendComment] = useTransition();
+
+  useEffect(() => {
+    let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch on open.
+    setComments(null);
+    getTipCommentsForAdmin(tip.id).then((rows) => {
+      if (!cancelled) setComments(rows);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [tip.id]);
+
+  function handleSendComment() {
+    if (commentBody.trim().length === 0) return;
+    startSendComment(async () => {
+      const result = await addTipComment({
+        tipId: tip.id,
+        body: commentBody.trim(),
+      });
+      if (result.success) {
+        setCommentBody("");
+        toast("Svar skickat", "success");
+        const fresh = await getTipCommentsForAdmin(tip.id);
+        setComments(fresh);
+        router.refresh();
+      } else {
+        toast(result.error ?? "Något gick fel", "error");
+      }
+    });
+  }
 
   const hasMetadata =
     tip.pageUrl || tip.userAgent || tip.viewportWidth || tip.appVersion;
@@ -243,7 +286,7 @@ function TipDetailModal({ tip, onClose, onAction }: TipDetailModalProps) {
             {tip.kind === "bug" ? "🐞" : "💡"}
           </span>
           <span className="text-heading font-medium">
-            {tip.kind === "bug" ? "Bugg" : "Idé"}
+            {tip.kind === "bug" ? "Bugg" : "Förslag"}
           </span>
           <span className="font-mono text-xs">
             {formatDate(tip.createdAt)}
@@ -321,6 +364,47 @@ function TipDetailModal({ tip, onClose, onAction }: TipDetailModalProps) {
             </pre>
           </details>
         )}
+
+        <div className="pt-3 border-t border-border space-y-3">
+          <h3 className="text-sm font-semibold text-heading">
+            Konversation ({comments?.length ?? 0})
+          </h3>
+          {comments === null ? (
+            <p className="text-sm text-secondary">Laddar tråd...</p>
+          ) : comments.length === 0 ? (
+            <p className="text-sm text-secondary">
+              Inga svar ännu. Ställ en följdfråga eller bekräfta att ni tar tag i det.
+            </p>
+          ) : (
+            <ul className="space-y-3">
+              {comments.map((c) => (
+                <CommentBubble key={c.id} comment={c} viewerIsReporter={false} />
+              ))}
+            </ul>
+          )}
+
+          <div className="space-y-2">
+            <textarea
+              value={commentBody}
+              onChange={(e) => setCommentBody(e.target.value)}
+              rows={3}
+              placeholder="Svara till testaren..."
+              className="w-full rounded-control border border-border px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary"
+              maxLength={4000}
+            />
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                size="compact"
+                onClick={handleSendComment}
+                loading={sendingComment}
+                disabled={commentBody.trim().length === 0}
+              >
+                Skicka svar
+              </Button>
+            </div>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-border">
           <div>
