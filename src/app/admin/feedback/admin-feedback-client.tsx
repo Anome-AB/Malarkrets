@@ -11,6 +11,11 @@ import {
   updateTipStatus,
   updateTipSeverity,
   getTipCommentsForAdmin,
+  getInterestSuggestionsForAdmin,
+  approveInterestSuggestion,
+  rejectInterestSuggestion,
+  updateSuggestionName,
+  type AdminInterestSuggestion,
 } from "@/actions/admin-feedback-tips";
 import { addTipComment, type TipComment } from "@/actions/feedback-tips";
 import { CommentBubble } from "@/app/mina-tips/[id]/tip-detail-client";
@@ -18,7 +23,7 @@ import { CommentBubble } from "@/app/mina-tips/[id]/tip-detail-client";
 type StatusKey = "open" | "triaged" | "in_progress" | "done" | "wont_fix" | "duplicate";
 type SeverityKey = "blocker" | "high" | "medium" | "low";
 type StatusFilter = StatusKey | "all" | "unread";
-type KindFilter = "bug" | "idea" | "all";
+type KindFilter = "bug" | "idea" | "interest" | "all";
 
 const STATUS_LABEL: Record<StatusKey, string> = {
   open: "Inkommit",
@@ -55,10 +60,23 @@ const STATUS_FILTERS: Array<{ value: StatusFilter; label: string }> = [
 ];
 
 const KIND_FILTERS: Array<{ value: KindFilter; label: string }> = [
-  { value: "all", label: "Bugg + förslag" },
+  { value: "all", label: "Alla typer" },
   { value: "bug", label: "Bugg" },
   { value: "idea", label: "Förslag" },
+  { value: "interest", label: "Intresseförslag" },
 ];
+
+function kindEmoji(kind: "bug" | "idea" | "interest"): string {
+  if (kind === "bug") return "🐞";
+  if (kind === "idea") return "💡";
+  return "🏷️";
+}
+
+function kindLabel(kind: "bug" | "idea" | "interest"): string {
+  if (kind === "bug") return "Bugg";
+  if (kind === "idea") return "Förslag";
+  return "Intresseförslag";
+}
 
 interface AdminFeedbackClientProps {
   initialTips: AdminTipRow[];
@@ -140,7 +158,7 @@ export function AdminFeedbackClient({
                           aria-label="Ny aktivitet"
                         />
                       )}
-                      {tip.kind === "bug" ? "🐞" : "💡"}
+                      {kindEmoji(tip.kind)}
                     </td>
                     <td className="py-3 pr-3">
                       <span
@@ -238,6 +256,16 @@ function TipDetailModal({ tip, onClose }: TipDetailModalProps) {
   const [commentBody, setCommentBody] = useState("");
   const [sendingComment, startSendComment] = useTransition();
   const [saving, startSaving] = useTransition();
+  const [suggestions, setSuggestions] = useState<
+    AdminInterestSuggestion[] | null
+  >(null);
+  const [, startSuggestionAction] = useTransition();
+
+  async function refreshSuggestions() {
+    if (tip.kind !== "interest") return;
+    const rows = await getInterestSuggestionsForAdmin(tip.id);
+    setSuggestions(rows);
+  }
 
   const statusChanged = status !== tip.status;
   const severityChanged = severity !== tip.severity;
@@ -272,13 +300,20 @@ function TipDetailModal({ tip, onClose }: TipDetailModalProps) {
     let cancelled = false;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch on open.
     setComments(null);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- same as above
+    setSuggestions(null);
     getTipCommentsForAdmin(tip.id).then((rows) => {
       if (!cancelled) setComments(rows);
     });
+    if (tip.kind === "interest") {
+      getInterestSuggestionsForAdmin(tip.id).then((rows) => {
+        if (!cancelled) setSuggestions(rows);
+      });
+    }
     return () => {
       cancelled = true;
     };
-  }, [tip.id]);
+  }, [tip.id, tip.kind]);
 
   function handleSendComment() {
     if (commentBody.trim().length === 0) return;
@@ -334,10 +369,10 @@ function TipDetailModal({ tip, onClose }: TipDetailModalProps) {
       <div className="space-y-5 pb-6">
         <div className="flex flex-wrap items-center gap-3 text-sm text-secondary">
           <span className="text-2xl" aria-hidden="true">
-            {tip.kind === "bug" ? "🐞" : "💡"}
+            {kindEmoji(tip.kind)}
           </span>
           <span className="text-heading font-medium">
-            {tip.kind === "bug" ? "Bugg" : "Förslag"}
+            {kindLabel(tip.kind)}
           </span>
           <span className="font-mono text-xs">
             {formatDate(tip.createdAt)}
@@ -399,9 +434,48 @@ function TipDetailModal({ tip, onClose }: TipDetailModalProps) {
           </div>
         </div>
 
-        <Card>
-          <p className="text-heading whitespace-pre-wrap">{tip.description}</p>
-        </Card>
+        {tip.kind === "interest" && (
+          <div className="rounded-control border border-border bg-background p-4 space-y-3">
+            <h3 className="text-sm font-semibold text-heading">
+              Föreslagna intressen
+            </h3>
+            {suggestions === null ? (
+              <p className="text-sm text-secondary">Laddar förslag...</p>
+            ) : suggestions.length === 0 ? (
+              <p className="text-sm text-secondary">
+                Inga förslag på den här tipset.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {suggestions.map((s) => (
+                  <InterestSuggestionAdminRow
+                    key={s.id}
+                    suggestion={s}
+                    onChange={refreshSuggestions}
+                    onAction={(fn) =>
+                      startSuggestionAction(async () => {
+                        const r = await fn();
+                        if (r.success) {
+                          await refreshSuggestions();
+                          router.refresh();
+                          toast("Sparat", "success");
+                        } else {
+                          toast(r.error ?? "Något gick fel", "error");
+                        }
+                      })
+                    }
+                  />
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+        {tip.description && (
+          <Card>
+            <p className="text-heading whitespace-pre-wrap">{tip.description}</p>
+          </Card>
+        )}
 
         {tip.screenshotImageId && (
           <div>
@@ -511,6 +585,114 @@ function MetadataRow({ label, value }: { label: string; value: string }) {
       <dt className="w-24 shrink-0 text-heading">{label}</dt>
       <dd className="break-all">{value}</dd>
     </div>
+  );
+}
+
+interface InterestSuggestionAdminRowProps {
+  suggestion: AdminInterestSuggestion;
+  onChange: () => Promise<void> | void;
+  onAction: (
+    fn: () => Promise<{ success: boolean; error?: string }>,
+  ) => void;
+}
+
+const SUGGESTION_BADGE: Record<
+  AdminInterestSuggestion["status"],
+  { label: string; className: string }
+> = {
+  pending: {
+    label: "Pending",
+    className: "bg-background text-secondary border border-border",
+  },
+  approved: {
+    label: "Godkänt",
+    className: "bg-primary text-white",
+  },
+  rejected: {
+    label: "Avslaget",
+    className: "bg-error/10 text-error border border-error/30",
+  },
+  duplicate: {
+    label: "Fanns redan",
+    className: "bg-accent-light text-heading border border-accent",
+  },
+};
+
+function InterestSuggestionAdminRow({
+  suggestion,
+  onAction,
+}: InterestSuggestionAdminRowProps) {
+  const [name, setName] = useState(suggestion.name);
+  const nameChanged = name.trim() !== suggestion.name;
+  const isPending = suggestion.status === "pending";
+  const badge = SUGGESTION_BADGE[suggestion.status];
+
+  function approve() {
+    onAction(async () => {
+      if (nameChanged) {
+        const r = await updateSuggestionName({
+          suggestionId: suggestion.id,
+          name: name.trim(),
+        });
+        if (!r.success) return r;
+      }
+      return approveInterestSuggestion({ suggestionId: suggestion.id });
+    });
+  }
+
+  function reject() {
+    onAction(async () => {
+      return rejectInterestSuggestion({ suggestionId: suggestion.id });
+    });
+  }
+
+  if (!isPending) {
+    return (
+      <li className="flex items-start justify-between gap-3 rounded-control bg-white border border-border px-3 py-2">
+        <div className="flex-1">
+          <p className="text-heading font-medium">{suggestion.name}</p>
+          {suggestion.approvedAsTagName &&
+            suggestion.approvedAsTagName !== suggestion.name && (
+              <p className="text-xs text-secondary">
+                Som tagg:{" "}
+                <span className="font-medium">
+                  {suggestion.approvedAsTagName}
+                </span>
+              </p>
+            )}
+        </div>
+        <span
+          className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${badge.className}`}
+        >
+          {badge.label}
+        </span>
+      </li>
+    );
+  }
+
+  return (
+    <li className="rounded-control bg-white border border-border px-3 py-3 space-y-2">
+      <input
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        maxLength={60}
+        className="w-full rounded-control border border-border px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary"
+      />
+      <div className="flex gap-2 justify-end">
+        <Button
+          type="button"
+          variant="ghost"
+          size="compact"
+          onClick={reject}
+        >
+          Avslå
+        </Button>
+        <Button type="button" size="compact" onClick={approve}>
+          {nameChanged ? "Spara + Godkänn" : "Godkänn"}
+        </Button>
+      </div>
+    </li>
   );
 }
 

@@ -64,6 +64,6 @@ function isStatus(
   );
 }
 
-function isKind(k: string | undefined): k is "bug" | "idea" | "all" {
-  return k === "bug" || k === "idea" || k === "all";
+function isKind(k: string | undefined): k is "bug" | "idea" | "interest" | "all" {
+  return k === "bug" || k === "idea" || k === "interest" || k === "all";
 }

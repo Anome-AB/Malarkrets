@@ -10,9 +10,10 @@ import {
   addTipComment,
   type MyTipDetail,
   type TipComment,
+  type InterestSuggestionItem,
 } from "@/actions/feedback-tips";
 
-type Kind = "bug" | "idea";
+type Kind = "bug" | "idea" | "interest";
 
 const STATUS_LABEL: Record<MyTipDetail["status"], string> = {
   open: "Inkommit",
@@ -90,16 +91,48 @@ export function TipDetailClient({ tip }: TipDetailClientProps) {
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-2 text-sm font-medium text-heading">
               <span className="text-xl" aria-hidden="true">
-                {tip.kind === "bug" ? "🐞" : "💡"}
+                {tip.kind === "bug"
+                  ? "🐞"
+                  : tip.kind === "idea"
+                    ? "💡"
+                    : "🏷️"}
               </span>
-              <span>{tip.kind === "bug" ? "Bugg" : "Förslag"}</span>
+              <span>
+                {tip.kind === "bug"
+                  ? "Bugg"
+                  : tip.kind === "idea"
+                    ? "Förslag"
+                    : "Intresseförslag"}
+              </span>
             </div>
             <span className="text-xs text-secondary font-mono">
               {new Date(tip.createdAt).toLocaleString("sv-SE")}
             </span>
           </div>
 
-          {editing ? (
+          {tip.kind === "interest" && tip.interestSuggestions.length > 0 && (
+            <div className="rounded-control border border-border bg-background p-4">
+              <h3 className="text-sm font-semibold text-heading mb-2">
+                Föreslagna intressen
+              </h3>
+              <ul className="space-y-2">
+                {tip.interestSuggestions.map((s) => (
+                  <SuggestionRow key={s.id} suggestion={s} />
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {tip.kind === "interest" && tip.description ? (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-secondary mb-1">
+                Motivering
+              </p>
+              <p className="text-heading whitespace-pre-wrap">
+                {tip.description}
+              </p>
+            </div>
+          ) : editing ? (
             <div className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <KindRadio
@@ -148,7 +181,7 @@ export function TipDetailClient({ tip }: TipDetailClientProps) {
                 </Button>
               </div>
             </div>
-          ) : (
+          ) : tip.kind !== "interest" ? (
             <>
               <p className="text-heading whitespace-pre-wrap">{tip.description}</p>
               {tip.canEdit && (
@@ -164,7 +197,7 @@ export function TipDetailClient({ tip }: TipDetailClientProps) {
                 </div>
               )}
             </>
-          )}
+          ) : null}
 
           <div className="flex items-center gap-2 pt-3 border-t border-border-light">
             <span
@@ -257,6 +290,55 @@ function KindRadio({ value, current, onSelect, emoji, label }: KindRadioProps) {
 interface CommentBubbleProps {
   comment: TipComment;
   viewerIsReporter: boolean;
+}
+
+const SUGGESTION_STATUS: Record<
+  InterestSuggestionItem["status"],
+  { label: string; className: string }
+> = {
+  pending: {
+    label: "Inkommit",
+    className: "bg-background text-secondary border border-border",
+  },
+  approved: {
+    label: "Godkänt",
+    className: "bg-primary text-white",
+  },
+  rejected: {
+    label: "Avslaget",
+    className: "bg-error/10 text-error border border-error/30",
+  },
+  duplicate: {
+    label: "Fanns redan",
+    className: "bg-accent-light text-heading border border-accent",
+  },
+};
+
+function SuggestionRow({ suggestion }: { suggestion: InterestSuggestionItem }) {
+  const status = SUGGESTION_STATUS[suggestion.status];
+  const showsAsTag =
+    (suggestion.status === "approved" || suggestion.status === "duplicate") &&
+    suggestion.approvedAsTagName;
+  return (
+    <li className="space-y-1">
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-heading font-medium">{suggestion.name}</span>
+        <span
+          className={`text-xs font-medium px-2 py-0.5 rounded-full ${status.className}`}
+        >
+          {status.label}
+        </span>
+      </div>
+      {showsAsTag && suggestion.approvedAsTagName !== suggestion.name && (
+        <p className="text-xs text-secondary">
+          Lades till som <span className="font-medium">{suggestion.approvedAsTagName}</span>
+        </p>
+      )}
+      {suggestion.status === "rejected" && suggestion.decisionReason && (
+        <p className="text-xs text-secondary">{suggestion.decisionReason}</p>
+      )}
+    </li>
+  );
 }
 
 export function CommentBubble({ comment, viewerIsReporter }: CommentBubbleProps) {

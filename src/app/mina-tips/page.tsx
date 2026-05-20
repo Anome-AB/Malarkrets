@@ -118,10 +118,18 @@ export default async function MinaTipsPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-2 text-sm font-medium text-heading">
                         <span aria-hidden="true">
-                          {tip.kind === "bug" ? "🐞" : "💡"}
+                          {tip.kind === "bug"
+                            ? "🐞"
+                            : tip.kind === "idea"
+                              ? "💡"
+                              : "🏷️"}
                         </span>
                         <span>
-                          {tip.kind === "bug" ? "Bugg" : "Förslag"}
+                          {tip.kind === "bug"
+                            ? "Bugg"
+                            : tip.kind === "idea"
+                              ? "Förslag"
+                              : "Intresseförslag"}
                         </span>
                         {tip.commentCount > 0 && (
                           <span className="ml-2 inline-flex items-center gap-1 text-xs text-secondary">
@@ -146,7 +154,10 @@ export default async function MinaTipsPage() {
                     </div>
 
                     <p className="text-heading whitespace-pre-wrap line-clamp-3">
-                      {tip.description}
+                      {tip.description ||
+                        (tip.kind === "interest"
+                          ? "Förslag på nya intressen. Klicka för att se vilka."
+                          : "")}
                     </p>
 
                     <div className="flex items-center gap-2 pt-2 border-t border-border-light">
