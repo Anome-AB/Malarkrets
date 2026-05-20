@@ -15,7 +15,7 @@ export default async function AdminFeedbackPage({ searchParams }: PageProps) {
   await requireAdmin();
   const params = await searchParams;
 
-  const statusFilter = isStatus(params.status) ? params.status : "open";
+  const statusFilter = isStatus(params.status) ? params.status : "unread";
   const kindFilter = isKind(params.kind) ? params.kind : "all";
 
   const tips = await listFeedbackTips({

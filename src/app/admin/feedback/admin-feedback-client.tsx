@@ -49,7 +49,7 @@ const SEVERITY_BADGE: Record<SeverityKey, string> = {
 };
 
 const STATUS_FILTERS: Array<{ value: StatusFilter; label: string }> = [
-  { value: "unread", label: "Ny aktivitet" },
+  { value: "unread", label: "Oläst" },
   { value: "open", label: "Inkommit" },
   { value: "triaged", label: "Sett" },
   { value: "in_progress", label: "På gång" },
@@ -96,7 +96,7 @@ export function AdminFeedbackClient({
     const status = next.status ?? initialStatus;
     const kind = next.kind ?? initialKind;
     const params = new URLSearchParams();
-    if (status !== "open") params.set("status", status);
+    if (status !== "unread") params.set("status", status);
     if (kind !== "all") params.set("kind", kind);
     const qs = params.toString();
     router.replace(`/admin/feedback${qs ? `?${qs}` : ""}`);
@@ -155,7 +155,7 @@ export function AdminFeedbackClient({
                       {tip.hasUnread && (
                         <span
                           className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full bg-accent"
-                          aria-label="Ny aktivitet"
+                          aria-label="Oläst aktivitet"
                         />
                       )}
                       {kindEmoji(tip.kind)}
