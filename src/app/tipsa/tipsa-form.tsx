@@ -13,7 +13,10 @@ import {
 import {
   submitTip,
   uploadFeedbackScreenshot,
+  getAllInterestTags,
+  type ExistingInterestTag,
 } from "@/actions/feedback-tips";
+import { slugifyInterest } from "@/lib/slugify-interest";
 
 type Kind = "bug" | "idea" | "interest";
 
@@ -63,11 +66,29 @@ export function TipsaForm() {
   const [snapshot, setSnapshot] = useState<FeedbackSnapshot | null>(null);
   const [includeScreenshot, setIncludeScreenshot] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [existingTags, setExistingTags] = useState<ExistingInterestTag[]>([]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- sessionStorage is browser-only, so we can't use a lazy initializer without hydration mismatch.
     setSnapshot(loadSnapshot());
   }, []);
+
+  useEffect(() => {
+    if (kind !== "interest" || existingTags.length > 0) return;
+    let cancelled = false;
+    getAllInterestTags().then((tags) => {
+      if (!cancelled) setExistingTags(tags);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [kind, existingTags.length]);
+
+  function findExistingMatch(name: string): ExistingInterestTag | null {
+    const slug = slugifyInterest(name);
+    if (!slug) return null;
+    return existingTags.find((t) => t.slug === slug) ?? null;
+  }
 
   const validNames = interestNames
     .map((n) => n.trim())
@@ -167,31 +188,46 @@ export function TipsaForm() {
       {kind === "interest" ? (
         <>
           <Card title="Vilka intressen saknar du?">
-            <ul className="space-y-2">
-              {interestNames.map((name, i) => (
-                <li key={i} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => updateName(i, e.target.value)}
-                    placeholder="T.ex. Motorsport, Dans, Musik"
-                    maxLength={60}
-                    className="flex-1 rounded-control border border-border px-4 py-2.5 text-base text-heading bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeNameRow(i)}
-                    disabled={interestNames.length === 1}
-                    aria-label="Ta bort raden"
-                    className="px-3 rounded-control border border-border text-secondary hover:text-error hover:border-error disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  </button>
-                </li>
-              ))}
+            <ul className="space-y-3">
+              {interestNames.map((name, i) => {
+                const match = findExistingMatch(name);
+                return (
+                  <li key={i}>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={name}
+                        onChange={(e) => updateName(i, e.target.value)}
+                        placeholder="T.ex. Motorsport, Dans, Musik"
+                        maxLength={60}
+                        className={`flex-1 rounded-control border px-4 py-2.5 text-base text-heading bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
+                          match ? "border-warning" : "border-border"
+                        }`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeNameRow(i)}
+                        disabled={interestNames.length === 1}
+                        aria-label="Ta bort raden"
+                        className="px-3 rounded-control border border-border text-secondary hover:text-error hover:border-error disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <line x1="18" y1="6" x2="6" y2="18" />
+                          <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
+                    </div>
+                    {match && (
+                      <p className="mt-1 ml-1 text-xs text-warning">
+                        Det finns redan ett intresse som heter{" "}
+                        <span className="font-semibold">{match.name}</span>.
+                        Välj något annat eller låt det stå om du vill att vi
+                        ska titta på det ändå.
+                      </p>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
             {interestNames.length < MAX_INTEREST_NAMES && (
               <button

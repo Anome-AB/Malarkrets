@@ -197,6 +197,26 @@ export async function uploadFeedbackScreenshot(
   }
 }
 
+// ─── Befintliga intressetaggar (för duplicate-koll i Tipsa-formuläret) ──
+
+export interface ExistingInterestTag {
+  id: number;
+  name: string;
+  slug: string;
+}
+
+export async function getAllInterestTags(): Promise<ExistingInterestTag[]> {
+  await requireAuth();
+  return await db
+    .select({
+      id: interestTags.id,
+      name: interestTags.name,
+      slug: interestTags.slug,
+    })
+    .from(interestTags)
+    .orderBy(interestTags.name);
+}
+
 export type MyTip = Pick<
   FeedbackTip,
   | "id"

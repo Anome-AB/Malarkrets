@@ -16,6 +16,7 @@ import { eq, desc, and, or, gt, isNull, inArray, sql, type SQL } from "drizzle-o
 import { revalidatePath } from "next/cache";
 import { log, errAttrs } from "@/lib/logger";
 import { z } from "zod";
+import { slugifyInterest } from "@/lib/slugify-interest";
 import type { TipComment } from "./feedback-tips";
 
 const updateStatusSchema = z.object({
@@ -324,17 +325,6 @@ export async function updateSuggestionName(
   }
 }
 
-// Slugifierar svensk-vänligt: lowercase + å/ä → a, ö → o, övriga
-// non-alphanumeric → bindestreck, trim. "Motion & Träning" → "motion-traning".
-function slugifyInterest(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[åä]/g, "a")
-    .replace(/ö/g, "o")
-    .replace(/[éè]/g, "e")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
 
 const approveSuggestionSchema = z.object({
   suggestionId: z.string().uuid(),
