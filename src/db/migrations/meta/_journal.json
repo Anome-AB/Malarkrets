@@ -78,6 +78,13 @@
 			"when": 1779926400000,
 			"tag": "0010_interest_suggestions",
 			"breakpoints": true
+		},
+		{
+			"idx": 11,
+			"version": "7",
+			"when": 1780012800000,
+			"tag": "0011_role_split_activity",
+			"breakpoints": true
 		}
 	]
 }

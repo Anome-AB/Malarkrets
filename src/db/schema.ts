@@ -430,6 +430,10 @@ export const feedbackTips = pgTable(
       onDelete: "set null",
     }),
     lastActivityAt: timestamp("last_activity_at").defaultNow().notNull(),
+    lastReporterActivityAt: timestamp("last_reporter_activity_at")
+      .defaultNow()
+      .notNull(),
+    lastAdminActivityAt: timestamp("last_admin_activity_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
@@ -442,6 +446,12 @@ export const feedbackTips = pgTable(
     ),
     index("feedback_tips_kind_status_idx").on(table.kind, table.status),
     index("feedback_tips_last_activity_idx").on(table.lastActivityAt),
+    index("feedback_tips_last_reporter_activity_idx").on(
+      table.lastReporterActivityAt,
+    ),
+    index("feedback_tips_last_admin_activity_idx").on(
+      table.lastAdminActivityAt,
+    ),
   ],
 );
 
