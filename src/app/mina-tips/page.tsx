@@ -21,7 +21,7 @@ const STATUS_DISPLAY: Record<MyTip["status"], StatusDisplay> = {
   triaged: {
     label: "Vi har sett det",
     dot: "bg-accent",
-    description: "Vi har läst tipset och funderar på vad vi gör med det.",
+    description: "Vi har läst tipset och tänker över det.",
   },
   in_progress: {
     label: "På gång",
