@@ -196,6 +196,8 @@ describe("getMyTips", () => {
 
   it("returnerar bara den inloggade användarens egna tips med kommentar-count", async () => {
     const baseTime = new Date(2026, 4, 20, 10, 0, 0);
+    // hasUnread räknas nu server-side via SQL, så mocken returnerar
+    // boolean direkt i stället för raw timestamps.
     const tipRows = [
       {
         id: "tip-1",
@@ -205,9 +207,7 @@ describe("getMyTips", () => {
         createdAt: baseTime,
         resolvedAt: null,
         lastActivityAt: baseTime,
-        // Ingen admin-aktivitet ännu → ska inte vara oläst
-        lastAdminActivityAt: null,
-        lastViewedAt: baseTime,
+        hasUnread: false,
       },
     ];
     mockSelect
@@ -231,9 +231,8 @@ describe("getMyTips", () => {
     expect(mockRequireAuth).toHaveBeenCalled();
   });
 
-  it("markerar som oläst när admin har gjort något efter senaste view", async () => {
+  it("returnerar hasUnread=true när server-side SQL räknat ut det", async () => {
     const baseTime = new Date(2026, 4, 20, 10, 0, 0);
-    const adminLater = new Date(2026, 4, 20, 11, 0, 0);
     const tipRows = [
       {
         id: "tip-2",
@@ -242,9 +241,8 @@ describe("getMyTips", () => {
         description: "y",
         createdAt: baseTime,
         resolvedAt: null,
-        lastActivityAt: adminLater,
-        lastAdminActivityAt: adminLater,
-        lastViewedAt: baseTime,
+        lastActivityAt: baseTime,
+        hasUnread: true,
       },
     ];
     mockSelect

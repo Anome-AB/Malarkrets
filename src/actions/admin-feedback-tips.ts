@@ -175,7 +175,13 @@ export async function listFeedbackTips(
       tip: feedbackTips,
       reporterEmail: users.email,
       reporterDisplayName: users.displayName,
-      lastViewedAt: feedbackTipViews.lastViewedAt,
+      // hasUnread räknas server-side: admin ser oläst när rapportören
+      // gjort något (eller skickat in tipset) efter senaste view, eller
+      // när adminen aldrig öppnat tipset.
+      hasUnread: sql<boolean>`
+        ${feedbackTipViews.lastViewedAt} IS NULL
+        OR ${feedbackTips.lastReporterActivityAt} > ${feedbackTipViews.lastViewedAt}
+      `,
     })
     .from(feedbackTips)
     .leftJoin(users, eq(feedbackTips.reporterId, users.id))
@@ -212,11 +218,7 @@ export async function listFeedbackTips(
     reporterEmail: r.reporterEmail,
     reporterDisplayName: r.reporterDisplayName,
     commentCount: countMap.get(r.tip.id) ?? 0,
-    // Admin ser "oläst" enbart när rapportören gjort något. Andra admins
-    // svar bumpar bara last_admin_activity_at, vilket vi ignorerar här.
-    hasUnread:
-      r.lastViewedAt === null ||
-      r.tip.lastReporterActivityAt.getTime() > r.lastViewedAt.getTime(),
+    hasUnread: r.hasUnread,
   }));
 }
 

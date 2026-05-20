@@ -243,8 +243,16 @@ export async function getMyTips(): Promise<MyTip[]> {
       createdAt: feedbackTips.createdAt,
       resolvedAt: feedbackTips.resolvedAt,
       lastActivityAt: feedbackTips.lastActivityAt,
-      lastAdminActivityAt: feedbackTips.lastAdminActivityAt,
-      lastViewedAt: feedbackTipViews.lastViewedAt,
+      // Räkna ut hasUnread server-side så timezone-tolkningen inte spelar
+      // någon roll: rapportören ser nytt när admin gjort något efter senaste
+      // view. Om admin aldrig gjort något ⇒ aldrig oläst.
+      hasUnread: sql<boolean>`
+        ${feedbackTips.lastAdminActivityAt} IS NOT NULL
+        AND (
+          ${feedbackTipViews.lastViewedAt} IS NULL
+          OR ${feedbackTips.lastAdminActivityAt} > ${feedbackTipViews.lastViewedAt}
+        )
+      `,
     })
     .from(feedbackTips)
     .leftJoin(
@@ -274,15 +282,9 @@ export async function getMyTips(): Promise<MyTip[]> {
     .groupBy(feedbackTipComments.tipId);
 
   const countMap = new Map(counts.map((c) => [c.tipId, c.count]));
-  return rows.map(({ lastViewedAt, lastAdminActivityAt, ...r }) => ({
+  return rows.map((r) => ({
     ...r,
     commentCount: countMap.get(r.id) ?? 0,
-    // Rapportören ser "Nytt" när en admin har gjort något hen inte sett.
-    // Egen aktivitet räknas inte, det vore brus.
-    hasUnread:
-      lastAdminActivityAt !== null &&
-      (lastViewedAt === null ||
-        lastAdminActivityAt.getTime() > lastViewedAt.getTime()),
   }));
 }
 
