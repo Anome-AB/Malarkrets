@@ -421,6 +421,7 @@ export const feedbackTips = pgTable(
     resolvedBy: uuid("resolved_by").references(() => users.id, {
       onDelete: "set null",
     }),
+    lastActivityAt: timestamp("last_activity_at").defaultNow().notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
@@ -432,6 +433,28 @@ export const feedbackTips = pgTable(
       table.status,
     ),
     index("feedback_tips_kind_status_idx").on(table.kind, table.status),
+    index("feedback_tips_last_activity_idx").on(table.lastActivityAt),
+  ],
+);
+
+export const feedbackTipComments = pgTable(
+  "feedback_tip_comments",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    tipId: uuid("tip_id")
+      .notNull()
+      .references(() => feedbackTips.id, { onDelete: "cascade" }),
+    authorId: uuid("author_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    body: text().notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("feedback_tip_comments_tip_created_idx").on(
+      table.tipId,
+      table.createdAt,
+    ),
   ],
 );
 
@@ -601,7 +624,7 @@ export const analyticsEventsRelations = relations(
   }),
 );
 
-export const feedbackTipsRelations = relations(feedbackTips, ({ one }) => ({
+export const feedbackTipsRelations = relations(feedbackTips, ({ one, many }) => ({
   reporter: one(users, {
     fields: [feedbackTips.reporterId],
     references: [users.id],
@@ -616,7 +639,22 @@ export const feedbackTipsRelations = relations(feedbackTips, ({ one }) => ({
     fields: [feedbackTips.screenshotImageId],
     references: [images.id],
   }),
+  comments: many(feedbackTipComments),
 }));
+
+export const feedbackTipCommentsRelations = relations(
+  feedbackTipComments,
+  ({ one }) => ({
+    tip: one(feedbackTips, {
+      fields: [feedbackTipComments.tipId],
+      references: [feedbackTips.id],
+    }),
+    author: one(users, {
+      fields: [feedbackTipComments.authorId],
+      references: [users.id],
+    }),
+  }),
+);
 
 export const adminActionsRelations = relations(adminActions, ({ one }) => ({
   admin: one(users, {
@@ -688,3 +726,6 @@ export type NewUserToken = typeof userTokens.$inferInsert;
 
 export type FeedbackTip = typeof feedbackTips.$inferSelect;
 export type NewFeedbackTip = typeof feedbackTips.$inferInsert;
+
+export type FeedbackTipComment = typeof feedbackTipComments.$inferSelect;
+export type NewFeedbackTipComment = typeof feedbackTipComments.$inferInsert;
