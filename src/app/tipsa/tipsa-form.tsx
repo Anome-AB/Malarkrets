@@ -166,7 +166,7 @@ export function TipsaForm() {
 
       {kind === "interest" ? (
         <>
-          <Card title="Vilka intressen saknas?">
+          <Card title="Vilka intressen saknar du?">
             <ul className="space-y-2">
               {interestNames.map((name, i) => (
                 <li key={i} className="flex gap-2">
