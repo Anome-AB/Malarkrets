@@ -74,7 +74,16 @@ export const userTokenTypeEnum = pgEnum("user_token_type", [
   "reset_password",
 ]);
 
-export const feedbackKindEnum = pgEnum("feedback_kind", ["bug", "idea"]);
+export const feedbackKindEnum = pgEnum("feedback_kind", [
+  "bug",
+  "idea",
+  "interest",
+]);
+
+export const interestSuggestionStatusEnum = pgEnum(
+  "interest_suggestion_status",
+  ["pending", "approved", "rejected", "duplicate"],
+);
 
 export const feedbackSeverityEnum = pgEnum("feedback_severity", [
   "blocker",
@@ -456,6 +465,38 @@ export const feedbackTipViews = pgTable(
   ],
 );
 
+export const feedbackTipInterestSuggestions = pgTable(
+  "feedback_tip_interest_suggestions",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    tipId: uuid("tip_id")
+      .notNull()
+      .references(() => feedbackTips.id, { onDelete: "cascade" }),
+    name: text().notNull(),
+    status: interestSuggestionStatusEnum().default("pending").notNull(),
+    approvedAsTagId: integer("approved_as_tag_id").references(
+      () => interestTags.id,
+      { onDelete: "set null" },
+    ),
+    decidedAt: timestamp("decided_at"),
+    decidedBy: uuid("decided_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    decisionReason: text("decision_reason"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("feedback_tip_interest_suggestions_tip_idx").on(
+      table.tipId,
+      table.createdAt,
+    ),
+    index("feedback_tip_interest_suggestions_status_idx").on(
+      table.status,
+      table.createdAt,
+    ),
+  ],
+);
+
 export const feedbackTipComments = pgTable(
   "feedback_tip_comments",
   {
@@ -659,7 +700,22 @@ export const feedbackTipsRelations = relations(feedbackTips, ({ one, many }) => 
     references: [images.id],
   }),
   comments: many(feedbackTipComments),
+  interestSuggestions: many(feedbackTipInterestSuggestions),
 }));
+
+export const feedbackTipInterestSuggestionsRelations = relations(
+  feedbackTipInterestSuggestions,
+  ({ one }) => ({
+    tip: one(feedbackTips, {
+      fields: [feedbackTipInterestSuggestions.tipId],
+      references: [feedbackTips.id],
+    }),
+    approvedAsTag: one(interestTags, {
+      fields: [feedbackTipInterestSuggestions.approvedAsTagId],
+      references: [interestTags.id],
+    }),
+  }),
+);
 
 export const feedbackTipCommentsRelations = relations(
   feedbackTipComments,
@@ -748,6 +804,11 @@ export type NewFeedbackTip = typeof feedbackTips.$inferInsert;
 
 export type FeedbackTipComment = typeof feedbackTipComments.$inferSelect;
 export type NewFeedbackTipComment = typeof feedbackTipComments.$inferInsert;
+
+export type FeedbackTipInterestSuggestion =
+  typeof feedbackTipInterestSuggestions.$inferSelect;
+export type NewFeedbackTipInterestSuggestion =
+  typeof feedbackTipInterestSuggestions.$inferInsert;
 
 export type FeedbackTipView = typeof feedbackTipViews.$inferSelect;
 export type NewFeedbackTipView = typeof feedbackTipViews.$inferInsert;
