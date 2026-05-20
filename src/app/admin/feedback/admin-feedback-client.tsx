@@ -18,7 +18,7 @@ import { CommentBubble } from "@/app/mina-tips/[id]/tip-detail-client";
 
 type StatusKey = "open" | "triaged" | "in_progress" | "done" | "wont_fix" | "duplicate";
 type SeverityKey = "blocker" | "high" | "medium" | "low";
-type StatusFilter = StatusKey | "all";
+type StatusFilter = StatusKey | "all" | "unread";
 type KindFilter = "bug" | "idea" | "all";
 
 const STATUS_LABEL: Record<StatusKey, string> = {
@@ -45,6 +45,7 @@ const SEVERITY_BADGE: Record<SeverityKey, string> = {
 };
 
 const STATUS_FILTERS: Array<{ value: StatusFilter; label: string }> = [
+  { value: "unread", label: "Ny aktivitet" },
   { value: "open", label: "Inkommit" },
   { value: "triaged", label: "Sett" },
   { value: "in_progress", label: "På gång" },
@@ -129,9 +130,19 @@ export function AdminFeedbackClient({
                   <tr
                     key={tip.id}
                     onClick={() => setOpenTip(tip)}
-                    className="border-b border-border-light hover:bg-primary-light/40 cursor-pointer transition-colors"
+                    className={`border-b border-border-light cursor-pointer transition-colors ${
+                      tip.hasUnread
+                        ? "bg-accent-light hover:bg-accent-light/80"
+                        : "hover:bg-primary-light/40"
+                    }`}
                   >
-                    <td className="py-3 pr-3 text-xl" aria-label={tip.kind}>
+                    <td className="py-3 pr-3 text-xl relative" aria-label={tip.kind}>
+                      {tip.hasUnread && (
+                        <span
+                          className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full bg-accent"
+                          aria-label="Ny aktivitet"
+                        />
+                      )}
                       {tip.kind === "bug" ? "🐞" : "💡"}
                     </td>
                     <td className="py-3 pr-3">

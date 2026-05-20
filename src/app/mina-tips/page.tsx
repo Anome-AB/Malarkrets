@@ -114,7 +114,11 @@ export default async function MinaTipsPage() {
               <li key={tip.id}>
                 <Link
                   href={`/mina-tips/${tip.id}`}
-                  className="block rounded-card bg-white border border-border p-6 hover:border-primary hover:shadow-md transition-all"
+                  className={`block rounded-card bg-white border p-6 hover:shadow-md transition-all ${
+                    tip.hasUnread
+                      ? "border-accent shadow-sm hover:border-accent"
+                      : "border-border hover:border-primary"
+                  }`}
                 >
                   <div className="space-y-3">
                     <div className="flex items-start justify-between gap-3">
@@ -134,9 +138,17 @@ export default async function MinaTipsPage() {
                           </span>
                         )}
                       </div>
-                      <span className="text-xs text-secondary font-mono">
-                        {formatRelative(tip.lastActivityAt)}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {tip.hasUnread && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent text-white text-xs font-semibold">
+                            <span className="w-1.5 h-1.5 rounded-full bg-white" aria-hidden="true" />
+                            Nytt
+                          </span>
+                        )}
+                        <span className="text-xs text-secondary font-mono">
+                          {formatRelative(tip.lastActivityAt)}
+                        </span>
+                      </div>
                     </div>
 
                     <p className="text-heading whitespace-pre-wrap line-clamp-3">

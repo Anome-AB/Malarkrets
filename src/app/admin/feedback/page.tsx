@@ -51,7 +51,7 @@ export default async function AdminFeedbackPage({ searchParams }: PageProps) {
 
 function isStatus(
   s: string | undefined,
-): s is "open" | "triaged" | "in_progress" | "done" | "wont_fix" | "duplicate" | "all" {
+): s is "open" | "triaged" | "in_progress" | "done" | "wont_fix" | "duplicate" | "all" | "unread" {
   return (
     s === "open" ||
     s === "triaged" ||
@@ -59,7 +59,8 @@ function isStatus(
     s === "done" ||
     s === "wont_fix" ||
     s === "duplicate" ||
-    s === "all"
+    s === "all" ||
+    s === "unread"
   );
 }
 

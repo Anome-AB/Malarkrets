@@ -59,10 +59,16 @@ vi.mock("@/db/schema", () => ({
     createdAt: "created_at",
     id: "id",
   },
+  feedbackTipViews: {
+    userId: "user_id",
+    tipId: "tip_id",
+    lastViewedAt: "last_viewed_at",
+  },
   users: {
     id: "id",
     displayName: "display_name",
     isAdmin: "is_admin",
+    adminNotesAuthorId: "admin_notes_author_id",
   },
   images: { id: "id" },
 }));
@@ -130,7 +136,10 @@ describe("submitTip", () => {
   });
 
   it("sparar giltigt tips och returnerar id", async () => {
-    mockInsert.mockReturnValue(chain([{ id: "tip-123" }]));
+    // Två insert-anrop: först feedback_tips, sedan view-rad för rapportören
+    mockInsert
+      .mockReturnValueOnce(chain([{ id: "tip-123" }]))
+      .mockReturnValueOnce(chain([]));
 
     const result = await submitTip({
       kind: "idea",
@@ -143,16 +152,19 @@ describe("submitTip", () => {
 
     expect(result.success).toBe(true);
     expect(result.tipId).toBe("tip-123");
-    expect(mockInsert).toHaveBeenCalled();
+    expect(mockInsert).toHaveBeenCalledTimes(2);
   });
 
   it("trimmar whitespace runt description", async () => {
-    let insertedValues: Record<string, unknown> | undefined;
+    let firstInsertValues: Record<string, unknown> | undefined;
+    let callCount = 0;
     mockInsert.mockImplementation(() => {
       const chained = chain([{ id: "tip-x" }]);
+      const myCall = callCount++;
       (chained as unknown as { values: (v: Record<string, unknown>) => unknown }).values = vi.fn(
         (v: Record<string, unknown>) => {
-          insertedValues = v;
+          // Bara första insert (feedback_tips), inte den andra (view-raden)
+          if (myCall === 0) firstInsertValues = v;
           return chained;
         },
       );
@@ -164,7 +176,7 @@ describe("submitTip", () => {
       description: "   Knappen svarar inte när jag trycker   ",
     });
 
-    expect(insertedValues?.description).toBe("Knappen svarar inte när jag trycker");
+    expect(firstInsertValues?.description).toBe("Knappen svarar inte när jag trycker");
   });
 });
 
@@ -175,25 +187,43 @@ describe("getMyTips", () => {
   });
 
   it("returnerar bara den inloggade användarens egna tips med kommentar-count", async () => {
-    const myTips = [
+    const baseTime = new Date(2026, 4, 20, 10, 0, 0);
+    const tipRows = [
       {
         id: "tip-1",
         kind: "bug",
         status: "open",
         description: "x",
-        createdAt: new Date(),
+        createdAt: baseTime,
         adminNotes: null,
         resolvedAt: null,
-        lastActivityAt: new Date(),
+        lastActivityAt: baseTime,
+        adminNotesAuthorName: null,
+        // Sedan användaren submitat har de en view-rad efteråt
+        lastViewedAt: baseTime,
       },
     ];
     // Två select-anrop: först raderna, sedan counts. counts blir tomt här.
     mockSelect
-      .mockReturnValueOnce(chain(myTips))
+      .mockReturnValueOnce(chain(tipRows))
       .mockReturnValueOnce(chain([]));
 
     const result = await getMyTips();
-    expect(result).toEqual([{ ...myTips[0], commentCount: 0 }]);
+    expect(result).toEqual([
+      {
+        id: "tip-1",
+        kind: "bug",
+        status: "open",
+        description: "x",
+        createdAt: baseTime,
+        adminNotes: null,
+        resolvedAt: null,
+        lastActivityAt: baseTime,
+        adminNotesAuthorName: null,
+        commentCount: 0,
+        hasUnread: false,
+      },
+    ]);
     expect(mockRequireAuth).toHaveBeenCalled();
   });
 

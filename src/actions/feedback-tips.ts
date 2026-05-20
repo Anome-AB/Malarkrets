@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import {
   feedbackTips,
   feedbackTipComments,
+  feedbackTipViews,
   images,
   users,
   type FeedbackTip,
@@ -80,6 +81,13 @@ export async function submitTip(input: SubmitTipInput): Promise<SubmitTipResult>
         screenshotImageId: data.screenshotImageId,
       })
       .returning({ id: feedbackTips.id });
+
+    // Markera som "läst" för rapportören direkt så deras nyss-skickade
+    // tips inte visas som oläst i deras egen lista.
+    await db.insert(feedbackTipViews).values({
+      userId: user.id,
+      tipId: inserted.id,
+    });
 
     log.info("feedback tip submitted", {
       tipId: inserted.id,
@@ -164,6 +172,7 @@ export type MyTip = Pick<
 > & {
   commentCount: number;
   adminNotesAuthorName: string | null;
+  hasUnread: boolean;
 };
 
 export async function getMyTips(): Promise<MyTip[]> {
@@ -180,9 +189,17 @@ export async function getMyTips(): Promise<MyTip[]> {
       resolvedAt: feedbackTips.resolvedAt,
       lastActivityAt: feedbackTips.lastActivityAt,
       adminNotesAuthorName: users.displayName,
+      lastViewedAt: feedbackTipViews.lastViewedAt,
     })
     .from(feedbackTips)
     .leftJoin(users, eq(feedbackTips.adminNotesAuthorId, users.id))
+    .leftJoin(
+      feedbackTipViews,
+      and(
+        eq(feedbackTipViews.tipId, feedbackTips.id),
+        eq(feedbackTipViews.userId, user.id),
+      ),
+    )
     .where(eq(feedbackTips.reporterId, user.id))
     .orderBy(desc(feedbackTips.lastActivityAt));
 
@@ -203,7 +220,12 @@ export async function getMyTips(): Promise<MyTip[]> {
     .groupBy(feedbackTipComments.tipId);
 
   const countMap = new Map(counts.map((c) => [c.tipId, c.count]));
-  return rows.map((r) => ({ ...r, commentCount: countMap.get(r.id) ?? 0 }));
+  return rows.map(({ lastViewedAt, ...r }) => ({
+    ...r,
+    commentCount: countMap.get(r.id) ?? 0,
+    hasUnread:
+      lastViewedAt === null || r.lastActivityAt.getTime() > lastViewedAt.getTime(),
+  }));
 }
 
 // ─── Detalj + redigera + kommentera ────────────────────────────────────
@@ -234,6 +256,17 @@ export async function getMyTipDetail(tipId: string): Promise<MyTipDetail | null>
   });
 
   if (!tip) return null;
+
+  // Sidoeffekt: markera tipset som läst för rapportören just nu. Triggar
+  // revalidate på /mina-tips så badge:n släcks vid nästa besök på listan.
+  await db
+    .insert(feedbackTipViews)
+    .values({ userId: user.id, tipId: tip.id })
+    .onConflictDoUpdate({
+      target: [feedbackTipViews.userId, feedbackTipViews.tipId],
+      set: { lastViewedAt: new Date() },
+    });
+  revalidatePath("/mina-tips");
 
   let adminNotesAuthorName: string | null = null;
   if (tip.adminNotesAuthorId) {
@@ -268,6 +301,7 @@ export async function getMyTipDetail(tipId: string): Promise<MyTipDetail | null>
     lastActivityAt: tip.lastActivityAt,
     commentCount: comments.length,
     adminNotesAuthorName,
+    hasUnread: false, // markerades just som läst i sidoeffekten ovan
     canEdit: tip.status === "open",
     comments: comments.map((c) => ({
       ...c,

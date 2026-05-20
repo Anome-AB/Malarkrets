@@ -5,10 +5,11 @@ import { db } from "@/lib/db";
 import {
   feedbackTips,
   feedbackTipComments,
+  feedbackTipViews,
   users,
   type FeedbackTip,
 } from "@/db/schema";
-import { eq, desc, and, inArray, sql, type SQL } from "drizzle-orm";
+import { eq, desc, and, or, gt, isNull, inArray, sql, type SQL } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { log, errAttrs } from "@/lib/logger";
 import { z } from "zod";
@@ -146,24 +147,49 @@ export interface AdminTipRow extends FeedbackTip {
   reporterEmail: string | null;
   reporterDisplayName: string | null;
   commentCount: number;
+  hasUnread: boolean;
 }
 
+export type AdminStatusFilter =
+  | "open"
+  | "triaged"
+  | "in_progress"
+  | "done"
+  | "wont_fix"
+  | "duplicate"
+  | "all"
+  | "unread";
+
 export interface ListTipsFilters {
-  status?: "open" | "triaged" | "in_progress" | "done" | "wont_fix" | "duplicate" | "all";
+  status?: AdminStatusFilter;
   kind?: "bug" | "idea" | "all";
 }
 
 export async function listFeedbackTips(
   filters: ListTipsFilters = {},
 ): Promise<AdminTipRow[]> {
-  await requireAdmin();
+  const { user } = await requireAdmin();
 
   const whereClauses: SQL[] = [];
-  if (filters.status && filters.status !== "all") {
+  if (
+    filters.status &&
+    filters.status !== "all" &&
+    filters.status !== "unread"
+  ) {
     whereClauses.push(eq(feedbackTips.status, filters.status));
   }
   if (filters.kind && filters.kind !== "all") {
     whereClauses.push(eq(feedbackTips.kind, filters.kind));
+  }
+  if (filters.status === "unread") {
+    // Olästa: ingen view-rad alls för denna admin ELLER tipset har rörts
+    // sen senaste besöket.
+    whereClauses.push(
+      or(
+        isNull(feedbackTipViews.lastViewedAt),
+        gt(feedbackTips.lastActivityAt, feedbackTipViews.lastViewedAt),
+      )!,
+    );
   }
   const where = whereClauses.length > 0 ? and(...whereClauses) : undefined;
 
@@ -172,9 +198,17 @@ export async function listFeedbackTips(
       tip: feedbackTips,
       reporterEmail: users.email,
       reporterDisplayName: users.displayName,
+      lastViewedAt: feedbackTipViews.lastViewedAt,
     })
     .from(feedbackTips)
     .leftJoin(users, eq(feedbackTips.reporterId, users.id))
+    .leftJoin(
+      feedbackTipViews,
+      and(
+        eq(feedbackTipViews.tipId, feedbackTips.id),
+        eq(feedbackTipViews.userId, user.id),
+      ),
+    )
     .where(where)
     .orderBy(desc(feedbackTips.lastActivityAt));
 
@@ -201,20 +235,33 @@ export async function listFeedbackTips(
     reporterEmail: r.reporterEmail,
     reporterDisplayName: r.reporterDisplayName,
     commentCount: countMap.get(r.tip.id) ?? 0,
+    hasUnread:
+      r.lastViewedAt === null ||
+      r.tip.lastActivityAt.getTime() > r.lastViewedAt.getTime(),
   }));
 }
 
 // Laddas av admin-modalen on-demand när en rad öppnas. Snabbare än att
-// joina alla kommentarer i listan.
+// joina alla kommentarer i listan. Sidoeffekt: markerar tipset som läst
+// för adminens räkning, så badge:n släcks.
 export async function getTipCommentsForAdmin(
   tipId: string,
 ): Promise<TipComment[]> {
-  await requireAdmin();
+  const { user } = await requireAdmin();
 
   const tip = await db.query.feedbackTips.findFirst({
     where: eq(feedbackTips.id, tipId),
   });
   if (!tip) return [];
+
+  await db
+    .insert(feedbackTipViews)
+    .values({ userId: user.id, tipId })
+    .onConflictDoUpdate({
+      target: [feedbackTipViews.userId, feedbackTipViews.tipId],
+      set: { lastViewedAt: new Date() },
+    });
+  revalidatePath("/admin/feedback");
 
   const rows = await db
     .select({
