@@ -174,7 +174,7 @@ export function TipsaForm() {
                     type="text"
                     value={name}
                     onChange={(e) => updateName(i, e.target.value)}
-                    placeholder="T.ex. Yoga på stranden"
+                    placeholder="T.ex. Motorsport, Dans, Musik"
                     maxLength={60}
                     className="flex-1 rounded-control border border-border px-4 py-2.5 text-base text-heading bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
@@ -207,8 +207,9 @@ export function TipsaForm() {
               </button>
             )}
             <p className="text-xs text-secondary mt-3">
-              Föreslå ett eller flera intressen som du tycker borde finnas.
-              Admin tittar igenom och godkänner ett i taget.
+              Håll förslagen ganska generella (t.ex. Motorsport, Dans, Musik)
+              så att fler aktiviteter passar in. Admin tittar igenom och
+              godkänner ett i taget.
             </p>
           </Card>
 

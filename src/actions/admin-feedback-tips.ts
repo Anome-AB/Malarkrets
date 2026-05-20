@@ -325,7 +325,7 @@ export async function updateSuggestionName(
 }
 
 // Slugifierar svensk-vänligt: lowercase + å/ä → a, ö → o, övriga
-// non-alphanumeric → bindestreck, trim. "Yoga på stranden" → "yoga-pa-stranden".
+// non-alphanumeric → bindestreck, trim. "Motion & Träning" → "motion-traning".
 function slugifyInterest(name: string): string {
   return name
     .toLowerCase()
