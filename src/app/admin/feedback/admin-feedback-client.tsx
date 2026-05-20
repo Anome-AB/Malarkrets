@@ -26,11 +26,11 @@ type StatusFilter = StatusKey | "all" | "unread";
 type KindFilter = "bug" | "idea" | "interest" | "all";
 
 const STATUS_LABEL: Record<StatusKey, string> = {
-  open: "Inkommit",
-  triaged: "Vi har sett det",
-  in_progress: "På gång",
+  open: "Ny",
+  triaged: "Sett",
+  in_progress: "Accepterat",
   done: "Klart",
-  wont_fix: "Vi tar inte det här",
+  wont_fix: "Avslaget",
   duplicate: "Duplikat",
 };
 
@@ -50,13 +50,11 @@ const SEVERITY_BADGE: Record<SeverityKey, string> = {
 
 const STATUS_FILTERS: Array<{ value: StatusFilter; label: string }> = [
   { value: "unread", label: "Oläst" },
-  { value: "open", label: "Inkommit" },
+  { value: "open", label: "Ny" },
   { value: "triaged", label: "Sett" },
-  { value: "in_progress", label: "På gång" },
+  { value: "in_progress", label: "Accepterat" },
   { value: "done", label: "Klart" },
-  { value: "wont_fix", label: "Tar ej" },
-  { value: "duplicate", label: "Duplikat" },
-  { value: "all", label: "Alla" },
+  { value: "wont_fix", label: "Avslaget" },
 ];
 
 const KIND_FILTERS: Array<{ value: KindFilter; label: string }> = [
