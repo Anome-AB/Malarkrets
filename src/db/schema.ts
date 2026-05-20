@@ -429,11 +429,20 @@ export const feedbackTips = pgTable(
     resolvedBy: uuid("resolved_by").references(() => users.id, {
       onDelete: "set null",
     }),
-    lastActivityAt: timestamp("last_activity_at").defaultNow().notNull(),
-    lastReporterActivityAt: timestamp("last_reporter_activity_at")
+    // timestamptz för att JS Date och postgres now() ska bli konsekventa
+    // (se 0012-migrationen). Olast-comparisons sker mellan dessa och
+    // feedback_tip_views.last_viewed_at, måste vara samma format.
+    lastActivityAt: timestamp("last_activity_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
-    lastAdminActivityAt: timestamp("last_admin_activity_at"),
+    lastReporterActivityAt: timestamp("last_reporter_activity_at", {
+      withTimezone: true,
+    })
+      .defaultNow()
+      .notNull(),
+    lastAdminActivityAt: timestamp("last_admin_activity_at", {
+      withTimezone: true,
+    }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
@@ -464,7 +473,9 @@ export const feedbackTipViews = pgTable(
     tipId: uuid("tip_id")
       .notNull()
       .references(() => feedbackTips.id, { onDelete: "cascade" }),
-    lastViewedAt: timestamp("last_viewed_at").defaultNow().notNull(),
+    lastViewedAt: timestamp("last_viewed_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => [
     primaryKey({ columns: [table.userId, table.tipId] }),
