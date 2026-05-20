@@ -304,3 +304,44 @@ select {
   -moz-appearance: none;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23999999' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
 }
+
+/* Rich-text-rendering för aktivitetsbeskrivningar (RichTextEditor +
+   RichTextDisplay). Vi har inte @tailwindcss/typography, så vi stylar
+   bara de specifika taggar vi tillåter i sanitiseringen. */
+.rich-text-prose {
+  color: inherit;
+  line-height: 1.6;
+}
+.rich-text-prose p {
+  margin: 0 0 0.75rem 0;
+}
+.rich-text-prose p:last-child {
+  margin-bottom: 0;
+}
+.rich-text-prose strong {
+  font-weight: 600;
+}
+.rich-text-prose em {
+  font-style: italic;
+}
+.rich-text-prose ul {
+  list-style: disc;
+  margin: 0 0 0.75rem 0;
+  padding-left: 1.5rem;
+}
+.rich-text-prose li {
+  margin: 0.125rem 0;
+}
+.rich-text-prose li > p {
+  margin: 0;
+}
+
+/* TipTap-placeholder för tomma editorer. Visas via :before-pseudo med
+   data-placeholder från Placeholder-extensionens emptyEditorClass. */
+.rich-text-prose.is-editor-empty:first-child::before {
+  color: var(--color-dimmed);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
