@@ -15,9 +15,12 @@ type ModalProps = {
   title: string;
   children: React.ReactNode;
   size?: keyof typeof sizeStyles;
+  // Renders som en shrink-0 rad utanför scrollytan, alltid synlig längst
+  // ner i modalen. Lämna ut för modaler utan persistent action-rad.
+  footer?: React.ReactNode;
 };
 
-function Modal({ open, onClose, title, children, size = "md" }: ModalProps) {
+function Modal({ open, onClose, title, children, size = "md", footer }: ModalProps) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
@@ -128,7 +131,16 @@ function Modal({ open, onClose, title, children, size = "md" }: ModalProps) {
         </div>
 
         {/* Content */}
-        <div className="px-6 pb-6 overflow-y-auto">{children}</div>
+        <div className={`px-6 ${footer ? "" : "pb-6"} overflow-y-auto flex-1`}>
+          {children}
+        </div>
+
+        {/* Footer (alltid synlig, ligger utanför scrollytan) */}
+        {footer && (
+          <div className="px-6 py-3 border-t border-border bg-white shrink-0 rounded-b-card">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

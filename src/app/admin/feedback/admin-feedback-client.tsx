@@ -303,8 +303,35 @@ function TipDetailModal({ tip, onClose }: TipDetailModalProps) {
     tip.pageUrl || tip.userAgent || tip.viewportWidth || tip.appVersion;
 
   return (
-    <Modal open onClose={onClose} title="Tips från testare" size="xl">
-      <div className="space-y-5">
+    <Modal
+      open
+      onClose={onClose}
+      title="Tips från testare"
+      size="xl"
+      footer={
+        <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onClose}
+            size="compact"
+            disabled={saving}
+          >
+            Avbryt
+          </Button>
+          <Button
+            type="button"
+            size="compact"
+            onClick={handleSaveAll}
+            loading={saving}
+            disabled={!hasChanges}
+          >
+            Spara
+          </Button>
+        </div>
+      }
+    >
+      <div className="space-y-5 pb-6">
         <div className="flex flex-wrap items-center gap-3 text-sm text-secondary">
           <span className="text-2xl" aria-hidden="true">
             {tip.kind === "bug" ? "🐞" : "💡"}
@@ -473,26 +500,6 @@ function TipDetailModal({ tip, onClose }: TipDetailModalProps) {
           </div>
         </div>
 
-        <div className="sticky bottom-0 -mx-6 -mb-6 px-6 py-3 bg-white border-t border-border flex flex-col sm:flex-row gap-2 sm:justify-end">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={onClose}
-            size="compact"
-            disabled={saving}
-          >
-            Avbryt
-          </Button>
-          <Button
-            type="button"
-            size="compact"
-            onClick={handleSaveAll}
-            loading={saving}
-            disabled={!hasChanges}
-          >
-            Spara
-          </Button>
-        </div>
       </div>
     </Modal>
   );
