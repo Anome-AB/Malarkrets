@@ -4,13 +4,15 @@ import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
   feedbackTips,
+  feedbackTipComments,
   users,
   type FeedbackTip,
 } from "@/db/schema";
-import { eq, desc, and, type SQL } from "drizzle-orm";
+import { eq, desc, and, inArray, sql, type SQL } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { log, errAttrs } from "@/lib/logger";
 import { z } from "zod";
+import type { TipComment } from "./feedback-tips";
 
 const updateStatusSchema = z.object({
   tipId: z.string().uuid(),
@@ -135,6 +137,7 @@ export async function updateTipNotes(
 export interface AdminTipRow extends FeedbackTip {
   reporterEmail: string | null;
   reporterDisplayName: string | null;
+  commentCount: number;
 }
 
 export interface ListTipsFilters {
@@ -165,11 +168,63 @@ export async function listFeedbackTips(
     .from(feedbackTips)
     .leftJoin(users, eq(feedbackTips.reporterId, users.id))
     .where(where)
-    .orderBy(desc(feedbackTips.createdAt));
+    .orderBy(desc(feedbackTips.lastActivityAt));
+
+  if (rows.length === 0) return [];
+
+  const counts = await db
+    .select({
+      tipId: feedbackTipComments.tipId,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(feedbackTipComments)
+    .where(
+      inArray(
+        feedbackTipComments.tipId,
+        rows.map((r) => r.tip.id),
+      ),
+    )
+    .groupBy(feedbackTipComments.tipId);
+
+  const countMap = new Map(counts.map((c) => [c.tipId, c.count]));
 
   return rows.map((r) => ({
     ...r.tip,
     reporterEmail: r.reporterEmail,
     reporterDisplayName: r.reporterDisplayName,
+    commentCount: countMap.get(r.tip.id) ?? 0,
+  }));
+}
+
+// Laddas av admin-modalen on-demand när en rad öppnas. Snabbare än att
+// joina alla kommentarer i listan.
+export async function getTipCommentsForAdmin(
+  tipId: string,
+): Promise<TipComment[]> {
+  await requireAdmin();
+
+  const tip = await db.query.feedbackTips.findFirst({
+    where: eq(feedbackTips.id, tipId),
+  });
+  if (!tip) return [];
+
+  const rows = await db
+    .select({
+      id: feedbackTipComments.id,
+      body: feedbackTipComments.body,
+      createdAt: feedbackTipComments.createdAt,
+      authorId: feedbackTipComments.authorId,
+      authorDisplayName: users.displayName,
+      authorIsAdmin: users.isAdmin,
+    })
+    .from(feedbackTipComments)
+    .leftJoin(users, eq(feedbackTipComments.authorId, users.id))
+    .where(eq(feedbackTipComments.tipId, tipId))
+    .orderBy(feedbackTipComments.createdAt);
+
+  return rows.map((c) => ({
+    ...c,
+    authorIsAdmin: c.authorIsAdmin ?? false,
+    isReporter: c.authorId === tip.reporterId,
   }));
 }
