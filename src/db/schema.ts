@@ -441,6 +441,26 @@ export const feedbackTips = pgTable(
   ],
 );
 
+export const feedbackTipViews = pgTable(
+  "feedback_tip_views",
+  {
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tipId: uuid("tip_id")
+      .notNull()
+      .references(() => feedbackTips.id, { onDelete: "cascade" }),
+    lastViewedAt: timestamp("last_viewed_at").defaultNow().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.tipId] }),
+    index("feedback_tip_views_user_viewed_idx").on(
+      table.userId,
+      table.lastViewedAt,
+    ),
+  ],
+);
+
 export const feedbackTipComments = pgTable(
   "feedback_tip_comments",
   {
@@ -733,3 +753,6 @@ export type NewFeedbackTip = typeof feedbackTips.$inferInsert;
 
 export type FeedbackTipComment = typeof feedbackTipComments.$inferSelect;
 export type NewFeedbackTipComment = typeof feedbackTipComments.$inferInsert;
+
+export type FeedbackTipView = typeof feedbackTipViews.$inferSelect;
+export type NewFeedbackTipView = typeof feedbackTipViews.$inferInsert;
