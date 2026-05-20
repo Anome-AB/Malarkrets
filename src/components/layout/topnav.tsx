@@ -5,6 +5,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FeedLink } from "@/components/layout/feed-link";
 import { GuardedLink } from "@/components/layout/guarded-link";
 import { NotificationDropdown } from "@/components/notifications/notification-dropdown";
+import { FeedbackTipButton } from "@/components/layout/feedback-tip-button";
 import { logOut } from "@/actions/auth";
 
 interface TopNavProps {
@@ -36,6 +37,7 @@ export function TopNav({ unreadCount, userInitials, userAvatarUrl }: TopNavProps
       <FeedLink className="text-xl font-semibold">Mälarkrets</FeedLink>
 
       <div className="flex items-center gap-4">
+        <FeedbackTipButton />
         <NotificationDropdown initialUnreadCount={unreadCount} />
 
         {/* Avatar + dropdown menu */}

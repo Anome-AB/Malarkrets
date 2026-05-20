@@ -74,6 +74,33 @@ export const userTokenTypeEnum = pgEnum("user_token_type", [
   "reset_password",
 ]);
 
+export const feedbackKindEnum = pgEnum("feedback_kind", [
+  "bug",
+  "idea",
+  "interest",
+]);
+
+export const interestSuggestionStatusEnum = pgEnum(
+  "interest_suggestion_status",
+  ["pending", "approved", "rejected", "duplicate"],
+);
+
+export const feedbackSeverityEnum = pgEnum("feedback_severity", [
+  "blocker",
+  "high",
+  "medium",
+  "low",
+]);
+
+export const feedbackStatusEnum = pgEnum("feedback_status", [
+  "open",
+  "triaged",
+  "in_progress",
+  "done",
+  "wont_fix",
+  "duplicate",
+]);
+
 // ─── Custom types ───────────────────────────────────────────────────────────
 
 const bytea = customType<{ data: Buffer; driverData: Buffer }>({
@@ -378,6 +405,140 @@ export const adminActions = pgTable(
   ],
 );
 
+export const feedbackTips = pgTable(
+  "feedback_tips",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    reporterId: uuid("reporter_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    kind: feedbackKindEnum().notNull(),
+    severity: feedbackSeverityEnum().default("medium").notNull(),
+    status: feedbackStatusEnum().default("open").notNull(),
+    description: text().notNull(),
+    pageUrl: text("page_url"),
+    userAgent: text("user_agent"),
+    viewportWidth: integer("viewport_width"),
+    viewportHeight: integer("viewport_height"),
+    consoleLog: text("console_log"),
+    appVersion: text("app_version"),
+    screenshotImageId: uuid("screenshot_image_id").references(() => images.id, {
+      onDelete: "set null",
+    }),
+    resolvedAt: timestamp("resolved_at"),
+    resolvedBy: uuid("resolved_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    // timestamptz för att JS Date och postgres now() ska bli konsekventa
+    // (se 0012-migrationen). Olast-comparisons sker mellan dessa och
+    // feedback_tip_views.last_viewed_at, måste vara samma format.
+    lastActivityAt: timestamp("last_activity_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    lastReporterActivityAt: timestamp("last_reporter_activity_at", {
+      withTimezone: true,
+    })
+      .defaultNow()
+      .notNull(),
+    lastAdminActivityAt: timestamp("last_admin_activity_at", {
+      withTimezone: true,
+    }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("feedback_tips_status_created_idx").on(table.status, table.createdAt),
+    index("feedback_tips_reporter_idx").on(table.reporterId, table.createdAt),
+    index("feedback_tips_severity_status_idx").on(
+      table.severity,
+      table.status,
+    ),
+    index("feedback_tips_kind_status_idx").on(table.kind, table.status),
+    index("feedback_tips_last_activity_idx").on(table.lastActivityAt),
+    index("feedback_tips_last_reporter_activity_idx").on(
+      table.lastReporterActivityAt,
+    ),
+    index("feedback_tips_last_admin_activity_idx").on(
+      table.lastAdminActivityAt,
+    ),
+  ],
+);
+
+export const feedbackTipViews = pgTable(
+  "feedback_tip_views",
+  {
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tipId: uuid("tip_id")
+      .notNull()
+      .references(() => feedbackTips.id, { onDelete: "cascade" }),
+    lastViewedAt: timestamp("last_viewed_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.tipId] }),
+    index("feedback_tip_views_user_viewed_idx").on(
+      table.userId,
+      table.lastViewedAt,
+    ),
+  ],
+);
+
+export const feedbackTipInterestSuggestions = pgTable(
+  "feedback_tip_interest_suggestions",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    tipId: uuid("tip_id")
+      .notNull()
+      .references(() => feedbackTips.id, { onDelete: "cascade" }),
+    name: text().notNull(),
+    status: interestSuggestionStatusEnum().default("pending").notNull(),
+    approvedAsTagId: integer("approved_as_tag_id").references(
+      () => interestTags.id,
+      { onDelete: "set null" },
+    ),
+    decidedAt: timestamp("decided_at"),
+    decidedBy: uuid("decided_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    decisionReason: text("decision_reason"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("feedback_tip_interest_suggestions_tip_idx").on(
+      table.tipId,
+      table.createdAt,
+    ),
+    index("feedback_tip_interest_suggestions_status_idx").on(
+      table.status,
+      table.createdAt,
+    ),
+  ],
+);
+
+export const feedbackTipComments = pgTable(
+  "feedback_tip_comments",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    tipId: uuid("tip_id")
+      .notNull()
+      .references(() => feedbackTips.id, { onDelete: "cascade" }),
+    authorId: uuid("author_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    body: text().notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("feedback_tip_comments_tip_created_idx").on(
+      table.tipId,
+      table.createdAt,
+    ),
+  ],
+);
+
 export const analyticsEvents = pgTable(
   "analytics_events",
   {
@@ -544,6 +705,53 @@ export const analyticsEventsRelations = relations(
   }),
 );
 
+export const feedbackTipsRelations = relations(feedbackTips, ({ one, many }) => ({
+  reporter: one(users, {
+    fields: [feedbackTips.reporterId],
+    references: [users.id],
+    relationName: "feedbackTipsReporter",
+  }),
+  resolver: one(users, {
+    fields: [feedbackTips.resolvedBy],
+    references: [users.id],
+    relationName: "feedbackTipsResolver",
+  }),
+  screenshot: one(images, {
+    fields: [feedbackTips.screenshotImageId],
+    references: [images.id],
+  }),
+  comments: many(feedbackTipComments),
+  interestSuggestions: many(feedbackTipInterestSuggestions),
+}));
+
+export const feedbackTipInterestSuggestionsRelations = relations(
+  feedbackTipInterestSuggestions,
+  ({ one }) => ({
+    tip: one(feedbackTips, {
+      fields: [feedbackTipInterestSuggestions.tipId],
+      references: [feedbackTips.id],
+    }),
+    approvedAsTag: one(interestTags, {
+      fields: [feedbackTipInterestSuggestions.approvedAsTagId],
+      references: [interestTags.id],
+    }),
+  }),
+);
+
+export const feedbackTipCommentsRelations = relations(
+  feedbackTipComments,
+  ({ one }) => ({
+    tip: one(feedbackTips, {
+      fields: [feedbackTipComments.tipId],
+      references: [feedbackTips.id],
+    }),
+    author: one(users, {
+      fields: [feedbackTipComments.authorId],
+      references: [users.id],
+    }),
+  }),
+);
+
 export const adminActionsRelations = relations(adminActions, ({ one }) => ({
   admin: one(users, {
     fields: [adminActions.adminId],
@@ -611,3 +819,17 @@ export type NewImage = typeof images.$inferInsert;
 
 export type UserToken = typeof userTokens.$inferSelect;
 export type NewUserToken = typeof userTokens.$inferInsert;
+
+export type FeedbackTip = typeof feedbackTips.$inferSelect;
+export type NewFeedbackTip = typeof feedbackTips.$inferInsert;
+
+export type FeedbackTipComment = typeof feedbackTipComments.$inferSelect;
+export type NewFeedbackTipComment = typeof feedbackTipComments.$inferInsert;
+
+export type FeedbackTipInterestSuggestion =
+  typeof feedbackTipInterestSuggestions.$inferSelect;
+export type NewFeedbackTipInterestSuggestion =
+  typeof feedbackTipInterestSuggestions.$inferInsert;
+
+export type FeedbackTipView = typeof feedbackTipViews.$inferSelect;
+export type NewFeedbackTipView = typeof feedbackTipViews.$inferInsert;
