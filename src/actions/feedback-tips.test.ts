@@ -102,6 +102,8 @@ function chain(terminal: unknown) {
     "set",
     "leftJoin",
     "innerJoin",
+    "onConflictDoUpdate",
+    "onConflictDoNothing",
   ];
   for (const m of methods) {
     (promise as unknown as Record<string, unknown>)[m] = vi.fn(() => promise);
@@ -203,7 +205,8 @@ describe("getMyTips", () => {
         createdAt: baseTime,
         resolvedAt: null,
         lastActivityAt: baseTime,
-        // Sedan användaren submitat har de en view-rad efteråt
+        // Ingen admin-aktivitet ännu → ska inte vara oläst
+        lastAdminActivityAt: null,
         lastViewedAt: baseTime,
       },
     ];
@@ -226,6 +229,30 @@ describe("getMyTips", () => {
       },
     ]);
     expect(mockRequireAuth).toHaveBeenCalled();
+  });
+
+  it("markerar som oläst när admin har gjort något efter senaste view", async () => {
+    const baseTime = new Date(2026, 4, 20, 10, 0, 0);
+    const adminLater = new Date(2026, 4, 20, 11, 0, 0);
+    const tipRows = [
+      {
+        id: "tip-2",
+        kind: "bug",
+        status: "open",
+        description: "y",
+        createdAt: baseTime,
+        resolvedAt: null,
+        lastActivityAt: adminLater,
+        lastAdminActivityAt: adminLater,
+        lastViewedAt: baseTime,
+      },
+    ];
+    mockSelect
+      .mockReturnValueOnce(chain(tipRows))
+      .mockReturnValueOnce(chain([]));
+
+    const result = await getMyTips();
+    expect(result[0].hasUnread).toBe(true);
   });
 
   it("returnerar tom lista utan att fråga om counts", async () => {
@@ -345,6 +372,7 @@ describe("addTipComment", () => {
     mockFindTip.mockResolvedValue({ id: "tip-1", reporterId: "user-1" });
     mockFindUser.mockResolvedValue({ id: "user-1", isAdmin: false });
     mockInsert.mockReturnValue(chain([]));
+    mockUpdate.mockReturnValue(chain([]));
     const result = await addTipComment({
       tipId: VALID_UUID,
       body: "Här är mer info",
@@ -357,6 +385,7 @@ describe("addTipComment", () => {
     mockFindTip.mockResolvedValue({ id: "tip-1", reporterId: "user-other" });
     mockFindUser.mockResolvedValue({ id: "user-1", isAdmin: true });
     mockInsert.mockReturnValue(chain([]));
+    mockUpdate.mockReturnValue(chain([]));
     const result = await addTipComment({
       tipId: VALID_UUID,
       body: "Vi tittar på det",

@@ -243,6 +243,7 @@ export async function getMyTips(): Promise<MyTip[]> {
       createdAt: feedbackTips.createdAt,
       resolvedAt: feedbackTips.resolvedAt,
       lastActivityAt: feedbackTips.lastActivityAt,
+      lastAdminActivityAt: feedbackTips.lastAdminActivityAt,
       lastViewedAt: feedbackTipViews.lastViewedAt,
     })
     .from(feedbackTips)
@@ -273,11 +274,15 @@ export async function getMyTips(): Promise<MyTip[]> {
     .groupBy(feedbackTipComments.tipId);
 
   const countMap = new Map(counts.map((c) => [c.tipId, c.count]));
-  return rows.map(({ lastViewedAt, ...r }) => ({
+  return rows.map(({ lastViewedAt, lastAdminActivityAt, ...r }) => ({
     ...r,
     commentCount: countMap.get(r.id) ?? 0,
+    // Rapportören ser "Nytt" när en admin har gjort något hen inte sett.
+    // Egen aktivitet räknas inte, det vore brus.
     hasUnread:
-      lastViewedAt === null || r.lastActivityAt.getTime() > lastViewedAt.getTime(),
+      lastAdminActivityAt !== null &&
+      (lastViewedAt === null ||
+        lastAdminActivityAt.getTime() > lastViewedAt.getTime()),
   }));
 }
 
@@ -427,13 +432,15 @@ export async function editMyTip(
       };
     }
 
+    const now = new Date();
     await db
       .update(feedbackTips)
       .set({
         kind: parsed.data.kind,
         description: parsed.data.description.trim(),
-        updatedAt: new Date(),
-        lastActivityAt: new Date(),
+        updatedAt: now,
+        lastActivityAt: now,
+        lastReporterActivityAt: now,
       })
       .where(eq(feedbackTips.id, parsed.data.tipId));
 
@@ -494,11 +501,33 @@ export async function addTipComment(
       return { success: false, error: "Du har inte tillgång till det här tipset" };
     }
 
+    const now = new Date();
     await db.insert(feedbackTipComments).values({
       tipId: parsed.data.tipId,
       authorId: user.id,
       body: parsed.data.body.trim(),
     });
+
+    // Rollspecifik bump: admins kommentarer triggar bara unread-signal
+    // för rapportören, inte för andra admins. Och vice versa.
+    await db
+      .update(feedbackTips)
+      .set(
+        isAdmin
+          ? { lastAdminActivityAt: now, updatedAt: now }
+          : { lastReporterActivityAt: now, updatedAt: now },
+      )
+      .where(eq(feedbackTips.id, parsed.data.tipId));
+
+    // Markera kommentatorn själv som "läst" så deras egna inlägg inte
+    // visas som oläst på deras eget kort.
+    await db
+      .insert(feedbackTipViews)
+      .values({ userId: user.id, tipId: parsed.data.tipId })
+      .onConflictDoUpdate({
+        target: [feedbackTipViews.userId, feedbackTipViews.tipId],
+        set: { lastViewedAt: now },
+      });
 
     log.info("feedback tip comment added", {
       tipId: parsed.data.tipId,

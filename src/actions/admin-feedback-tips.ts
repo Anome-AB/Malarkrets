@@ -60,13 +60,15 @@ export async function updateTipStatus(
     const { tipId, status } = parsed.data;
     const isFinal = FINAL_STATUSES.has(status);
 
+    const now = new Date();
     await db
       .update(feedbackTips)
       .set({
         status,
-        resolvedAt: isFinal ? new Date() : null,
+        resolvedAt: isFinal ? now : null,
         resolvedBy: isFinal ? user.id : null,
-        updatedAt: new Date(),
+        updatedAt: now,
+        lastAdminActivityAt: now,
       })
       .where(eq(feedbackTips.id, tipId));
 
@@ -95,9 +97,14 @@ export async function updateTipSeverity(
       return { success: false, error: "Ogiltig severity" };
     }
 
+    const now = new Date();
     await db
       .update(feedbackTips)
-      .set({ severity: parsed.data.severity, updatedAt: new Date() })
+      .set({
+        severity: parsed.data.severity,
+        updatedAt: now,
+        lastAdminActivityAt: now,
+      })
       .where(eq(feedbackTips.id, parsed.data.tipId));
 
     revalidatePath("/admin/feedback");
@@ -148,12 +155,16 @@ export async function listFeedbackTips(
     whereClauses.push(eq(feedbackTips.kind, filters.kind));
   }
   if (filters.status === "unread") {
-    // Olästa: ingen view-rad alls för denna admin ELLER tipset har rörts
-    // sen senaste besöket.
+    // Olästa för en admin: rapportören har gjort något (kommentar, edit
+    // eller helt ny tip) som adminen inte sett. Andra admins aktivitet
+    // räknas inte, det är brus.
     whereClauses.push(
       or(
         isNull(feedbackTipViews.lastViewedAt),
-        gt(feedbackTips.lastActivityAt, feedbackTipViews.lastViewedAt),
+        gt(
+          feedbackTips.lastReporterActivityAt,
+          feedbackTipViews.lastViewedAt,
+        ),
       )!,
     );
   }
@@ -201,9 +212,11 @@ export async function listFeedbackTips(
     reporterEmail: r.reporterEmail,
     reporterDisplayName: r.reporterDisplayName,
     commentCount: countMap.get(r.tip.id) ?? 0,
+    // Admin ser "oläst" enbart när rapportören gjort något. Andra admins
+    // svar bumpar bara last_admin_activity_at, vilket vi ignorerar här.
     hasUnread:
       r.lastViewedAt === null ||
-      r.tip.lastActivityAt.getTime() > r.lastViewedAt.getTime(),
+      r.tip.lastReporterActivityAt.getTime() > r.lastViewedAt.getTime(),
   }));
 }
 
@@ -380,15 +393,22 @@ export async function approveInterestSuggestion(
       tagId = existing.id;
     }
 
+    const now = new Date();
     await db
       .update(feedbackTipInterestSuggestions)
       .set({
         status: wasNew ? "approved" : "duplicate",
         approvedAsTagId: tagId,
-        decidedAt: new Date(),
+        decidedAt: now,
         decidedBy: user.id,
       })
       .where(eq(feedbackTipInterestSuggestions.id, parsed.data.suggestionId));
+
+    // Bump admin-aktivitet på parent-tipset så rapportören får oläst-signal.
+    await db
+      .update(feedbackTips)
+      .set({ lastAdminActivityAt: now, updatedAt: now })
+      .where(eq(feedbackTips.id, suggestion.tipId));
 
     // Lägg automatiskt till taggen i rapportörens egna intressen, så de
     // ser den direkt nästa gång de filtrerar. user_interests har composite
@@ -434,15 +454,24 @@ export async function rejectInterestSuggestion(
       return { success: false, error: "Ogiltigt förslag" };
     }
 
-    await db
+    const now = new Date();
+    const updated = await db
       .update(feedbackTipInterestSuggestions)
       .set({
         status: "rejected",
         decisionReason: parsed.data.reason ?? null,
-        decidedAt: new Date(),
+        decidedAt: now,
         decidedBy: user.id,
       })
-      .where(eq(feedbackTipInterestSuggestions.id, parsed.data.suggestionId));
+      .where(eq(feedbackTipInterestSuggestions.id, parsed.data.suggestionId))
+      .returning({ tipId: feedbackTipInterestSuggestions.tipId });
+
+    if (updated[0]) {
+      await db
+        .update(feedbackTips)
+        .set({ lastAdminActivityAt: now, updatedAt: now })
+        .where(eq(feedbackTips.id, updated[0].tipId));
+    }
 
     revalidatePath("/admin/feedback");
     revalidatePath("/mina-tips");
