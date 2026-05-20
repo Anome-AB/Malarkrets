@@ -74,6 +74,24 @@ export const userTokenTypeEnum = pgEnum("user_token_type", [
   "reset_password",
 ]);
 
+export const feedbackKindEnum = pgEnum("feedback_kind", ["bug", "idea"]);
+
+export const feedbackSeverityEnum = pgEnum("feedback_severity", [
+  "blocker",
+  "high",
+  "medium",
+  "low",
+]);
+
+export const feedbackStatusEnum = pgEnum("feedback_status", [
+  "open",
+  "triaged",
+  "in_progress",
+  "done",
+  "wont_fix",
+  "duplicate",
+]);
+
 // ─── Custom types ───────────────────────────────────────────────────────────
 
 const bytea = customType<{ data: Buffer; driverData: Buffer }>({
@@ -378,6 +396,45 @@ export const adminActions = pgTable(
   ],
 );
 
+export const feedbackTips = pgTable(
+  "feedback_tips",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    reporterId: uuid("reporter_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    kind: feedbackKindEnum().notNull(),
+    severity: feedbackSeverityEnum().default("medium").notNull(),
+    status: feedbackStatusEnum().default("open").notNull(),
+    description: text().notNull(),
+    pageUrl: text("page_url"),
+    userAgent: text("user_agent"),
+    viewportWidth: integer("viewport_width"),
+    viewportHeight: integer("viewport_height"),
+    consoleLog: text("console_log"),
+    appVersion: text("app_version"),
+    screenshotImageId: uuid("screenshot_image_id").references(() => images.id, {
+      onDelete: "set null",
+    }),
+    adminNotes: text("admin_notes"),
+    resolvedAt: timestamp("resolved_at"),
+    resolvedBy: uuid("resolved_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("feedback_tips_status_created_idx").on(table.status, table.createdAt),
+    index("feedback_tips_reporter_idx").on(table.reporterId, table.createdAt),
+    index("feedback_tips_severity_status_idx").on(
+      table.severity,
+      table.status,
+    ),
+    index("feedback_tips_kind_status_idx").on(table.kind, table.status),
+  ],
+);
+
 export const analyticsEvents = pgTable(
   "analytics_events",
   {
@@ -544,6 +601,23 @@ export const analyticsEventsRelations = relations(
   }),
 );
 
+export const feedbackTipsRelations = relations(feedbackTips, ({ one }) => ({
+  reporter: one(users, {
+    fields: [feedbackTips.reporterId],
+    references: [users.id],
+    relationName: "feedbackTipsReporter",
+  }),
+  resolver: one(users, {
+    fields: [feedbackTips.resolvedBy],
+    references: [users.id],
+    relationName: "feedbackTipsResolver",
+  }),
+  screenshot: one(images, {
+    fields: [feedbackTips.screenshotImageId],
+    references: [images.id],
+  }),
+}));
+
 export const adminActionsRelations = relations(adminActions, ({ one }) => ({
   admin: one(users, {
     fields: [adminActions.adminId],
@@ -611,3 +685,6 @@ export type NewImage = typeof images.$inferInsert;
 
 export type UserToken = typeof userTokens.$inferSelect;
 export type NewUserToken = typeof userTokens.$inferInsert;
+
+export type FeedbackTip = typeof feedbackTips.$inferSelect;
+export type NewFeedbackTip = typeof feedbackTips.$inferInsert;

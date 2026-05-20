@@ -36,6 +36,13 @@
 			"when": 1778544000000,
 			"tag": "0004_add_motion_traning_tag",
 			"breakpoints": true
+		},
+		{
+			"idx": 5,
+			"version": "7",
+			"when": 1779494400000,
+			"tag": "0005_feedback_tips",
+			"breakpoints": true
 		}
 	]
 }
