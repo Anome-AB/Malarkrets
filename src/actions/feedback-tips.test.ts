@@ -8,16 +8,34 @@ vi.mock("@/lib/auth", () => ({
 const mockInsert = vi.fn();
 const mockSelect = vi.fn();
 
+vi.mock("drizzle-orm", () => ({
+  eq: vi.fn((...args: unknown[]) => args),
+  desc: vi.fn((arg: unknown) => arg),
+  and: vi.fn((...args: unknown[]) => args),
+  inArray: vi.fn((...args: unknown[]) => args),
+  sql: Object.assign(vi.fn((...args: unknown[]) => args), {
+    join: vi.fn((...args: unknown[]) => args),
+  }),
+}));
+
+const mockFindTip = vi.fn();
+const mockFindUser = vi.fn();
+const mockUpdate = vi.fn();
+
 vi.mock("@/lib/db", () => ({
   db: {
     insert: (...args: unknown[]) => mockInsert(...args),
     select: (...args: unknown[]) => mockSelect(...args),
+    update: (...args: unknown[]) => mockUpdate(...args),
+    query: {
+      feedbackTips: {
+        findFirst: (...args: unknown[]) => mockFindTip(...args),
+      },
+      users: {
+        findFirst: (...args: unknown[]) => mockFindUser(...args),
+      },
+    },
   },
-}));
-
-vi.mock("drizzle-orm", () => ({
-  eq: vi.fn((...args: unknown[]) => args),
-  desc: vi.fn((arg: unknown) => arg),
 }));
 
 vi.mock("@/db/schema", () => ({
@@ -31,6 +49,20 @@ vi.mock("@/db/schema", () => ({
     createdAt: "created_at",
     adminNotes: "admin_notes",
     resolvedAt: "resolved_at",
+    lastActivityAt: "last_activity_at",
+    updatedAt: "updated_at",
+  },
+  feedbackTipComments: {
+    tipId: "tip_id",
+    authorId: "author_id",
+    body: "body",
+    createdAt: "created_at",
+    id: "id",
+  },
+  users: {
+    id: "id",
+    displayName: "display_name",
+    isAdmin: "is_admin",
   },
   images: { id: "id" },
 }));
@@ -44,7 +76,7 @@ vi.mock("@/lib/logger", () => ({
   errAttrs: vi.fn((err: unknown) => ({ err })),
 }));
 
-import { submitTip, getMyTips } from "./feedback-tips";
+import { submitTip, getMyTips, editMyTip, addTipComment } from "./feedback-tips";
 
 function chain(terminal: unknown) {
   const promise = Promise.resolve(terminal);
@@ -54,12 +86,18 @@ function chain(terminal: unknown) {
     "from",
     "where",
     "orderBy",
+    "groupBy",
+    "set",
+    "leftJoin",
+    "innerJoin",
   ];
   for (const m of methods) {
     (promise as unknown as Record<string, unknown>)[m] = vi.fn(() => promise);
   }
   return promise;
 }
+
+const VALID_UUID = "10000000-0000-4000-8000-000000000001";
 
 describe("submitTip", () => {
   beforeEach(() => {
@@ -136,14 +174,136 @@ describe("getMyTips", () => {
     mockRequireAuth.mockResolvedValue({ id: "user-1", email: "tester@example.com" });
   });
 
-  it("returnerar bara den inloggade användarens egna tips", async () => {
+  it("returnerar bara den inloggade användarens egna tips med kommentar-count", async () => {
     const myTips = [
-      { id: "tip-1", kind: "bug", status: "open", description: "x", createdAt: new Date(), adminNotes: null, resolvedAt: null },
+      {
+        id: "tip-1",
+        kind: "bug",
+        status: "open",
+        description: "x",
+        createdAt: new Date(),
+        adminNotes: null,
+        resolvedAt: null,
+        lastActivityAt: new Date(),
+      },
     ];
-    mockSelect.mockReturnValue(chain(myTips));
+    // Två select-anrop: först raderna, sedan counts. counts blir tomt här.
+    mockSelect
+      .mockReturnValueOnce(chain(myTips))
+      .mockReturnValueOnce(chain([]));
 
     const result = await getMyTips();
-    expect(result).toEqual(myTips);
+    expect(result).toEqual([{ ...myTips[0], commentCount: 0 }]);
     expect(mockRequireAuth).toHaveBeenCalled();
+  });
+
+  it("returnerar tom lista utan att fråga om counts", async () => {
+    mockSelect.mockReturnValueOnce(chain([]));
+    const result = await getMyTips();
+    expect(result).toEqual([]);
+    // Andra anropet (counts) ska aldrig göras
+    expect(mockSelect).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("editMyTip", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockRequireAuth.mockResolvedValue({ id: "user-1", email: "tester@example.com" });
+  });
+
+  it("avvisar redigering om tipset inte tillhör användaren", async () => {
+    mockFindTip.mockResolvedValue({
+      id: "tip-1",
+      reporterId: "user-other",
+      status: "open",
+    });
+    const result = await editMyTip({
+      tipId: VALID_UUID,
+      kind: "bug",
+      description: "En tillräckligt lång beskrivning för validering",
+    });
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/dina egna/);
+  });
+
+  it("avvisar redigering om status inte längre är open", async () => {
+    mockFindTip.mockResolvedValue({
+      id: "tip-1",
+      reporterId: "user-1",
+      status: "triaged",
+    });
+    const result = await editMyTip({
+      tipId: VALID_UUID,
+      kind: "bug",
+      description: "En tillräckligt lång beskrivning för validering",
+    });
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/hanteras/);
+  });
+
+  it("uppdaterar tipset när allt stämmer", async () => {
+    mockFindTip.mockResolvedValue({
+      id: "tip-1",
+      reporterId: "user-1",
+      status: "open",
+    });
+    mockUpdate.mockReturnValue(chain([]));
+    const result = await editMyTip({
+      tipId: VALID_UUID,
+      kind: "idea",
+      description: "En tillräckligt lång beskrivning för validering",
+    });
+    expect(result.success).toBe(true);
+    expect(mockUpdate).toHaveBeenCalled();
+  });
+});
+
+describe("addTipComment", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockRequireAuth.mockResolvedValue({ id: "user-1", email: "tester@example.com" });
+  });
+
+  it("släpper in rapportören att svara på sitt eget tips", async () => {
+    mockFindTip.mockResolvedValue({ id: "tip-1", reporterId: "user-1" });
+    mockFindUser.mockResolvedValue({ id: "user-1", isAdmin: false });
+    mockInsert.mockReturnValue(chain([]));
+    const result = await addTipComment({
+      tipId: VALID_UUID,
+      body: "Här är mer info",
+    });
+    expect(result.success).toBe(true);
+    expect(mockInsert).toHaveBeenCalled();
+  });
+
+  it("släpper in en admin även om hen inte är rapportören", async () => {
+    mockFindTip.mockResolvedValue({ id: "tip-1", reporterId: "user-other" });
+    mockFindUser.mockResolvedValue({ id: "user-1", isAdmin: true });
+    mockInsert.mockReturnValue(chain([]));
+    const result = await addTipComment({
+      tipId: VALID_UUID,
+      body: "Vi tittar på det",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("nekar tredje part som varken är rapportören eller admin", async () => {
+    mockFindTip.mockResolvedValue({ id: "tip-1", reporterId: "user-other" });
+    mockFindUser.mockResolvedValue({ id: "user-1", isAdmin: false });
+    const result = await addTipComment({
+      tipId: VALID_UUID,
+      body: "Försöker tjuvlyssna",
+    });
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/tillgång/);
+  });
+
+  it("avvisar tom kommentar", async () => {
+    const result = await addTipComment({
+      tipId: VALID_UUID,
+      body: "",
+    });
+    expect(result.success).toBe(false);
   });
 });
