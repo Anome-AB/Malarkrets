@@ -6,7 +6,9 @@ import {
   feedbackTips,
   feedbackTipComments,
   feedbackTipViews,
+  feedbackTipInterestSuggestions,
   images,
+  interestTags,
   users,
   type FeedbackTip,
 } from "@/db/schema";
@@ -29,20 +31,44 @@ const MAX_DESCRIPTION_CHARS = 8000;
 const MAX_SCREENSHOT_BYTES = 4 * 1024 * 1024;
 const ALLOWED_SCREENSHOT_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
-const submitTipSchema = z.object({
-  kind: z.enum(["bug", "idea"]),
-  description: z
-    .string()
-    .min(10, "Berätta lite mer, minst 10 tecken")
-    .max(MAX_DESCRIPTION_CHARS, "Beskrivningen är för lång"),
-  pageUrl: z.string().max(2048).optional(),
-  userAgent: z.string().max(1024).optional(),
-  viewportWidth: z.number().int().min(0).max(20000).optional(),
-  viewportHeight: z.number().int().min(0).max(20000).optional(),
-  consoleLog: z.string().max(MAX_CONSOLE_LOG_BYTES).optional(),
-  appVersion: z.string().max(64).optional(),
-  screenshotImageId: z.string().uuid().optional(),
-});
+const MAX_INTEREST_NAME_CHARS = 60;
+const MAX_INTEREST_NAMES = 10;
+
+const submitTipSchema = z
+  .object({
+    kind: z.enum(["bug", "idea", "interest"]),
+    description: z.string().max(MAX_DESCRIPTION_CHARS).default(""),
+    interestNames: z
+      .array(z.string().trim().min(2).max(MAX_INTEREST_NAME_CHARS))
+      .max(MAX_INTEREST_NAMES)
+      .optional(),
+    pageUrl: z.string().max(2048).optional(),
+    userAgent: z.string().max(1024).optional(),
+    viewportWidth: z.number().int().min(0).max(20000).optional(),
+    viewportHeight: z.number().int().min(0).max(20000).optional(),
+    consoleLog: z.string().max(MAX_CONSOLE_LOG_BYTES).optional(),
+    appVersion: z.string().max(64).optional(),
+    screenshotImageId: z.string().uuid().optional(),
+  })
+  .superRefine((d, ctx) => {
+    if (d.kind === "interest") {
+      const names = d.interestNames ?? [];
+      const cleaned = names.map((n) => n.trim()).filter((n) => n.length > 0);
+      if (cleaned.length === 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Föreslå minst ett intresse",
+          path: ["interestNames"],
+        });
+      }
+    } else if (d.description.trim().length < 10) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Berätta lite mer, minst 10 tecken",
+        path: ["description"],
+      });
+    }
+  });
 
 export type SubmitTipInput = z.infer<typeof submitTipSchema>;
 
@@ -81,6 +107,18 @@ export async function submitTip(input: SubmitTipInput): Promise<SubmitTipResult>
         screenshotImageId: data.screenshotImageId,
       })
       .returning({ id: feedbackTips.id });
+
+    // För kind=interest: lägg in en suggestion-rad per föreslaget intresse.
+    if (data.kind === "interest" && data.interestNames) {
+      const cleaned = data.interestNames
+        .map((n) => n.trim())
+        .filter((n) => n.length > 0);
+      if (cleaned.length > 0) {
+        await db.insert(feedbackTipInterestSuggestions).values(
+          cleaned.map((name) => ({ tipId: inserted.id, name })),
+        );
+      }
+    }
 
     // Markera som "läst" för rapportören direkt så deras nyss-skickade
     // tips inte visas som oläst i deras egen lista.
@@ -235,8 +273,19 @@ export interface TipComment {
   isReporter: boolean;
 }
 
+export interface InterestSuggestionItem {
+  id: string;
+  name: string;
+  status: "pending" | "approved" | "rejected" | "duplicate";
+  decisionReason: string | null;
+  decidedAt: Date | null;
+  approvedAsTagId: number | null;
+  approvedAsTagName: string | null;
+}
+
 export interface MyTipDetail extends MyTip {
   comments: TipComment[];
+  interestSuggestions: InterestSuggestionItem[];
   canEdit: boolean;
 }
 
@@ -277,6 +326,27 @@ export async function getMyTipDetail(tipId: string): Promise<MyTipDetail | null>
     .where(eq(feedbackTipComments.tipId, tipId))
     .orderBy(feedbackTipComments.createdAt);
 
+  const suggestions =
+    tip.kind === "interest"
+      ? await db
+          .select({
+            id: feedbackTipInterestSuggestions.id,
+            name: feedbackTipInterestSuggestions.name,
+            status: feedbackTipInterestSuggestions.status,
+            decisionReason: feedbackTipInterestSuggestions.decisionReason,
+            decidedAt: feedbackTipInterestSuggestions.decidedAt,
+            approvedAsTagId: feedbackTipInterestSuggestions.approvedAsTagId,
+            approvedAsTagName: interestTags.name,
+          })
+          .from(feedbackTipInterestSuggestions)
+          .leftJoin(
+            interestTags,
+            eq(feedbackTipInterestSuggestions.approvedAsTagId, interestTags.id),
+          )
+          .where(eq(feedbackTipInterestSuggestions.tipId, tipId))
+          .orderBy(feedbackTipInterestSuggestions.createdAt)
+      : [];
+
   return {
     id: tip.id,
     kind: tip.kind,
@@ -287,18 +357,21 @@ export async function getMyTipDetail(tipId: string): Promise<MyTipDetail | null>
     lastActivityAt: tip.lastActivityAt,
     commentCount: comments.length,
     hasUnread: false, // markerades just som läst i sidoeffekten ovan
-    canEdit: tip.status === "open",
+    // Interest-tips redigeras via egna suggestion-handlers (admin
+    // godkänner/avslår enstaka namn), inte via description-edit.
+    canEdit: tip.status === "open" && tip.kind !== "interest",
     comments: comments.map((c) => ({
       ...c,
       authorIsAdmin: c.authorIsAdmin ?? false,
       isReporter: c.authorId === tip.reporterId,
     })),
+    interestSuggestions: suggestions,
   };
 }
 
 const editMyTipSchema = z.object({
   tipId: z.string().uuid(),
-  kind: z.enum(["bug", "idea"]),
+  kind: z.enum(["bug", "idea", "interest"]),
   description: z
     .string()
     .min(10, "Berätta lite mer, minst 10 tecken")
