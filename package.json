@@ -27,6 +27,7 @@
     "@vercel/otel": "^2.1.2",
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.2",
+    "html2canvas-pro": "^1.5.8",
     "next": "^16.2.4",
     "next-auth": "^5.0.0-beta.30",
     "postgres": "^3.4.8",

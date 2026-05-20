@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ToastProvider } from "@/components/ui/toast";
 import { SiteBanner } from "@/components/site-banner";
+import { ConsoleCaptureProvider } from "@/components/layout/console-capture-provider";
 import "./globals.css";
 
 // metadataBase används av Next.js för att göra alla relativa URL:er i metadata
@@ -34,6 +35,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400&display=swap" rel="stylesheet" />
       </head>
       <body className="bg-background text-heading min-h-screen">
+        <ConsoleCaptureProvider />
         <SiteBanner />
         <ToastProvider>{children}</ToastProvider>
       </body>
