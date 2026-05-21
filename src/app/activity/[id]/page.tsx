@@ -12,9 +12,10 @@ import {
   activityComments,
   activityFeedback,
   interestTags,
+  userBlocks,
   users,
 } from "@/db/schema";
-import { eq, and, count, sql } from "drizzle-orm";
+import { eq, and, count, inArray, sql } from "drizzle-orm";
 import { CourageSection } from "@/components/activity/courage-section";
 import { RichTextDisplay } from "@/components/ui/rich-text-display";
 import { stripHtmlForExcerpt } from "@/lib/rich-text";
@@ -206,6 +207,31 @@ export default async function ActivityDetailPage({
     });
     isParticipant = !!participation;
     participationStatus = (participation?.status as "interested" | "attending" | undefined) ?? null;
+  }
+
+  // Markera vilka av attending-deltagarna som current user redan har blockerat,
+  // så popovern kan visa "Blockerad"-chip och byta blockera-knappen mot
+  // avblockera. Bara relevant för inloggade som inte är deltagaren själv.
+  if (currentUserId && activity.attendingPreview.length > 0) {
+    const blockRows = await db
+      .select({ blockedId: userBlocks.blockedId })
+      .from(userBlocks)
+      .where(
+        and(
+          eq(userBlocks.blockerId, currentUserId),
+          inArray(
+            userBlocks.blockedId,
+            activity.attendingPreview.map((p) => p.id),
+          ),
+        ),
+      );
+    const blockedSet = new Set(blockRows.map((r) => r.blockedId));
+    if (blockedSet.size > 0) {
+      activity.attendingPreview = activity.attendingPreview.map((p) => ({
+        ...p,
+        isBlockedByViewer: blockedSet.has(p.id),
+      }));
+    }
   }
 
   const wte = activity.whatToExpect as WhatToExpect | null;

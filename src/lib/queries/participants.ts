@@ -6,6 +6,12 @@ export interface ParticipantPreview {
   id: string;
   displayName: string;
   avatarUrl: string | null;
+  /**
+   * Markerar att den aktuella betraktaren (viewer) har blockerat just denna
+   * användare. Används av UI:t för att visa "Blockerad"-chip och byta
+   * blockera-knappen mot avblockera-knappen.
+   */
+  isBlockedByViewer?: boolean;
 }
 
 /**

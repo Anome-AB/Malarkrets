@@ -880,6 +880,25 @@ export async function getActivityDetail(activityId: string) {
     .orderBy(activityParticipants.createdAt)
     .limit(20);
 
+  // Slå upp vilka av deltagarna som viewern har blockat, så popovern kan
+  // visa "Blockerad"-chip och byta blockera-knappen mot avblockera.
+  const attendingIds = attendingRows.map((r) => r.userId);
+  const blockedIds = new Set<string>();
+  if (attendingIds.length > 0) {
+    const blockRows = await db
+      .select({ blockedId: userBlocks.blockedId })
+      .from(userBlocks)
+      .where(
+        and(
+          eq(userBlocks.blockerId, user.id!),
+          inArray(userBlocks.blockedId, attendingIds),
+        ),
+      );
+    for (const row of blockRows) {
+      blockedIds.add(row.blockedId);
+    }
+  }
+
   const comments = await db
     .select({
       id: activityComments.id,
@@ -942,6 +961,7 @@ export async function getActivityDetail(activityId: string) {
       id: r.userId,
       displayName: r.displayName ?? "Anonym",
       avatarUrl: r.avatarUrl,
+      isBlockedByViewer: blockedIds.has(r.userId),
     })),
     comments: comments.map((c) => ({
       id: c.id,

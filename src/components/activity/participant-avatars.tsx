@@ -5,12 +5,18 @@ import { useRouter } from "next/navigation";
 import { computeInitials } from "@/lib/initials";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
-import { blockUser } from "@/actions/blocking";
+import { blockUser, unblockUser } from "@/actions/blocking";
 
 export interface ParticipantPreview {
   id: string;
   displayName: string;
   avatarUrl: string | null;
+  /**
+   * Sätts av server-render när current viewer redan har blockerat denna
+   * deltagare. UI:t visar då "Blockerad"-chip och avblockera-knapp istället
+   * för blockera-knappen.
+   */
+  isBlockedByViewer?: boolean;
 }
 
 interface ParticipantAvatarsProps {
@@ -220,12 +226,29 @@ function ParticipantPopoverButton({
       if (result.success) {
         toast(`${target.displayName} är nu blockerad`, "success");
         setBlockTarget(null);
-        setOpen(false);
         if (onBlocked) {
           onBlocked(target.id);
         } else {
           // Server-renderade kallare (t.ex. /activity/[id]) använder
-          // router.refresh för att fasa ut den blockade ur listan.
+          // router.refresh för att markera den som blockerad i listan.
+          router.refresh();
+        }
+      } else {
+        toast(result.error ?? "Något gick fel", "error");
+      }
+    });
+  }
+
+  // Avblockering har ingen confirm-dialog - det är en konstruktiv handling
+  // som lätt kan ångras genom att blockera igen. Bara en toast bekräftar.
+  function handleUnblock(participant: ParticipantPreview) {
+    startBlockTransition(async () => {
+      const result = await unblockUser(participant.id);
+      if (result.success) {
+        toast(`${participant.displayName} är avblockerad`, "success");
+        if (onBlocked) {
+          onBlocked(participant.id);
+        } else {
           router.refresh();
         }
       } else {
@@ -260,6 +283,7 @@ function ParticipantPopoverButton({
             <ul className="space-y-0.5">
               {participants.map((p) => {
                 const isSelf = currentUserId === p.id;
+                const isBlocked = !!p.isBlockedByViewer;
                 return (
                   <li
                     key={p.id}
@@ -267,10 +291,21 @@ function ParticipantPopoverButton({
                   >
                     <Avatar
                       participant={p}
-                      className="w-7 h-7 text-[10px]"
+                      className={`w-7 h-7 text-[10px] ${isBlocked ? "opacity-60" : ""}`}
                     />
-                    <span className="flex-1 min-w-0 truncate">{p.displayName}</span>
-                    {currentUserId && !isSelf && (
+                    <span
+                      className={`flex-1 min-w-0 truncate ${
+                        isBlocked ? "text-secondary" : ""
+                      }`}
+                    >
+                      {p.displayName}
+                    </span>
+                    {isBlocked && (
+                      <span className="shrink-0 inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-50 text-error">
+                        Blockerad
+                      </span>
+                    )}
+                    {currentUserId && !isSelf && !isBlocked && (
                       <button
                         type="button"
                         onClick={() => setBlockTarget(p)}
@@ -291,6 +326,31 @@ function ParticipantPopoverButton({
                         >
                           <circle cx="12" cy="12" r="10" />
                           <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                        </svg>
+                      </button>
+                    )}
+                    {currentUserId && !isSelf && isBlocked && (
+                      <button
+                        type="button"
+                        onClick={() => handleUnblock(p)}
+                        disabled={isBlocking}
+                        aria-label={`Avblockera ${p.displayName}`}
+                        title="Avblockera"
+                        className="shrink-0 p-1 rounded-control text-secondary hover:text-heading hover:bg-background focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 transition-colors"
+                      >
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden="true"
+                        >
+                          <path d="M3 12a9 9 0 1 0 9-9" />
+                          <polyline points="3 4 3 12 11 12" />
                         </svg>
                       </button>
                     )}
