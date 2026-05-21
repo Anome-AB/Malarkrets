@@ -1,7 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useToast } from "@/components/ui/toast";
+import { blockUser, unblockUser } from "@/actions/blocking";
 
 interface Comment {
   id: string;
@@ -51,7 +55,43 @@ export function CommentList({
   onSubmit,
   onDelete,
 }: CommentListProps) {
+  const { toast } = useToast();
+  const router = useRouter();
   const [newComment, setNewComment] = useState("");
+  // Centralt block-state så vi har en ConfirmDialog för hela listan istället
+  // för en per kommentar. Avblockering går utan dialog (konstruktiv handling).
+  const [blockTarget, setBlockTarget] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [isBlocking, startBlockTransition] = useTransition();
+
+  function confirmBlock() {
+    const target = blockTarget;
+    if (!target) return;
+    startBlockTransition(async () => {
+      const result = await blockUser(target.id);
+      if (result.success) {
+        toast(`${target.name} är nu blockerad`, "success");
+        setBlockTarget(null);
+        router.refresh();
+      } else {
+        toast(result.error ?? "Något gick fel", "error");
+      }
+    });
+  }
+
+  function handleUnblock(userId: string, name: string) {
+    startBlockTransition(async () => {
+      const result = await unblockUser(userId);
+      if (result.success) {
+        toast(`${name} är avblockerad`, "success");
+        router.refresh();
+      } else {
+        toast(result.error ?? "Något gick fel", "error");
+      }
+    });
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -84,7 +124,13 @@ export function CommentList({
                 key={comment.id}
                 comment={comment}
                 canDelete={canDelete}
+                currentUserId={currentUserId}
+                isBlocking={isBlocking}
                 onDelete={onDelete}
+                onRequestBlock={(c) =>
+                  setBlockTarget({ id: c.userId!, name: c.authorName })
+                }
+                onUnblock={(c) => handleUnblock(c.userId!, c.authorName)}
               />
             );
           })}
@@ -109,6 +155,22 @@ export function CommentList({
           Anmäl intresse för att kommentera
         </p>
       )}
+
+      <ConfirmDialog
+        open={!!blockTarget}
+        title={blockTarget ? `Blockera ${blockTarget.name}?` : ""}
+        message={
+          blockTarget
+            ? `Du ser inte längre aktiviteter som ${blockTarget.name} arrangerar i flödet, och de ser inte dina. Ni kan dock fortfarande delta i samma aktiviteter som någon annan arrangerar - där syns ni kvar i deltagarlistan. Du kan avblockera senare via din profil.`
+            : ""
+        }
+        confirmLabel="Blockera"
+        cancelLabel="Avbryt"
+        variant="danger"
+        loading={isBlocking}
+        onCancel={() => setBlockTarget(null)}
+        onConfirm={confirmBlock}
+      />
     </section>
   );
 }
@@ -122,19 +184,33 @@ export function CommentList({
 function CommentItem({
   comment,
   canDelete,
+  currentUserId,
+  isBlocking,
   onDelete,
+  onRequestBlock,
+  onUnblock,
 }: {
   comment: Comment;
   canDelete: boolean;
+  currentUserId?: string;
+  isBlocking: boolean;
   onDelete?: (commentId: string) => void;
+  onRequestBlock: (comment: Comment) => void;
+  onUnblock: (comment: Comment) => void;
 }) {
   const isBlocked = !!comment.isBlockedByViewer;
   const [revealed, setRevealed] = useState(false);
   const shouldBlur = isBlocked && !revealed;
+  // Block/unblock-knappen visas bara för inloggade, mot andra användare,
+  // och bara om författaren fortfarande har konto (userId != null).
+  const canBlockOrUnblock =
+    !!currentUserId &&
+    comment.userId !== null &&
+    comment.userId !== currentUserId;
 
   return (
     <li className="bg-white border border-border rounded-lg p-3">
-      <div className="flex items-center justify-between mb-1">
+      <div className="flex items-center justify-between mb-1 gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-sm font-medium text-heading truncate">
             {comment.authorName}
@@ -148,27 +224,81 @@ function CommentItem({
             {timeAgo(comment.createdAt)}
           </span>
         </div>
-        {canDelete && (
-          <button
-            onClick={() => onDelete?.(comment.id)}
-            className="text-xs text-dimmed hover:text-warning transition-colors"
-            aria-label={`Ta bort kommentar av ${comment.authorName}`}
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+        <div className="shrink-0 flex items-center gap-1">
+          {canBlockOrUnblock && !isBlocked && (
+            <button
+              type="button"
+              onClick={() => onRequestBlock(comment)}
+              disabled={isBlocking}
+              aria-label={`Blockera ${comment.authorName}`}
+              title="Blockera"
+              className="p-1 rounded-control text-error/70 hover:text-error hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-error disabled:opacity-50 transition-colors"
             >
-              <polyline points="3 6 5 6 21 6" />
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-            </svg>
-          </button>
-        )}
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+              </svg>
+            </button>
+          )}
+          {canBlockOrUnblock && isBlocked && (
+            <button
+              type="button"
+              onClick={() => onUnblock(comment)}
+              disabled={isBlocking}
+              aria-label={`Avblockera ${comment.authorName}`}
+              title="Avblockera"
+              className="p-1 rounded-control text-secondary hover:text-primary hover:bg-primary-light focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 transition-colors"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <polyline points="16 11 18 13 22 9" />
+              </svg>
+            </button>
+          )}
+          {canDelete && (
+            <button
+              onClick={() => onDelete?.(comment.id)}
+              className="p-1 rounded-control text-dimmed hover:text-warning transition-colors"
+              aria-label={`Ta bort kommentar av ${comment.authorName}`}
+              title="Ta bort"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
       <p
         className={`text-sm text-heading transition-[filter] duration-200 ${
@@ -184,7 +314,7 @@ function CommentItem({
           onClick={() => setRevealed((r) => !r)}
           className="mt-1.5 text-xs text-primary hover:underline focus:outline-none focus:underline"
         >
-          {revealed ? "Dölj kommentaren igen" : "Visa kommentaren"}
+          {revealed ? "Dölj kommentar" : "Visa kommentar"}
         </button>
       )}
     </li>
