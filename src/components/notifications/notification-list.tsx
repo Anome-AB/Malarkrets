@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import {
+  notificationDetail,
   notificationIcon,
   notificationMessage,
   timeAgo,
@@ -54,6 +55,7 @@ export function NotificationList({ items, onItemClick, emptyMessage }: Props) {
   return (
     <ul className="divide-y divide-border-light">
       {items.map((item) => {
+        const detail = notificationDetail(item.type, item.params);
         const content = (
           <div
             className={`flex gap-3 px-4 py-3 transition-colors cursor-pointer hover:bg-background ${
@@ -75,7 +77,12 @@ export function NotificationList({ items, onItemClick, emptyMessage }: Props) {
               >
                 {notificationMessage(item.type, item.params, item.activityTitle)}
               </p>
-              <p className="text-xs text-dimmed mt-0.5">
+              {detail && (
+                <p className="text-sm text-secondary mt-1 line-clamp-3 whitespace-pre-wrap">
+                  {detail}
+                </p>
+              )}
+              <p className="text-xs text-dimmed mt-1">
                 {timeAgo(item.createdAt)}
               </p>
             </div>

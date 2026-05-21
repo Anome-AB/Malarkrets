@@ -47,6 +47,26 @@ export function notificationMessage(
   }
 }
 
+/**
+ * Eventuell extra detaljrad under headlinen, t.ex. admins motivering vid
+ * moderationsåtgärd. Returnerar null om inget extra ska visas.
+ */
+export function notificationDetail(
+  type: NotificationType,
+  params: Params,
+): string | null {
+  const p = (params ?? {}) as Record<string, unknown>;
+  const reason = asString(p.reason);
+  if (!reason) return null;
+  switch (type) {
+    case "activity_edited_by_admin":
+    case "activity_deleted":
+      return `Anledning: ${reason}`;
+    default:
+      return null;
+  }
+}
+
 export function notificationIcon(type: NotificationType): ReactNode {
   const common = {
     width: 18,
