@@ -26,6 +26,7 @@ type UpdateActivityData = z.infer<typeof updateActivitySchema>;
 import { eq, and, count, sql, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { log, errAttrs } from "@/lib/logger";
+import { mergeCreatorIntoPreview } from "@/lib/queries/participants";
 
 // publish=true publicerar direkt (full validering, syns i feeden).
 // publish=false sparar som utkast (lös validering, syns bara för creator
@@ -934,6 +935,27 @@ export async function getActivityDetail(activityId: string) {
 
   const wte = activity.whatToExpect as Record<string, unknown> | null;
 
+  // Slå in arrangören först i listan och justera räknaren så texten "X / Y
+  // deltagare" stämmer med antalet avatarer.
+  const attendingMapped = attendingRows.map((r) => ({
+    id: r.userId,
+    displayName: r.displayName ?? "Anonym",
+    avatarUrl: r.avatarUrl,
+    isBlockedByViewer: blockedIds.has(r.userId),
+  }));
+  const { participants: attendingWithCreator, countDelta } =
+    mergeCreatorIntoPreview(
+      attendingMapped,
+      creator
+        ? {
+            id: creator.id,
+            displayName: creator.displayName ?? "Anonym",
+            avatarUrl: creator.avatarUrl,
+          }
+        : null,
+    );
+  const displayParticipantCount = participantCount + countDelta;
+
   return {
     id: activity.id,
     title: activity.title,
@@ -955,14 +977,9 @@ export async function getActivityDetail(activityId: string) {
     viewerIsAdmin: viewerProfile?.isAdmin ?? false,
     deletedAt: activity.deletedAt,
     tags,
-    participantCount,
+    participantCount: displayParticipantCount,
     interestedCount,
-    attendingPreview: attendingRows.map((r) => ({
-      id: r.userId,
-      displayName: r.displayName ?? "Anonym",
-      avatarUrl: r.avatarUrl,
-      isBlockedByViewer: blockedIds.has(r.userId),
-    })),
+    attendingPreview: attendingWithCreator,
     comments: comments.map((c) => ({
       id: c.id,
       userId: c.userId,

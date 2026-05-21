@@ -17,6 +17,11 @@ export interface ParticipantPreview {
    * för blockera-knappen.
    */
   isBlockedByViewer?: boolean;
+  /**
+   * Sätts av server-render när raden representerar aktivitetens arrangör.
+   * Popovern visar då "Arrangör"-chip bredvid namnet.
+   */
+  isCreator?: boolean;
 }
 
 interface ParticipantAvatarsProps {
@@ -300,6 +305,11 @@ function ParticipantPopoverButton({
                     >
                       {p.displayName}
                     </span>
+                    {p.isCreator && (
+                      <span className="shrink-0 inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-success-bg text-success-text">
+                        Arrangör
+                      </span>
+                    )}
                     {isBlocked && (
                       <span className="shrink-0 inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-50 text-error">
                         Blockerad

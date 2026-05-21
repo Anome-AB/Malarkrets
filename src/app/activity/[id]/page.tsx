@@ -28,6 +28,7 @@ import { UnsavedChangesProvider } from "@/contexts/unsaved-changes";
 import { ActivityDetailClient } from "./activity-detail-client";
 import { AdminActivityControls } from "@/components/activity/admin-activity-controls";
 import { ParticipantAvatars } from "@/components/activity/participant-avatars";
+import { mergeCreatorIntoPreview } from "@/lib/queries/participants";
 
 interface WhatToExpect {
   okAlone?: boolean;
@@ -128,17 +129,33 @@ async function getActivity(id: string) {
     if (row.rating === "positive") feedbackPositive = row.count;
   }
 
+  // Lägg arrangören först i listan + justera räknaren så den matchar
+  // antalet avatarer. Skedd här istället för i getActivity-callern eftersom
+  // creator-info redan finns laddat ovan.
+  const attendingMapped = attendingRows.map((r) => ({
+    id: r.userId,
+    displayName: r.displayName ?? "Anonym",
+    avatarUrl: r.avatarUrl,
+  }));
+  const { participants: attendingWithCreator, countDelta } =
+    mergeCreatorIntoPreview(
+      attendingMapped,
+      creator
+        ? {
+            id: creator.id,
+            displayName: creator.displayName ?? "Anonym",
+            avatarUrl: creator.avatarUrl,
+          }
+        : null,
+    );
+
   return {
     ...activity,
     creator,
     tags,
-    participantCount,
+    participantCount: participantCount + countDelta,
     interestedCount,
-    attendingPreview: attendingRows.map((r) => ({
-      id: r.userId,
-      displayName: r.displayName ?? "Anonym",
-      avatarUrl: r.avatarUrl,
-    })),
+    attendingPreview: attendingWithCreator,
     comments: comments.map((c) => ({
       id: c.id,
       userId: c.userId,
