@@ -981,6 +981,10 @@ export async function getActivityForCopy(activityId: string) {
       location: activity.location,
       latitude: activity.latitude,
       longitude: activity.longitude,
+      // startTime/endTime som ISO-strängar - klienten parsar och skiftar
+      // datumet framåt en vecka, men behåller tidpunkten under dygnet.
+      startTime: activity.startTime?.toISOString() ?? null,
+      endTime: activity.endTime?.toISOString() ?? null,
       imageThumbUrl: activity.imageThumbUrl,
       imageMediumUrl: activity.imageMediumUrl,
       imageOgUrl: activity.imageOgUrl,

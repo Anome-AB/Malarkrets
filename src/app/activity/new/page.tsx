@@ -16,7 +16,7 @@ import { isRichTextEmpty } from "@/lib/rich-text";
 import { createActivity, getActivityForCopy } from "@/actions/activities";
 import { randomCourageMessage, randomFromList } from "@/lib/courage-messages";
 import { COLOR_PRESETS } from "@/lib/color-themes";
-import { combineDateTime, combineEndDateTime, toDateInput } from "@/lib/datetime";
+import { combineDateTime, combineEndDateTime, toDateInput, toTimeInput } from "@/lib/datetime";
 
 interface InterestTag {
   id: number;
@@ -193,15 +193,34 @@ function CreateActivityPageInner() {
         return;
       }
       const src = result.activity;
-      // RHF-fält: titel, beskrivning + whatToExpect-text. Datum/starttid/sluttid
-      // lämnas tomma med flit.
+      // Förslå datum = original + 1 vecka, behåll tidpunkten under dygnet.
+      // Användaren kan ändra fritt - det här är bara ett rimligt startvärde
+      // istället för tomt eller dagens datum.
+      let proposedDate = "";
+      let proposedStartTime = "";
+      let proposedEndTime = "";
+      if (src.startTime) {
+        const start = new Date(src.startTime);
+        if (!isNaN(start.getTime())) {
+          const nextWeek = new Date(start);
+          nextWeek.setDate(nextWeek.getDate() + 7);
+          proposedDate = toDateInput(nextWeek);
+          proposedStartTime = toTimeInput(start);
+        }
+      }
+      if (src.endTime) {
+        const end = new Date(src.endTime);
+        if (!isNaN(end.getTime())) {
+          proposedEndTime = toTimeInput(end);
+        }
+      }
       reset({
         title: src.title,
         description: src.description,
         location: src.location,
-        date: "",
-        startTimeOfDay: "",
-        endTimeOfDay: "",
+        date: proposedDate,
+        startTimeOfDay: proposedStartTime,
+        endTimeOfDay: proposedEndTime,
         maxParticipants: src.maxParticipants?.toString() ?? "",
         genderRestriction: src.genderRestriction ?? "alla",
         minAge: src.minAge?.toString() ?? "",
@@ -408,8 +427,8 @@ function CreateActivityPageInner() {
                   Du skapar en kopia av &ldquo;{copySourceTitle}&rdquo;
                 </p>
                 <p className="text-xs text-secondary mt-0.5">
-                  Datum och tid är tomma - allt annat är förifyllt från
-                  originalet. Ändra fritt innan du publicerar.
+                  Allt är förifyllt från originalet och datumet flyttat fram
+                  en vecka. Ändra fritt innan du publicerar.
                 </p>
               </div>
             </div>
