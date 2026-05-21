@@ -368,8 +368,28 @@ export async function updateActivity(
       compare("endTime", activity.endTime, endTime ?? null);
       compare("maxParticipants", activity.maxParticipants, updateData.maxParticipants);
       compare("colorTheme", activity.colorTheme, colorTheme);
-      if (JSON.stringify(activity.whatToExpect) !== JSON.stringify(whatToExpect) && whatToExpect !== undefined) {
-        diffForAudit.whatToExpect = { before: activity.whatToExpect, after: whatToExpect };
+      // whatToExpect lagras som jsonb - Postgres bevarar inte nyckelordning,
+      // och Zod fyller på defaults för optional-fält. En naiv JSON.stringify
+      // ger därför false positives. Jämför istället värde-för-värde över de
+      // kända fälten, med null som normalform för saknat/tomt värde.
+      if (whatToExpect !== undefined) {
+        const wteFields = [
+          "audience",
+          "experienceLevel",
+          "whoComes",
+          "latePolicy",
+          "courageMessage",
+        ] as const;
+        const before = (activity.whatToExpect ?? {}) as Record<string, unknown>;
+        const after = whatToExpect as Record<string, unknown>;
+        const norm = (v: unknown) => (v === undefined || v === "" ? null : v);
+        const changed = wteFields.some((k) => norm(before[k]) !== norm(after[k]));
+        if (changed) {
+          diffForAudit.whatToExpect = {
+            before: activity.whatToExpect,
+            after: whatToExpect,
+          };
+        }
       }
     }
 
