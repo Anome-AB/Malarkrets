@@ -312,7 +312,26 @@ export const activityComments = pgTable("activity_comments", {
     onDelete: "set null",
   }),
   content: text().notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
+  // timestamptz för konsekvent JS Date <-> postgres now()-jämförelse i
+  // "X min sedan"-displayen. Se migration 0013.
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  // Sätts när författaren själv redigerar kommentaren. UI:t visar
+  // "(redigerad)"-markör om värdet är non-null.
+  editedAt: timestamp("edited_at", { withTimezone: true }),
+  // Sätts när kommentaren tagits bort. Raden lämnas kvar som tombstone så
+  // det syns att det funnits en kommentar där.
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  // Sätts BARA när en admin tar bort någon annans kommentar.
+  deletedByAdminId: uuid("deleted_by_admin_id").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  // Sätts BARA när aktivitetens arrangör tar bort en deltagar-kommentar.
+  // Arrangör tar precedens om personen är både admin och arrangör - en
+  // host som är admin agerar i sin värd-kapacitet på sin egen aktivitet.
+  // UI:t differentierar tombstone-text: arrangör > admin > användaren själv.
+  deletedByCreatorId: uuid("deleted_by_creator_id").references(() => users.id, {
+    onDelete: "set null",
+  }),
 });
 
 export const activityFeedback = pgTable(
@@ -344,7 +363,9 @@ export const notifications = pgTable(
     }),
     params: jsonb(),
     read: boolean().default(false),
-    createdAt: timestamp("created_at").defaultNow(),
+    // timestamptz för konsekvent JS Date <-> postgres now()-jämförelse i
+    // "för X min sedan"-displayen. Se migration 0013.
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   (table) => [
     index("notifications_user_read_idx").on(

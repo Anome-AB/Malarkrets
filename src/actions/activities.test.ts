@@ -495,25 +495,20 @@ describe("Own activity (creator perspective)", () => {
   // ── Join own activity ───────────────────────────────
 
   describe("joinActivity (on own activity)", () => {
-    it("allows creator to join as attending", async () => {
+    it("blocks creator from joining as attending - de räknas redan implicit som deltagare", async () => {
       mockDbQueryActivitiesFindFirst.mockResolvedValue(makeActivity());
-      mockDbQueryUsersFindFirst.mockResolvedValue(makeCreatorProfile());
-      // Max participants check: 3 attending out of 15, then blocked users check
-      selectQueue.push([{ currentCount: 3 }]);
-      selectQueue.push([]);
 
       const result = await joinActivity(ACTIVITY_ID, "attending");
-      expect(result.success).toBe(true);
+      expect(result.success).toBe(false);
+      expect(result.error).toMatch(/arrangör/i);
     });
 
-    it("allows creator to mark as interested", async () => {
+    it("blocks creator from marking themselves as interested", async () => {
       mockDbQueryActivitiesFindFirst.mockResolvedValue(makeActivity());
-      mockDbQueryUsersFindFirst.mockResolvedValue(makeCreatorProfile());
-      // No max check for interested, blocked check
-      selectQueue.push([]);
 
       const result = await joinActivity(ACTIVITY_ID, "interested");
-      expect(result.success).toBe(true);
+      expect(result.success).toBe(false);
+      expect(result.error).toMatch(/arrangör/i);
     });
   });
 });

@@ -10,6 +10,8 @@ import {
   activities,
   activityTags,
   interestTags,
+  userBlocks,
+  userInterests,
   users,
 } from "@/db/schema";
 import { getMatchedActivities } from "@/lib/queries/activity-feed";
@@ -235,6 +237,139 @@ describe('getMatchedActivities "Visa alla" (showAll)', () => {
       undefined,
       false,
       false,
+    );
+
+    expect(results).toHaveLength(0);
+  });
+
+  // ── Admin bypass av creator-blocks ──────────────────────────────────────
+  // En vanlig användare ska kunna gömma sina aktiviteter från en annan
+  // vanlig användare genom att blockera dem. Men en admin behöver kunna se
+  // alla aktiviteter för att kunna moderera - även de som blockerat admin.
+
+  it("regular user blocked by creator: aktivitet doldas från viewer", async () => {
+    const tag = await seedTag(db, "Vandring");
+    const creator = await seedUser(db, { email: "c@x.se" });
+    const viewer = await seedUser(db, { email: "v@x.se" });
+    // Viewer har intresse-matchning (annars filtreras aktiviteten ändå)
+    await db.insert(userInterests).values({ userId: viewer.id, tagId: tag.id });
+
+    await seedActivity(db, creator.id, tag.id, { title: "Privat vandring" });
+    // Creator blockerar viewer
+    await db
+      .insert(userBlocks)
+      .values({ blockerId: creator.id, blockedId: viewer.id });
+
+    const results = await getMatchedActivities(
+      viewer.id,
+      viewer.gender,
+      null,
+      undefined,
+      undefined,
+      false, // showAll
+      false, // isAdmin
+    );
+
+    expect(results).toHaveLength(0);
+  });
+
+  it("admin blocked by creator: ser fortfarande aktiviteten (moderation-bypass)", async () => {
+    const tag = await seedTag(db, "Vandring");
+    const creator = await seedUser(db, { email: "c@x.se" });
+    const admin = await seedUser(db, { email: "a@x.se", isAdmin: true });
+    await db.insert(userInterests).values({ userId: admin.id, tagId: tag.id });
+
+    await seedActivity(db, creator.id, tag.id, { title: "Privat vandring" });
+    // Creator blockerar admin - ska INTE dölja aktiviteten för admin
+    await db
+      .insert(userBlocks)
+      .values({ blockerId: creator.id, blockedId: admin.id });
+
+    const results = await getMatchedActivities(
+      admin.id,
+      admin.gender,
+      null,
+      undefined,
+      undefined,
+      false, // showAll
+      true, // isAdmin
+    );
+
+    expect(results).toHaveLength(1);
+    expect(results[0].title).toBe("Privat vandring");
+  });
+
+  it("admin har själv blockerat creator: aktiviteten doldas i Mina intressen (personligt flöde)", async () => {
+    const tag = await seedTag(db, "Vandring");
+    const creator = await seedUser(db, { email: "c@x.se" });
+    const admin = await seedUser(db, { email: "a@x.se", isAdmin: true });
+    await db.insert(userInterests).values({ userId: admin.id, tagId: tag.id });
+
+    await seedActivity(db, creator.id, tag.id, { title: "Vandring" });
+    // Admin blockerar creator - admins personliga flöde respekterar det.
+    await db
+      .insert(userBlocks)
+      .values({ blockerId: admin.id, blockedId: creator.id });
+
+    const results = await getMatchedActivities(
+      admin.id,
+      admin.gender,
+      null,
+      undefined,
+      undefined,
+      false, // showAll = Mina intressen
+      true, // isAdmin
+    );
+
+    expect(results).toHaveLength(0);
+  });
+
+  it("admin har själv blockerat creator: aktiviteten syns ändå i Visa alla (moderation-bypass)", async () => {
+    const tag = await seedTag(db, "Vandring");
+    const creator = await seedUser(db, { email: "c@x.se" });
+    const admin = await seedUser(db, { email: "a@x.se", isAdmin: true });
+
+    await seedActivity(db, creator.id, tag.id, { title: "Vandring" });
+    // Admin blockerar creator men byter till Visa alla - moderation kräver
+    // full visibilitet även för admins egna blocks.
+    await db
+      .insert(userBlocks)
+      .values({ blockerId: admin.id, blockedId: creator.id });
+
+    const results = await getMatchedActivities(
+      admin.id,
+      admin.gender,
+      null,
+      undefined,
+      undefined,
+      true, // showAll = full moderation-vy
+      true, // isAdmin
+    );
+
+    expect(results).toHaveLength(1);
+    expect(results[0].title).toBe("Vandring");
+  });
+
+  it("vanlig användare har blockerat creator + Visa alla: aktiviteten doldas (regular users har full block-respekt)", async () => {
+    const tag = await seedTag(db, "Vandring");
+    const creator = await seedUser(db, { email: "c@x.se" });
+    const viewer = await seedUser(db, { email: "v@x.se" });
+
+    await seedActivity(db, creator.id, tag.id, { title: "Vandring" });
+    // Vanlig användare blockerar creator - även Visa alla respekterar det
+    // för vanliga användare (bara admins får moderation-bypass i Visa alla).
+    await db
+      .insert(userBlocks)
+      .values({ blockerId: viewer.id, blockedId: creator.id });
+
+    const results = await getMatchedActivities(
+      viewer.id,
+      viewer.gender,
+      null,
+      undefined,
+      undefined,
+      true, // showAll
+      false, // isAdmin
     );
 
     expect(results).toHaveLength(0);

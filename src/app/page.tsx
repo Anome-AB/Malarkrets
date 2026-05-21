@@ -10,12 +10,16 @@ import {
   userInterests,
   users,
 } from "@/db/schema";
-import { eq, gt, and, isNull, count, desc, sql } from "drizzle-orm";
+import { eq, gt, and, isNull, isNotNull, count, desc, sql } from "drizzle-orm";
 import {
   getMatchedActivities,
   FEED_PAGE_SIZE,
 } from "@/lib/queries/activity-feed";
 import { enrichFeedActivities } from "@/lib/queries/activity-feed-enrich";
+import { stripHtmlForExcerpt } from "@/lib/rich-text";
+import { getColorHex } from "@/lib/color-themes";
+
+const NEUTRAL_ACCENT = "#7a8088";
 import { getNotificationCount } from "@/lib/queries/notifications";
 import { AppShell } from "@/components/layout/app-shell";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -31,6 +35,8 @@ async function getPopularActivities() {
       location: activities.location,
       startTime: activities.startTime,
       imageThumbUrl: activities.imageThumbUrl,
+      imageAccentColor: activities.imageAccentColor,
+      colorTheme: activities.colorTheme,
       participantCount: count(activityParticipants.userId),
     })
     .from(activities)
@@ -44,6 +50,9 @@ async function getPopularActivities() {
     .where(and(
       gt(activities.startTime, now),
       isNull(activities.cancelledAt),
+      // Utkast (publishedAt IS NULL) ska inte hamna i "populära" eftersom
+      // /activity/[id] returnerar 404 för icke-creator/non-admin.
+      isNotNull(activities.publishedAt),
       sql`NOT EXISTS (SELECT 1 FROM ${users} WHERE ${users.id} = ${activities.creatorId} AND ${users.isBanned} = true)`,
     ))
     .groupBy(activities.id)
@@ -112,30 +121,70 @@ function LandingPage({
           </p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {popularActivities.map((activity) => (
+            {popularActivities.map((activity) => {
+              // Bild eller gradient-fallback: matchar ActivityCard så att
+              // bildlösa aktiviteter inte ser tomma ut.
+              const themeHex = getColorHex(activity.colorTheme);
+              const accent =
+                activity.imageAccentColor ?? themeHex ?? NEUTRAL_ACCENT;
+              const heroStyle: React.CSSProperties = activity.imageThumbUrl
+                ? {
+                    backgroundImage: `url(${activity.imageThumbUrl})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                  }
+                : {
+                    backgroundImage: `linear-gradient(135deg, color-mix(in srgb, ${accent} 60%, white) 0%, ${accent} 55%, color-mix(in srgb, ${accent} 80%, black) 100%)`,
+                  };
+              const startDate = new Date(activity.startTime);
+              const weekday = startDate
+                .toLocaleDateString("sv-SE", { weekday: "short" })
+                .replace(".", "");
+              const day = String(startDate.getDate()).padStart(2, "0");
+              const month = startDate
+                .toLocaleDateString("sv-SE", { month: "short" })
+                .replace(".", "");
+              return (
               <Link
                 key={activity.id}
                 href={`/activity/${activity.id}`}
                 className="bg-white border border-border rounded-card p-4 hover:shadow-md hover:border-primary transition block"
               >
-                {activity.imageThumbUrl && (
-                  <img
-                    src={activity.imageThumbUrl}
-                    alt=""
-                    className="w-full h-40 object-cover rounded-lg mb-3"
-                  />
-                )}
+                <div
+                  className="relative w-full h-40 rounded-lg mb-3 overflow-hidden"
+                  style={heroStyle}
+                  aria-hidden="true"
+                >
+                  {/* Datum-badge i övre vänstra hörnet, samma struktur
+                      som ActivityCards datumblock (weekday / day / month
+                      i vit display-typografi). Backdrop-overlay för att
+                      datumet ska kunna läsas mot både bild och gradient. */}
+                  <div
+                    className="absolute top-3 left-3 flex flex-col items-center text-white px-3 py-2 rounded-control"
+                    style={{
+                      backgroundColor: "rgba(0, 0, 0, 0.28)",
+                      textShadow: "0 1px 6px rgba(0,0,0,0.35)",
+                    }}
+                  >
+                    <span className="text-[10px] font-display font-bold uppercase tracking-[0.2em] leading-none">
+                      {weekday}
+                    </span>
+                    <span className="font-display font-black text-[32px] leading-none my-1">
+                      {day}
+                    </span>
+                    <span className="text-[10px] font-display font-bold uppercase tracking-[0.2em] leading-none">
+                      {month}
+                    </span>
+                  </div>
+                </div>
                 <h3 className="text-base font-semibold text-heading">
                   {activity.title}
                 </h3>
                 <p className="text-sm text-secondary mt-1 line-clamp-2">
-                  {activity.description}
+                  {stripHtmlForExcerpt(activity.description, 200)}
                 </p>
                 <p className="text-sm text-secondary mt-2">
-                  {new Date(activity.startTime).toLocaleDateString("sv-SE", {
-                    weekday: "short",
-                    day: "numeric",
-                    month: "short",
+                  {startDate.toLocaleTimeString("sv-SE", {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}{" "}
@@ -145,7 +194,8 @@ function LandingPage({
                   {activity.participantCount} deltagare
                 </p>
               </Link>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>
@@ -213,7 +263,10 @@ async function AuthenticatedFeed({
 
   // "Visa alla" mode: available to all users; admins get full bypass,
   // regular users still respect gender and minAge constraints.
-  const showAll = params.alla === "1";
+  // Användare utan valda intressen får automatiskt "Visa alla" som default,
+  // annars skulle feeden vara nästan tom (bara egna aktiviteter + de man
+  // anmält sig till).
+  const showAll = params.alla === "1" || userInterestsList.length === 0;
 
   // Determine active tag filters (comma-separated slugs)
   const interestParam = typeof params.intresse === "string" ? params.intresse : null;

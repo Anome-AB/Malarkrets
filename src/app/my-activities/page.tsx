@@ -13,6 +13,11 @@ import {
 } from "@/db/schema";
 import { eq, and, desc, asc, count, sql } from "drizzle-orm";
 import { MyActivitiesClient } from "./my-activities-client";
+import {
+  getAttendingPreviews,
+  getCreatorProfiles,
+  mergeCreatorIntoPreview,
+} from "@/lib/queries/participants";
 
 export const metadata: Metadata = {
   title: "Mina aktiviteter - Malarkrets",
@@ -97,33 +102,48 @@ async function getCreatedActivities(userId: string) {
     countByActivity.set(row.activityId, row.count);
   }
 
-  return rows.map((a) => ({
-    id: a.id,
-    title: a.title,
-    description: a.description,
-    location: a.location,
-    startTime: a.startTime,
-    endTime: a.endTime,
-    imageThumbUrl: a.imageThumbUrl,
-    imageAccentColor: a.imageAccentColor,
-    colorTheme: a.colorTheme,
-    genderRestriction: a.genderRestriction,
-    maxParticipants: a.maxParticipants,
-    whatToExpect: a.whatToExpect as {
-      okAlone?: boolean;
-      experienceLevel?: string;
-      whoComes?: string;
-      latePolicy?: string;
-      groupSize?: string;
-    } | null,
-    tags: tagsByActivity.get(a.id) ?? [],
-    participantCount: countByActivity.get(a.id) ?? 0,
-    cancelledAt: a.cancelledAt,
-    cancelledReason: a.cancelledReason,
-    deletedAt: a.deletedAt,
-    deletedReason: a.deletedReason,
-    publishedAt: a.publishedAt,
-  }));
+  const attendingPreviewsByActivity = await getAttendingPreviews(ids);
+
+  // Alla rader har userId som creator - hämta profilen en gång och prepend:a
+  // som första rad i varje aktivitets deltagar-lista.
+  const creatorMap = await getCreatorProfiles([userId]);
+  const creator = creatorMap.get(userId) ?? null;
+
+  return rows.map((a) => {
+    const baseAttending = attendingPreviewsByActivity.get(a.id) ?? [];
+    const { participants, countDelta } = mergeCreatorIntoPreview(
+      baseAttending,
+      creator,
+    );
+    return {
+      id: a.id,
+      title: a.title,
+      description: a.description,
+      location: a.location,
+      startTime: a.startTime,
+      endTime: a.endTime,
+      imageThumbUrl: a.imageThumbUrl,
+      imageAccentColor: a.imageAccentColor,
+      colorTheme: a.colorTheme,
+      genderRestriction: a.genderRestriction,
+      maxParticipants: a.maxParticipants,
+      whatToExpect: a.whatToExpect as {
+        okAlone?: boolean;
+        experienceLevel?: string;
+        whoComes?: string;
+        latePolicy?: string;
+        groupSize?: string;
+      } | null,
+      tags: tagsByActivity.get(a.id) ?? [],
+      participantCount: (countByActivity.get(a.id) ?? 0) + countDelta,
+      attendingPreview: participants,
+      cancelledAt: a.cancelledAt,
+      cancelledReason: a.cancelledReason,
+      deletedAt: a.deletedAt,
+      deletedReason: a.deletedReason,
+      publishedAt: a.publishedAt,
+    };
+  });
 }
 
 async function getParticipatingActivities(userId: string) {
@@ -145,6 +165,7 @@ async function getParticipatingActivities(userId: string) {
       cancelledReason: activities.cancelledReason,
       deletedAt: activities.deletedAt,
       deletedReason: activities.deletedReason,
+      creatorId: activities.creatorId,
       status: activityParticipants.status,
     })
     .from(activityParticipants)
@@ -206,33 +227,50 @@ async function getParticipatingActivities(userId: string) {
     countByActivity.set(row.activityId, row.count);
   }
 
-  return rows.map((a) => ({
-    id: a.id,
-    title: a.title,
-    description: a.description,
-    location: a.location,
-    startTime: a.startTime,
-    endTime: a.endTime,
-    imageThumbUrl: a.imageThumbUrl,
-    imageAccentColor: a.imageAccentColor,
-    colorTheme: a.colorTheme,
-    genderRestriction: a.genderRestriction,
-    maxParticipants: a.maxParticipants,
-    whatToExpect: a.whatToExpect as {
-      okAlone?: boolean;
-      experienceLevel?: string;
-      whoComes?: string;
-      latePolicy?: string;
-      groupSize?: string;
-    } | null,
-    tags: tagsByActivity.get(a.id) ?? [],
-    participantCount: countByActivity.get(a.id) ?? 0,
-    cancelledAt: a.cancelledAt,
-    cancelledReason: a.cancelledReason,
-    deletedAt: a.deletedAt,
-    deletedReason: a.deletedReason,
-    status: a.status as "interested" | "attending",
-  }));
+  const attendingPreviewsByActivity = await getAttendingPreviews(ids);
+
+  // Hämta arrangörsprofiler för alla aktiviteter (olika creator per rad).
+  const creatorIds = rows
+    .map((r) => r.creatorId)
+    .filter((id): id is string => id !== null);
+  const creatorMap = await getCreatorProfiles(creatorIds);
+
+  return rows.map((a) => {
+    const baseAttending = attendingPreviewsByActivity.get(a.id) ?? [];
+    const creator = a.creatorId ? creatorMap.get(a.creatorId) ?? null : null;
+    const { participants, countDelta } = mergeCreatorIntoPreview(
+      baseAttending,
+      creator,
+    );
+    return {
+      id: a.id,
+      title: a.title,
+      description: a.description,
+      location: a.location,
+      startTime: a.startTime,
+      endTime: a.endTime,
+      imageThumbUrl: a.imageThumbUrl,
+      imageAccentColor: a.imageAccentColor,
+      colorTheme: a.colorTheme,
+      genderRestriction: a.genderRestriction,
+      maxParticipants: a.maxParticipants,
+      whatToExpect: a.whatToExpect as {
+        okAlone?: boolean;
+        experienceLevel?: string;
+        whoComes?: string;
+        latePolicy?: string;
+        groupSize?: string;
+      } | null,
+      tags: tagsByActivity.get(a.id) ?? [],
+      participantCount: (countByActivity.get(a.id) ?? 0) + countDelta,
+      attendingPreview: participants,
+      cancelledAt: a.cancelledAt,
+      cancelledReason: a.cancelledReason,
+      deletedAt: a.deletedAt,
+      deletedReason: a.deletedReason,
+      status: a.status as "interested" | "attending",
+    };
+  });
 }
 
 export default async function MyActivitiesPage() {

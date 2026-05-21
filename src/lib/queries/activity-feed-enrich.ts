@@ -5,6 +5,12 @@ import {
   interestTags,
 } from "@/db/schema";
 import { and, count, eq, sql } from "drizzle-orm";
+import {
+  getAttendingPreviews,
+  getCreatorProfiles,
+  mergeCreatorIntoPreview,
+  type ParticipantPreview,
+} from "@/lib/queries/participants";
 
 export interface EnrichedFeedActivity {
   id: string;
@@ -21,6 +27,7 @@ export interface EnrichedFeedActivity {
   whatToExpect: unknown;
   tags: Array<{ id: number; name: string; slug: string }>;
   participantCount: number;
+  attendingPreview: ParticipantPreview[];
   creatorId: string | null;
   userStatus: "interested" | "attending" | null;
 }
@@ -100,6 +107,14 @@ export async function enrichFeedActivities(
       ),
     );
 
+  const attendingPreviewsByActivity = await getAttendingPreviews(activityIds);
+
+  // Hämta arrangörsprofiler för att kunna prepend:a dem i deltagar-listan.
+  const creatorIds = rawActivities
+    .map((a) => a.creatorId)
+    .filter((id): id is string => id !== null);
+  const creatorProfilesById = await getCreatorProfiles(creatorIds);
+
   const tagsByActivity = new Map<
     string,
     Array<{ id: number; name: string; slug: string }>
@@ -136,8 +151,24 @@ export async function enrichFeedActivities(
     genderRestriction: a.genderRestriction,
     maxParticipants: a.maxParticipants,
     whatToExpect: a.whatToExpect,
+    ...((): {
+      participantCount: number;
+      attendingPreview: ParticipantPreview[];
+    } => {
+      const baseAttending = attendingPreviewsByActivity.get(a.id) ?? [];
+      const creator = a.creatorId
+        ? creatorProfilesById.get(a.creatorId) ?? null
+        : null;
+      const { participants, countDelta } = mergeCreatorIntoPreview(
+        baseAttending,
+        creator,
+      );
+      return {
+        participantCount: (countByActivity.get(a.id) ?? 0) + countDelta,
+        attendingPreview: participants,
+      };
+    })(),
     tags: tagsByActivity.get(a.id) ?? [],
-    participantCount: countByActivity.get(a.id) ?? 0,
     creatorId: a.creatorId,
     userStatus: userStatusByActivity.get(a.id) ?? null,
   }));

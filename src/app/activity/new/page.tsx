@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useState, useTransition, useEffect, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useForm, Controller } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TagPicker } from "@/components/activity/tag-picker";
@@ -11,10 +11,12 @@ import { useToast } from "@/components/ui/toast";
 import { Card } from "@/components/ui/card";
 import { PlacesAutocomplete } from "@/components/ui/places-autocomplete";
 import { ImageUpload } from "@/components/ui/image-upload";
-import { createActivity } from "@/actions/activities";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { isRichTextEmpty } from "@/lib/rich-text";
+import { createActivity, getActivityForCopy } from "@/actions/activities";
 import { randomCourageMessage, randomFromList } from "@/lib/courage-messages";
 import { COLOR_PRESETS } from "@/lib/color-themes";
-import { combineDateTime, combineEndDateTime, toDateInput } from "@/lib/datetime";
+import { combineDateTime, combineEndDateTime, toDateInput, toTimeInput } from "@/lib/datetime";
 
 interface InterestTag {
   id: number;
@@ -44,9 +46,24 @@ const AUDIENCE_OPTIONS = [
 ] as const;
 
 export default function CreateActivityPage() {
+  // useSearchParams kräver Suspense-boundary i Next 15+. Inner-komponenten
+  // gör allt jobbet, default-exporten finns bara för att svepa den.
+  return (
+    <Suspense fallback={null}>
+      <CreateActivityPageInner />
+    </Suspense>
+  );
+}
+
+function CreateActivityPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const copyFromId = searchParams.get("from");
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
+  // Titel på källaktiviteten visas i banner när vi kopierar. Null när vi inte
+  // är i copy-mode eller medan fetch pågår.
+  const [copySourceTitle, setCopySourceTitle] = useState<string | null>(null);
   const [userInterests, setUserInterests] = useState<InterestTag[]>([]);
   const [selectedTags, setSelectedTags] = useState<number[]>([]);
   const [loadingTags, setLoadingTags] = useState(true);
@@ -111,12 +128,16 @@ export default function CreateActivityPage() {
   const {
     register,
     handleSubmit,
+    control,
+    reset,
     formState: { errors, isDirty: rhfDirty },
   } = useForm<FormValues>({
     defaultValues: {
       genderRestriction: "alla",
       experienceLevel: "alla",
+      description: "",
       // Default to today so the date picker shows something useful on mount.
+      // Vid copy-mode rensas datumet i prefill-effekten nedan.
       date: toDateInput(new Date()),
     },
   });
@@ -156,6 +177,119 @@ export default function CreateActivityPage() {
     }
     fetchInterests();
   }, []);
+
+  // När ?from=<id> finns: hämta källaktiviteten och prefil:la formuläret.
+  // Datum/tid lämnas alltid tomt - användaren måste välja nytt.
+  useEffect(() => {
+    if (!copyFromId) return;
+    let cancelled = false;
+    async function prefillFromSource(sourceId: string) {
+      const result = await getActivityForCopy(sourceId);
+      if (cancelled) return;
+      if (!result.success) {
+        toast(result.error, "error");
+        // Rensa from-paramen så vi inte sitter fast i ett brutet state
+        router.replace("/activity/new");
+        return;
+      }
+      const src = result.activity;
+      // Förslå datum = original + 1 vecka, behåll tidpunkten under dygnet.
+      // Användaren kan ändra fritt - det här är bara ett rimligt startvärde
+      // istället för tomt eller dagens datum.
+      let proposedDate = "";
+      let proposedStartTime = "";
+      let proposedEndTime = "";
+      if (src.startTime) {
+        const start = new Date(src.startTime);
+        if (!isNaN(start.getTime())) {
+          const nextWeek = new Date(start);
+          nextWeek.setDate(nextWeek.getDate() + 7);
+          proposedDate = toDateInput(nextWeek);
+          proposedStartTime = toTimeInput(start);
+        }
+      }
+      if (src.endTime) {
+        const end = new Date(src.endTime);
+        if (!isNaN(end.getTime())) {
+          proposedEndTime = toTimeInput(end);
+        }
+      }
+      reset({
+        title: src.title,
+        description: src.description,
+        location: src.location,
+        date: proposedDate,
+        startTimeOfDay: proposedStartTime,
+        endTimeOfDay: proposedEndTime,
+        maxParticipants: src.maxParticipants?.toString() ?? "",
+        genderRestriction: src.genderRestriction ?? "alla",
+        minAge: src.minAge?.toString() ?? "",
+        experienceLevel: src.whatToExpect.experienceLevel,
+        whoComes: src.whatToExpect.whoComes,
+        latePolicy: src.whatToExpect.latePolicy,
+      });
+      // useState-fält: location/koordinater, tags, audience, image, color,
+      // genderOpen, courage.
+      setLocationText(src.location);
+      if (src.latitude !== null && src.longitude !== null) {
+        setCoordinates({ lat: src.latitude, lng: src.longitude });
+      }
+      setSelectedTags(src.tagIds);
+      setAudience(src.whatToExpect.audience);
+      if (src.imageThumbUrl || src.imageMediumUrl || src.imageOgUrl) {
+        setImage({
+          thumbUrl: src.imageThumbUrl,
+          mediumUrl: src.imageMediumUrl,
+          ogUrl: src.imageOgUrl,
+          accentColor: src.imageAccentColor,
+        });
+      }
+      if (src.colorTheme) setColorTheme(src.colorTheme);
+      setGenderOpen(src.genderRestriction !== "alla");
+      if (src.whatToExpect.courageMessage) {
+        setCourageEnabled(true);
+        setCourageText(src.whatToExpect.courageMessage);
+        setLastAutoCourage(null);
+      }
+      setCopySourceTitle(src.title);
+    }
+    prefillFromSource(copyFromId);
+    return () => {
+      cancelled = true;
+    };
+  }, [copyFromId, reset, toast, router]);
+
+  // "Börja om" - rensa allt prefil:lat och ta bort ?from= från URL:en.
+  function clearCopyPrefill() {
+    reset({
+      title: "",
+      description: "",
+      location: "",
+      date: toDateInput(new Date()),
+      startTimeOfDay: "",
+      endTimeOfDay: "",
+      maxParticipants: "",
+      genderRestriction: "alla",
+      minAge: "",
+      experienceLevel: "alla",
+      whoComes: "",
+      latePolicy: "",
+    });
+    setLocationText("");
+    setCoordinates(null);
+    setSelectedTags([]);
+    setAudience("alla");
+    setImage({ thumbUrl: null, mediumUrl: null, ogUrl: null, accentColor: null });
+    setColorTheme(
+      COLOR_PRESETS[Math.floor(Math.random() * COLOR_PRESETS.length)].value,
+    );
+    setGenderOpen(false);
+    setCourageEnabled(false);
+    setCourageText("");
+    setLastAutoCourage(null);
+    setCopySourceTitle(null);
+    router.replace("/activity/new");
+  }
 
   function toggleTag(tagId: number) {
     setSelectedTags((prev) =>
@@ -272,7 +406,44 @@ export default function CreateActivityPage() {
 
   return (
     <div className="px-6 pt-8 flex flex-col min-h-full">
-      <h1 className="text-2xl font-bold text-heading mb-6">Skapa ny aktivitet</h1>
+      <h1 className="text-2xl font-bold text-heading mb-6">
+        {copySourceTitle ? "Skapa kopia av aktivitet" : "Skapa ny aktivitet"}
+      </h1>
+      {copySourceTitle && (
+        <Card className="!bg-primary-light border-primary/20 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <span
+                aria-hidden="true"
+                className="shrink-0 mt-0.5 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-heading">
+                  Du skapar en kopia av &ldquo;{copySourceTitle}&rdquo;
+                </p>
+                <p className="text-xs text-secondary mt-0.5">
+                  Allt är förifyllt från originalet och datumet flyttat fram
+                  en vecka. Ändra fritt innan du publicerar.
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="compact"
+              type="button"
+              onClick={clearCopyPrefill}
+              className="self-start sm:self-center"
+            >
+              Börja om
+            </Button>
+          </div>
+        </Card>
+      )}
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1">
           <div className="cols-activity-form">
               <Card title="Grundläggande information" className="space-y-4 break-inside-avoid mb-6">
@@ -293,22 +464,33 @@ export default function CreateActivityPage() {
                 />
                 <div className="flex flex-col gap-1">
                   <label htmlFor="description" className="text-sm font-medium text-heading">Beskrivning</label>
-                  <textarea
-                    id="description"
-                    rows={4}
-                    placeholder="Berätta mer om aktiviteten..."
-                    className="w-full px-3 py-2 min-h-touch-target rounded-control border border-border text-heading bg-white placeholder:text-dimmed focus:outline-none focus:ring-1 focus:border-primary focus:ring-primary resize-y"
-                    {...register("description", {
+                  <Controller
+                    name="description"
+                    control={control}
+                    rules={{
                       // Beskrivning är fri vid utkast. Vid publicering
-                      // kräver vi minst 10 tecken precis som tidigare.
+                      // kräver vi minst 10 tecken plain text precis som
+                      // tidigare, men nu räknat efter att HTML-taggar
+                      // strippats så <p></p> inte räknas som innehåll.
                       validate: (value) => {
-                        if (value && value.length > 5000) return "Max 5000 tecken";
+                        if (value && value.length > 50000)
+                          return "Beskrivningen är för lång";
                         if (submitMode === "draft") return true;
-                        if (!value) return "Beskrivning krävs";
-                        if (value.length < 10) return "Minst 10 tecken";
+                        if (!value || isRichTextEmpty(value))
+                          return "Beskrivning krävs";
+                        const plain = value.replace(/<[^>]+>/g, "").trim();
+                        if (plain.length < 10) return "Minst 10 tecken";
                         return true;
                       },
-                    })}
+                    }}
+                    render={({ field }) => (
+                      <RichTextEditor
+                        id="description"
+                        value={field.value ?? ""}
+                        onChange={field.onChange}
+                        placeholder="Berätta mer om aktiviteten..."
+                      />
+                    )}
                   />
                   {errors.description && (
                     <p className="text-sm text-error">{errors.description.message}</p>

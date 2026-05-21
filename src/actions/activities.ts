@@ -26,6 +26,7 @@ type UpdateActivityData = z.infer<typeof updateActivitySchema>;
 import { eq, and, count, sql, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { log, errAttrs } from "@/lib/logger";
+import { mergeCreatorIntoPreview } from "@/lib/queries/participants";
 
 // publish=true publicerar direkt (full validering, syns i feeden).
 // publish=false sparar som utkast (lös validering, syns bara för creator
@@ -368,8 +369,28 @@ export async function updateActivity(
       compare("endTime", activity.endTime, endTime ?? null);
       compare("maxParticipants", activity.maxParticipants, updateData.maxParticipants);
       compare("colorTheme", activity.colorTheme, colorTheme);
-      if (JSON.stringify(activity.whatToExpect) !== JSON.stringify(whatToExpect) && whatToExpect !== undefined) {
-        diffForAudit.whatToExpect = { before: activity.whatToExpect, after: whatToExpect };
+      // whatToExpect lagras som jsonb - Postgres bevarar inte nyckelordning,
+      // och Zod fyller på defaults för optional-fält. En naiv JSON.stringify
+      // ger därför false positives. Jämför istället värde-för-värde över de
+      // kända fälten, med null som normalform för saknat/tomt värde.
+      if (whatToExpect !== undefined) {
+        const wteFields = [
+          "audience",
+          "experienceLevel",
+          "whoComes",
+          "latePolicy",
+          "courageMessage",
+        ] as const;
+        const before = (activity.whatToExpect ?? {}) as Record<string, unknown>;
+        const after = whatToExpect as Record<string, unknown>;
+        const norm = (v: unknown) => (v === undefined || v === "" ? null : v);
+        const changed = wteFields.some((k) => norm(before[k]) !== norm(after[k]));
+        if (changed) {
+          diffForAudit.whatToExpect = {
+            before: activity.whatToExpect,
+            after: whatToExpect,
+          };
+        }
       }
     }
 
@@ -441,7 +462,11 @@ export async function updateActivity(
           userId: activity.creatorId,
           type: "activity_edited_by_admin",
           activityId: id,
-          params: { reason: adminReason, changedFields: changedLabels },
+          params: {
+            activityTitle: activity.title,
+            reason: adminReason,
+            changedFields: changedLabels,
+          },
         });
       }
     }
@@ -466,6 +491,7 @@ export async function updateActivity(
           userId: p.userId,
           type: "activity_updated" as const,
           activityId: id,
+          params: { activityTitle: activity.title },
         })),
       );
     }
@@ -619,6 +645,15 @@ export async function joinActivity(
       return { success: false, error: "Aktiviteten är inställd" };
     }
 
+    // Arrangören är implicit deltagare och kan inte anmäla sig till sin
+    // egen aktivitet - det skulle skapa en dubbelroll i deltagar-listan.
+    if (activity.creatorId === user.id) {
+      return {
+        success: false,
+        error: "Du är arrangör för aktiviteten och räknas redan som deltagare",
+      };
+    }
+
     const joiner = await db.query.users.findFirst({
       where: eq(users.id, user.id!),
     });
@@ -721,7 +756,10 @@ export async function joinActivity(
         userId: activity.creatorId,
         type: "participant_joined",
         activityId,
-        params: { participantName: joiner.displayName || "Anonym" },
+        params: {
+          activityTitle: activity.title,
+          actorName: joiner.displayName || "Anonym",
+        },
       });
     }
 
@@ -776,7 +814,10 @@ export async function leaveActivity(activityId: string) {
         userId: activity.creatorId,
         type: "participant_left",
         activityId,
-        params: { participantName: leaver?.displayName || "Anonym" },
+        params: {
+          activityTitle: activity.title,
+          actorName: leaver?.displayName || "Anonym",
+        },
       });
     }
 
@@ -830,6 +871,34 @@ export async function getActivityDetail(activityId: string) {
       eq(activityParticipants.status, "interested"),
     ));
 
+  // Förhandsvisning av attending-deltagare för avatar-stacken. Hämtar upp
+  // till 20 så popovern täcker normala aktiviteter utan extra round-trip.
+  const attendingRows = await db
+    .select({
+      userId: activityParticipants.userId,
+      displayName: users.displayName,
+      avatarUrl: users.avatarUrl,
+    })
+    .from(activityParticipants)
+    .innerJoin(users, eq(users.id, activityParticipants.userId))
+    .where(
+      and(
+        eq(activityParticipants.activityId, activityId),
+        eq(activityParticipants.status, "attending"),
+      ),
+    )
+    .orderBy(activityParticipants.createdAt)
+    .limit(20);
+
+  // Slå upp alla användare som viewern har blockerat. Använder vi för att
+  // (a) markera blockerade rader i deltagarpopovern, och (b) filtrera bort
+  // kommentarer från blockerade författare nedan.
+  const viewerBlockRows = await db
+    .select({ blockedId: userBlocks.blockedId })
+    .from(userBlocks)
+    .where(eq(userBlocks.blockerId, user.id!));
+  const blockedIds = new Set<string>(viewerBlockRows.map((r) => r.blockedId));
+
   const comments = await db
     .select({
       id: activityComments.id,
@@ -837,11 +906,24 @@ export async function getActivityDetail(activityId: string) {
       authorName: users.displayName,
       content: activityComments.content,
       createdAt: activityComments.createdAt,
+      editedAt: activityComments.editedAt,
+      deletedAt: activityComments.deletedAt,
+      deletedByAdminId: activityComments.deletedByAdminId,
+      deletedByCreatorId: activityComments.deletedByCreatorId,
     })
     .from(activityComments)
     .leftJoin(users, eq(users.id, activityComments.userId))
     .where(eq(activityComments.activityId, activityId))
     .orderBy(activityComments.createdAt);
+
+  // Annotera kommentarer från blockerade författare istället för att dölja
+  // dem helt. UI:t använder isBlockedByViewer för att rendera en spoiler-
+  // stil där innehållet är suddigt tills användaren klickar "Visa".
+  const annotatedComments = comments.map((c) => ({
+    ...c,
+    isBlockedByViewer:
+      c.userId !== null && blockedIds.has(c.userId),
+  }));
 
   const feedbackRows = await db
     .select({ rating: activityFeedback.rating, count: count() })
@@ -865,6 +947,27 @@ export async function getActivityDetail(activityId: string) {
 
   const wte = activity.whatToExpect as Record<string, unknown> | null;
 
+  // Slå in arrangören först i listan och justera räknaren så texten "X / Y
+  // deltagare" stämmer med antalet avatarer.
+  const attendingMapped = attendingRows.map((r) => ({
+    id: r.userId,
+    displayName: r.displayName ?? "Anonym",
+    avatarUrl: r.avatarUrl,
+    isBlockedByViewer: blockedIds.has(r.userId),
+  }));
+  const { participants: attendingWithCreator, countDelta } =
+    mergeCreatorIntoPreview(
+      attendingMapped,
+      creator
+        ? {
+            id: creator.id,
+            displayName: creator.displayName ?? "Anonym",
+            avatarUrl: creator.avatarUrl,
+          }
+        : null,
+    );
+  const displayParticipantCount = participantCount + countDelta;
+
   return {
     id: activity.id,
     title: activity.title,
@@ -886,14 +989,20 @@ export async function getActivityDetail(activityId: string) {
     viewerIsAdmin: viewerProfile?.isAdmin ?? false,
     deletedAt: activity.deletedAt,
     tags,
-    participantCount,
+    participantCount: displayParticipantCount,
     interestedCount,
-    comments: comments.map((c) => ({
+    attendingPreview: attendingWithCreator,
+    comments: annotatedComments.map((c) => ({
       id: c.id,
       userId: c.userId,
       authorName: c.authorName ?? "Anonym",
       content: c.content,
       createdAt: c.createdAt!,
+      editedAt: c.editedAt,
+      deletedAt: c.deletedAt,
+      deletedByAdminId: c.deletedByAdminId,
+      deletedByCreatorId: c.deletedByCreatorId,
+      isBlockedByViewer: c.isBlockedByViewer,
     })),
     feedbackTotal,
     feedbackPositive,
@@ -901,5 +1010,75 @@ export async function getActivityDetail(activityId: string) {
     participationStatus: (participation?.status as "interested" | "attending" | undefined) ?? null,
     isCreator: activity.creatorId === user.id,
     currentUserId: user.id!,
+  };
+}
+
+/**
+ * Hämta en aktivitet för kopiering till en ny aktivitet. Returnerar bara de
+ * fält som ska prefilas i create-formuläret - datum/tid lämnas alltid tomma,
+ * och deltagare/kommentarer/status följer aldrig med.
+ *
+ * Kräver att anroparen är skaparen av källaktiviteten. Borttagna aktiviteter
+ * kan inte kopieras. Avbokade och utkast får kopieras.
+ */
+export async function getActivityForCopy(activityId: string) {
+  const user = await requireAuth();
+
+  const activity = await db.query.activities.findFirst({
+    where: eq(activities.id, activityId),
+  });
+
+  if (!activity) {
+    return { success: false as const, error: "Aktivitet hittades inte" };
+  }
+  if (activity.deletedAt) {
+    return {
+      success: false as const,
+      error: "Borttagna aktiviteter kan inte kopieras",
+    };
+  }
+  if (activity.creatorId !== user.id) {
+    return {
+      success: false as const,
+      error: "Du kan bara kopiera dina egna aktiviteter",
+    };
+  }
+
+  const tagRows = await db
+    .select({ tagId: activityTags.tagId })
+    .from(activityTags)
+    .where(eq(activityTags.activityId, activityId));
+
+  const wte = activity.whatToExpect as Record<string, unknown> | null;
+
+  return {
+    success: true as const,
+    activity: {
+      title: activity.title,
+      description: activity.description,
+      location: activity.location,
+      latitude: activity.latitude,
+      longitude: activity.longitude,
+      // startTime/endTime som ISO-strängar - klienten parsar och skiftar
+      // datumet framåt en vecka, men behåller tidpunkten under dygnet.
+      startTime: activity.startTime?.toISOString() ?? null,
+      endTime: activity.endTime?.toISOString() ?? null,
+      imageThumbUrl: activity.imageThumbUrl,
+      imageMediumUrl: activity.imageMediumUrl,
+      imageOgUrl: activity.imageOgUrl,
+      imageAccentColor: activity.imageAccentColor,
+      colorTheme: activity.colorTheme,
+      maxParticipants: activity.maxParticipants,
+      genderRestriction: activity.genderRestriction,
+      minAge: activity.minAge,
+      tagIds: tagRows.map((r) => r.tagId),
+      whatToExpect: {
+        audience: (wte?.audience as string | undefined) ?? "alla",
+        experienceLevel: (wte?.experienceLevel as string | undefined) ?? "alla",
+        whoComes: (wte?.whoComes as string | undefined) ?? "",
+        latePolicy: (wte?.latePolicy as string | undefined) ?? "",
+        courageMessage: (wte?.courageMessage as string | undefined) ?? "",
+      },
+    },
   };
 }

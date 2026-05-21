@@ -1,6 +1,10 @@
 "use client";
 
 import { getColorHex } from "@/lib/color-themes";
+import {
+  ParticipantAvatars,
+  type ParticipantPreview,
+} from "@/components/activity/participant-avatars";
 
 interface WhatToExpect {
   okAlone?: boolean;
@@ -34,10 +38,23 @@ interface ActivityCardProps {
     imageAccentColor?: string | null;
     colorTheme?: string | null;
     genderRestriction?: "alla" | "kvinnor" | "man" | null;
+    /** Förhandsvisning av attending-deltagare för avatar-stack på kortet. */
+    attendingPreview?: ParticipantPreview[];
   };
   isCreator?: boolean;
   userStatus?: "interested" | "attending" | null;
   onClick?: (id: string) => void;
+  /**
+   * Reserverar extra padding i topp av info-blocket så att absolut-positionerade
+   * action-knappar (Kopiera, Redigera) ovanpå kortet inte döljer titeln. Sätts
+   * av föräldern som faktiskt renderar overlayen.
+   */
+  reserveTopActionSpace?: boolean;
+  /**
+   * När true visas en "Utkast"-badge i titelraden istället för "Arrangerar".
+   * Båda badgar är exklusiva - utkast ersätter arrangerar-statusen.
+   */
+  isDraft?: boolean;
 }
 
 // Fallback used when an activity has neither an extracted accent nor a colorTheme
@@ -72,37 +89,13 @@ function formatLocation(raw: string): string {
   return parts.join(", ");
 }
 
-function ParticipantDots({
-  count,
-  max,
-}: {
-  count: number;
-  max: number | null;
-}) {
-  const shown = Math.min(count, 5);
-  return (
-    <div className="flex items-center gap-1.5">
-      <div className="flex gap-[3px]">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div
-            key={i}
-            className={`w-1.5 h-1.5 rounded-full ${i < shown ? "bg-primary" : "bg-border"}`}
-          />
-        ))}
-      </div>
-      <span className="text-xs text-secondary">
-        {count}
-        {max != null ? ` / ${max}` : ""} deltagare
-      </span>
-    </div>
-  );
-}
-
 export function ActivityCard({
   activity,
   isCreator = false,
   userStatus,
   onClick,
+  reserveTopActionSpace = false,
+  isDraft = false,
 }: ActivityCardProps) {
   const wte = activity.whatToExpect;
   const start =
@@ -211,7 +204,11 @@ export function ActivityCard({
       </div>
 
       {/* ───── Info block (right) ───── */}
-      <div className="flex-1 min-w-0 p-3 md:p-5 flex flex-col">
+      <div
+        className={`flex-1 min-w-0 p-3 md:p-5 flex flex-col ${
+          reserveTopActionSpace ? "pt-10 md:pt-14" : ""
+        }`}
+      >
         {/* Title + badge share the top row via flex. Title truncates at the
             badge's left edge, so the break point shifts with viewport width
             instead of being pinned to a fixed pr-24. No wrap, just ellipsis. */}
@@ -219,7 +216,12 @@ export function ActivityCard({
           <h3 className="flex-1 min-w-0 font-display font-bold text-heading tracking-tight text-sm md:text-lg leading-tight truncate">
             {activity.title}
           </h3>
-          {isCreator && (
+          {isDraft && (
+            <span className="shrink-0 inline-block text-[10px] md:text-xs font-semibold px-2 py-0.5 rounded-full bg-alert-bg text-alert-text">
+              Utkast
+            </span>
+          )}
+          {isCreator && !isDraft && (
             <span className="shrink-0 inline-block text-[10px] md:text-xs font-semibold px-2 py-0.5 rounded-full bg-success-bg text-success-text">
               Arrangerar
             </span>
@@ -257,9 +259,11 @@ export function ActivityCard({
         {/* Footer: participants only. The courage-message heart icon is now
             redundant because the message itself is visible above. */}
         <div className="mt-auto pt-2 md:pt-3 md:border-t md:border-border flex items-center justify-between gap-2">
-          <ParticipantDots
-            count={activity.participantCount}
+          <ParticipantAvatars
+            participants={activity.attendingPreview ?? []}
+            total={activity.participantCount}
             max={activity.maxParticipants}
+            variant="compact"
           />
         </div>
       </div>

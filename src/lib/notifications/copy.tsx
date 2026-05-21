@@ -17,23 +17,53 @@ function asString(value: unknown, fallback = ""): string {
 export function notificationMessage(
   type: NotificationType,
   params: Params,
+  activityTitle: string | null = null,
 ): string {
-  const p = params ?? {};
+  const p = (params ?? {}) as Record<string, unknown>;
+  // Prio: aktiv FK-join > params.activityTitle (sparat vid creation) >
+  // generic fallback. Andra steget täcker hard-deletade aktiviteter där
+  // notification.activityId blivit null via ON DELETE SET NULL.
+  const titleRaw =
+    activityTitle ?? asString(p.activityTitle, "") ?? "";
+  const titleQuoted = titleRaw ? `"${titleRaw}"` : "En aktivitet";
+  const actor = asString(p.actorName, "En deltagare");
+  const reason = asString(p.reason);
+  const changed = asString(p.changedFields);
   switch (type) {
     case "participant_joined":
-      return `${asString((p as Record<string, unknown>).actorName, "En deltagare")} har anmält sig`;
+      return `${actor} har anmält sig till ${titleQuoted}`;
     case "participant_left":
-      return `${asString((p as Record<string, unknown>).actorName, "En deltagare")} har avanmält sig`;
+      return `${actor} har avanmält sig från ${titleQuoted}`;
     case "activity_updated":
-      return "Aktiviteten har uppdaterats";
+      return `${titleQuoted} har uppdaterats`;
     case "activity_cancelled":
-      return `Aktiviteten har avbokats${asString((p as Record<string, unknown>).reason) ? ` - ${asString((p as Record<string, unknown>).reason)}` : ""}`;
+      return `${titleQuoted} har avbokats${reason ? ` - ${reason}` : ""}`;
     case "activity_deleted":
-      return asString((p as Record<string, unknown>).isForCreator)
-        ? "Din aktivitet har tagits bort av en administratör"
-        : "Aktiviteten har tagits bort";
+      return asString(p.isForCreator)
+        ? `Din aktivitet ${titleQuoted} har tagits bort av en administratör`
+        : `${titleQuoted} har tagits bort`;
     case "activity_edited_by_admin":
-      return `En administratör har redigerat aktiviteten${asString((p as Record<string, unknown>).changedFields) ? ` (${asString((p as Record<string, unknown>).changedFields)})` : ""}`;
+      return `En administratör har redigerat ${titleQuoted}${changed ? ` (${changed})` : ""}`;
+  }
+}
+
+/**
+ * Eventuell extra detaljrad under headlinen, t.ex. admins motivering vid
+ * moderationsåtgärd. Returnerar null om inget extra ska visas.
+ */
+export function notificationDetail(
+  type: NotificationType,
+  params: Params,
+): string | null {
+  const p = (params ?? {}) as Record<string, unknown>;
+  const reason = asString(p.reason);
+  if (!reason) return null;
+  switch (type) {
+    case "activity_edited_by_admin":
+    case "activity_deleted":
+      return `Anledning: ${reason}`;
+    default:
+      return null;
   }
 }
 

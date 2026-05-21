@@ -12,17 +12,23 @@ import {
   activityComments,
   activityFeedback,
   interestTags,
+  userBlocks,
   users,
 } from "@/db/schema";
-import { eq, and, count, sql } from "drizzle-orm";
+import { eq, and, count, inArray, sql } from "drizzle-orm";
 import { CourageSection } from "@/components/activity/courage-section";
+import { RichTextDisplay } from "@/components/ui/rich-text-display";
+import { stripHtmlForExcerpt } from "@/lib/rich-text";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ShareButton } from "@/components/ui/share-button";
 import { getColorHex } from "@/lib/color-themes";
 import { AppShell } from "@/components/layout/app-shell";
+import { UnsavedChangesProvider } from "@/contexts/unsaved-changes";
 import { ActivityDetailClient } from "./activity-detail-client";
 import { AdminActivityControls } from "@/components/activity/admin-activity-controls";
+import { ParticipantAvatars } from "@/components/activity/participant-avatars";
+import { mergeCreatorIntoPreview } from "@/lib/queries/participants";
 
 interface WhatToExpect {
   okAlone?: boolean;
@@ -74,6 +80,24 @@ async function getActivity(id: string) {
       eq(activityParticipants.status, "interested"),
     ));
 
+  // Förhandsvisning av attending-deltagare för avatar-stack + popover.
+  const attendingRows = await db
+    .select({
+      userId: activityParticipants.userId,
+      displayName: users.displayName,
+      avatarUrl: users.avatarUrl,
+    })
+    .from(activityParticipants)
+    .innerJoin(users, eq(users.id, activityParticipants.userId))
+    .where(
+      and(
+        eq(activityParticipants.activityId, id),
+        eq(activityParticipants.status, "attending"),
+      ),
+    )
+    .orderBy(activityParticipants.createdAt)
+    .limit(20);
+
   // Get comments with author info
   const comments = await db
     .select({
@@ -82,6 +106,10 @@ async function getActivity(id: string) {
       authorName: users.displayName,
       content: activityComments.content,
       createdAt: activityComments.createdAt,
+      editedAt: activityComments.editedAt,
+      deletedAt: activityComments.deletedAt,
+      deletedByAdminId: activityComments.deletedByAdminId,
+      deletedByCreatorId: activityComments.deletedByCreatorId,
     })
     .from(activityComments)
     .leftJoin(users, eq(users.id, activityComments.userId))
@@ -105,18 +133,43 @@ async function getActivity(id: string) {
     if (row.rating === "positive") feedbackPositive = row.count;
   }
 
+  // Lägg arrangören först i listan + justera räknaren så den matchar
+  // antalet avatarer. Skedd här istället för i getActivity-callern eftersom
+  // creator-info redan finns laddat ovan.
+  const attendingMapped = attendingRows.map((r) => ({
+    id: r.userId,
+    displayName: r.displayName ?? "Anonym",
+    avatarUrl: r.avatarUrl,
+  }));
+  const { participants: attendingWithCreator, countDelta } =
+    mergeCreatorIntoPreview(
+      attendingMapped,
+      creator
+        ? {
+            id: creator.id,
+            displayName: creator.displayName ?? "Anonym",
+            avatarUrl: creator.avatarUrl,
+          }
+        : null,
+    );
+
   return {
     ...activity,
     creator,
     tags,
-    participantCount,
+    participantCount: participantCount + countDelta,
     interestedCount,
+    attendingPreview: attendingWithCreator,
     comments: comments.map((c) => ({
       id: c.id,
       userId: c.userId,
       authorName: c.authorName ?? "Anonym",
       content: c.content,
       createdAt: c.createdAt!,
+      editedAt: c.editedAt,
+      deletedAt: c.deletedAt,
+      deletedByAdminId: c.deletedByAdminId,
+      deletedByCreatorId: c.deletedByCreatorId,
     })),
     feedbackTotal,
     feedbackPositive,
@@ -137,10 +190,10 @@ export async function generateMetadata({
 
   return {
     title: `${activity.title} - Mälarkrets`,
-    description: activity.description.slice(0, 160),
+    description: stripHtmlForExcerpt(activity.description, 160),
     openGraph: {
       title: activity.title,
-      description: activity.description.slice(0, 160),
+      description: stripHtmlForExcerpt(activity.description, 160),
       images: activity.imageOgUrl
         ? [activity.imageOgUrl]
         : activity.imageMediumUrl
@@ -179,6 +232,28 @@ export default async function ActivityDetailPage({
     });
     isParticipant = !!participation;
     participationStatus = (participation?.status as "interested" | "attending" | undefined) ?? null;
+  }
+
+  // Slå upp alla användare som inloggad viewer har blockerat. Använder vi
+  // för att markera blockerade rader i deltagarpopovern och kommentarer
+  // (spoiler-suddiga med "Visa"-knapp).
+  if (currentUserId) {
+    const blockRows = await db
+      .select({ blockedId: userBlocks.blockedId })
+      .from(userBlocks)
+      .where(eq(userBlocks.blockerId, currentUserId));
+    const blockedSet = new Set(blockRows.map((r) => r.blockedId));
+    if (blockedSet.size > 0) {
+      activity.attendingPreview = activity.attendingPreview.map((p) => ({
+        ...p,
+        isBlockedByViewer: blockedSet.has(p.id),
+      }));
+      activity.comments = activity.comments.map((c) => ({
+        ...c,
+        isBlockedByViewer:
+          c.userId !== null && blockedSet.has(c.userId),
+      }));
+    }
   }
 
   const wte = activity.whatToExpect as WhatToExpect | null;
@@ -417,22 +492,21 @@ export default async function ActivityDetailPage({
                         </span>
                       </p>
                     )}
-                    <p>
-                      Deltagare:{" "}
-                      <span className="font-medium text-heading">
-                        {activity.participantCount}
-                        {activity.maxParticipants ? ` / ${activity.maxParticipants}` : ""}
-                      </span>
+                    <div className="pt-1">
+                      <ParticipantAvatars
+                        participants={activity.attendingPreview}
+                        total={activity.participantCount}
+                        max={activity.maxParticipants}
+                        variant="full"
+                        currentUserId={currentUserId ?? undefined}
+                      />
                       {activity.interestedCount > 0 && (
-                        <>
-                          <span className="mx-2 text-dimmed">·</span>
-                          Intresserade:{" "}
-                          <span className="font-medium text-heading">
-                            {activity.interestedCount}
-                          </span>
-                        </>
+                        <p className="mt-1 text-xs text-dimmed">
+                          + {activity.interestedCount}{" "}
+                          {activity.interestedCount === 1 ? "intresserad" : "intresserade"}
+                        </p>
                       )}
-                    </p>
+                    </div>
                     {feedbackText && (
                       <p className="text-primary font-medium">{feedbackText}</p>
                     )}
@@ -477,9 +551,10 @@ export default async function ActivityDetailPage({
               </div>
 
               {/* Description - full width below */}
-              <p className="mt-6 text-heading whitespace-pre-wrap leading-relaxed">
-                {activity.description}
-              </p>
+              <RichTextDisplay
+                html={activity.description}
+                className="mt-6 text-heading leading-relaxed"
+              />
 
               {/* Action buttons - desktop only, mobile uses floating bar.
                   Creators get their Edit button in a sticky card at the end of the
@@ -493,6 +568,7 @@ export default async function ActivityDetailPage({
                     participationStatus={participationStatus}
                     isCreator={isCreator}
                     currentUserId={currentUserId}
+                    currentUserIsAdmin={isAdmin}
                     comments={activity.comments}
                     isCancelled={!!activity.cancelledAt}
                     actionsOnly
@@ -517,6 +593,7 @@ export default async function ActivityDetailPage({
                 participationStatus={participationStatus}
                 isCreator={isCreator}
                 currentUserId={currentUserId}
+                currentUserIsAdmin={isAdmin}
                 comments={activity.comments}
                 isCancelled={!!activity.cancelledAt}
               />
@@ -539,23 +616,38 @@ export default async function ActivityDetailPage({
               </Card>
             )}
 
-            {/* Creator tools - sticky footer mirroring the admin card pattern. Only the
-                edit action lives here; cancel/delete stay on the edit page. */}
+            {/* Creator tools - sticky footer mirroring the admin card pattern. Only
+                the edit + copy actions lives here; cancel/delete stay on the edit
+                page. Avbokade aktiviteter kan kopieras (skapa om eventet) men inte
+                redigeras. */}
             {currentUserId && isCreator && !activity.deletedAt && (
               <Card className="!bg-primary-light border-primary/20 lg:sticky lg:bottom-4 lg:z-20 shadow-admin-footer">
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-xs font-semibold text-primary uppercase tracking-wider">
                     Din aktivitet
                   </span>
-                  <Link href={`/activity/${id}/edit`}>
-                    <Button variant="secondary" size="compact" type="button">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                      </svg>
-                      Redigera
-                    </Button>
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link href={`/activity/new?from=${id}`}>
+                      <Button variant="secondary" size="compact" type="button">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                        </svg>
+                        Kopiera
+                      </Button>
+                    </Link>
+                    {!activity.cancelledAt && (
+                      <Link href={`/activity/${id}/edit`}>
+                        <Button variant="secondary" size="compact" type="button">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                          </svg>
+                          Redigera
+                        </Button>
+                      </Link>
+                    )}
+                  </div>
                 </div>
               </Card>
             )}
@@ -578,5 +670,9 @@ export default async function ActivityDetailPage({
     );
   }
 
-  return pageContent;
+  // Icke-inloggade får ingen AppShell men FeedLink/GuardedLink i headern
+  // kräver att UnsavedChangesProvider finns högre upp i trädet.
+  return (
+    <UnsavedChangesProvider>{pageContent}</UnsavedChangesProvider>
+  );
 }

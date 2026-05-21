@@ -4,14 +4,19 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { RichTextDisplay } from "@/components/ui/rich-text-display";
 import { getColorHex } from "@/lib/color-themes";
 import { CourageSection } from "@/components/activity/courage-section";
 import { CommentList } from "@/components/activity/comment-list";
 import { AdminActivityControls } from "@/components/activity/admin-activity-controls";
 import { useToast } from "@/components/ui/toast";
 import { joinActivity, leaveActivity, getActivityDetail } from "@/actions/activities";
-import { createComment, deleteComment } from "@/actions/comments";
+import { createComment, deleteComment, editComment } from "@/actions/comments";
 import { ShareButton } from "@/components/ui/share-button";
+import {
+  ParticipantAvatars,
+  type ParticipantPreview,
+} from "@/components/activity/participant-avatars";
 
 interface ActivityDetail {
   id: string;
@@ -35,6 +40,7 @@ interface ActivityDetail {
   tags: Array<{ id: number; name: string; slug: string }>;
   participantCount: number;
   interestedCount: number;
+  attendingPreview: ParticipantPreview[];
   comments: Array<{
     id: string;
     userId: string | null;
@@ -177,7 +183,19 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
     const result = await deleteComment(commentId);
     if (result.success) {
       await refreshPanel();
+    } else {
+      toast(result.error ?? "Kunde inte ta bort kommentar", "error");
     }
+  }
+
+  async function handleCommentEdit(commentId: string, content: string) {
+    const result = await editComment(commentId, content);
+    if (result.success) {
+      await refreshPanel();
+      return true;
+    }
+    toast(result.error ?? "Kunde inte redigera kommentar", "error");
+    return false;
   }
 
   const feedbackText =
@@ -334,22 +352,22 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
                         Skapad av{" "}
                         <span className="font-medium text-heading">{detail.creatorName}</span>
                       </p>
-                      <p>
-                        Deltagare:{" "}
-                        <span className="font-medium text-heading">
-                          {detail.participantCount}
-                          {detail.maxParticipants ? ` / ${detail.maxParticipants}` : ""}
-                        </span>
+                      <div className="pt-1">
+                        <ParticipantAvatars
+                          participants={detail.attendingPreview}
+                          total={detail.participantCount}
+                          max={detail.maxParticipants}
+                          variant="full"
+                          currentUserId={detail.currentUserId}
+                          onBlocked={() => refreshPanel()}
+                        />
                         {detail.interestedCount > 0 && (
-                          <>
-                            <span className="mx-2 text-dimmed">·</span>
-                            Intresserade:{" "}
-                            <span className="font-medium text-heading">
-                              {detail.interestedCount}
-                            </span>
-                          </>
+                          <p className="mt-1 text-xs text-dimmed">
+                            + {detail.interestedCount}{" "}
+                            {detail.interestedCount === 1 ? "intresserad" : "intresserade"}
+                          </p>
                         )}
-                      </p>
+                      </div>
                       {feedbackText && (
                         <p className="text-primary font-medium">{feedbackText}</p>
                       )}
@@ -389,8 +407,10 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
                 isParticipant={detail.isParticipant}
                 isCreator={detail.isCreator}
                 currentUserId={detail.currentUserId}
+                currentUserIsAdmin={detail.viewerIsAdmin}
                 onSubmit={handleCommentSubmit}
                 onDelete={handleCommentDelete}
+                onEdit={handleCommentEdit}
               />
             </>
           )}
@@ -446,23 +466,38 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
           </div>
         )}
 
-        {/* Creator tools footer - sticky, mirrors the admin footer pattern. Only the
-            edit action lives here; cancel/delete stay on the edit page. */}
+        {/* Creator tools footer - sticky, mirrors the admin footer pattern.
+            Kopiera-knappen finns alltid (även på avbokade events där man kan
+            vilja "starta om"); Redigera försvinner för avbokade. Cancel/delete
+            stay on the edit page. */}
         {detail && detail.isCreator && !detail.deletedAt && (
           <div className="shrink-0 bg-primary-light border-t-2 border-primary/30 px-6 py-3 shadow-admin-footer">
             <div className="flex items-center justify-between gap-3">
               <span className="text-xs font-semibold text-primary uppercase tracking-wider">
                 Din aktivitet
               </span>
-              <Link href={`/activity/${activityId}/edit`}>
-                <Button variant="secondary" size="compact" type="button">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                  </svg>
-                  Redigera
-                </Button>
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link href={`/activity/new?from=${activityId}`}>
+                  <Button variant="secondary" size="compact" type="button">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                    Kopiera
+                  </Button>
+                </Link>
+                {!detail.cancelledAt && (
+                  <Link href={`/activity/${activityId}/edit`}>
+                    <Button variant="secondary" size="compact" type="button">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                      Redigera
+                    </Button>
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -492,23 +527,28 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
 // per-panel-instans så det återställs vid byte av aktivitet.
 function PanelDescription({ text }: { text: string }) {
   const [expanded, setExpanded] = useState(false);
-  const isLong = text.length >= 350;
+  // Räkna plain-text-längd, inte HTML-taggar, så "Visa mer"-tröskeln
+  // matchar vad användaren faktiskt ser.
+  const plainLength = text.replace(/<[^>]+>/g, "").length;
+  const isLong = plainLength >= 350;
 
   if (!isLong) {
     return (
-      <p className="text-heading whitespace-pre-wrap leading-relaxed">{text}</p>
+      <RichTextDisplay
+        html={text}
+        className="text-heading leading-relaxed"
+      />
     );
   }
 
   return (
     <div>
-      <p
-        className={`text-heading whitespace-pre-wrap leading-relaxed ${
+      <RichTextDisplay
+        html={text}
+        className={`text-heading leading-relaxed ${
           expanded ? "" : "line-clamp-6"
         }`}
-      >
-        {text}
-      </p>
+      />
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}

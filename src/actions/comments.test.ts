@@ -9,6 +9,7 @@ vi.mock("@/lib/auth", () => ({
 const mockDbQueryParticipantsFindFirst = vi.fn();
 const mockDbQueryCommentsFindFirst = vi.fn();
 const mockDbQueryActivitiesFindFirst = vi.fn();
+const mockDbQueryUsersFindFirst = vi.fn();
 
 function chain(terminal: unknown = []) {
   const promise = Promise.resolve(terminal);
@@ -26,6 +27,7 @@ function chain(terminal: unknown = []) {
 const mockSelect = vi.fn();
 const mockInsert = vi.fn();
 const mockDelete = vi.fn();
+const mockUpdate = vi.fn();
 
 vi.mock("@/lib/db", () => ({
   db: {
@@ -33,10 +35,12 @@ vi.mock("@/lib/db", () => ({
       activityParticipants: { findFirst: (...args: unknown[]) => mockDbQueryParticipantsFindFirst(...args) },
       activityComments: { findFirst: (...args: unknown[]) => mockDbQueryCommentsFindFirst(...args) },
       activities: { findFirst: (...args: unknown[]) => mockDbQueryActivitiesFindFirst(...args) },
+      users: { findFirst: (...args: unknown[]) => mockDbQueryUsersFindFirst(...args) },
     },
     select: (...args: unknown[]) => mockSelect(...args),
     insert: (...args: unknown[]) => mockInsert(...args),
     delete: (...args: unknown[]) => mockDelete(...args),
+    update: (...args: unknown[]) => mockUpdate(...args),
   },
 }));
 
@@ -52,10 +56,18 @@ vi.mock("drizzle-orm", () => ({
 }));
 
 vi.mock("@/db/schema", () => ({
-  activityComments: { id: "id", activityId: "activity_id", userId: "user_id", createdAt: "created_at" },
+  activityComments: {
+    id: "id",
+    activityId: "activity_id",
+    userId: "user_id",
+    createdAt: "created_at",
+    editedAt: "edited_at",
+    deletedByAdminId: "deleted_by_admin_id",
+  },
   activityParticipants: { activityId: "activity_id", userId: "user_id", status: "status" },
   activityFeedback: { activityId: "activity_id", userId: "user_id", rating: "rating" },
   activities: { id: "id", startTime: "start_time" },
+  users: { id: "id" },
   analyticsEvents: {},
 }));
 
@@ -74,6 +86,10 @@ beforeEach(async () => {
   mockSelect.mockReturnValue(chain([]));
   mockInsert.mockReturnValue(chain());
   mockDelete.mockReturnValue(chain());
+  mockUpdate.mockReturnValue(chain());
+  // Default: viewer är vanlig användare. Test-cases som behöver admin
+  // overridar det här explicit.
+  mockDbQueryUsersFindFirst.mockResolvedValue({ id: "default", isAdmin: false });
 
   const mod = await import("@/actions/comments");
   createComment = mod.createComment;
@@ -227,7 +243,7 @@ describe("Comments on other's activity (participant)", () => {
     const result = await deleteComment("comment-3");
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error).toContain("egna");
+      expect(result.error).toMatch(/inte rätt|egna/i);
     }
   });
 

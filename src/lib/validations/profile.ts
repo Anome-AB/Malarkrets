@@ -8,8 +8,11 @@ export const updateProfileSchema = z.object({
   gender: z.enum(["man", "kvinna", "ej_angett"]).optional(),
 });
 
+// Inget min-krav på server. Onboarding-flödet sätter sin egen UX-grind (3 st
+// för att komma vidare), men en etablerad användare ska kunna ta bort alla
+// sina intressen via profilen utan att schema-valideringen säger nej.
 export const updateInterestsSchema = z.object({
-  tagIds: z.array(z.number().int()).min(3, "Valj minst 3 intressen"),
+  tagIds: z.array(z.number().int()),
 });
 
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

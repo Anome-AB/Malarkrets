@@ -103,7 +103,7 @@ function unsplashUrls(photoKey: keyof typeof UNSPLASH_PHOTOS) {
 
 // När RESEED_ACTIVITIES=1 sätts: hoppa över user-creation, wipa befintliga
 // aktiviteter (inkl. tags/participants/comments via cascade), och insertera
-// den utökade listan. Användardatan rörs aldrig — bara aktiviteter.
+// den utökade listan. Användardatan rörs aldrig - bara aktiviteter.
 const RESEED_ACTIVITIES = process.env.RESEED_ACTIVITIES === "1";
 
 async function seed() {
@@ -591,7 +591,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Naturälskare 25-60 år", latePolicy: "Vi startade kl 10 punktligt" },
     },
     {
-      title: "Vinprovning — Bordeaux",
+      title: "Vinprovning - Bordeaux",
       description: "Sex utvalda Bordeaux-viner med tilltugg. Riktigt mysig kväll på Bia.",
       location: "Restaurang Bia, Västerås",
       latitude: 59.6120, longitude: 16.5420,
@@ -606,7 +606,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Vinintresserade 30-55 år", latePolicy: "Punkligt kl 19" },
     },
     {
-      title: "Brädspelskväll — Catan-natten",
+      title: "Brädspelskväll - Catan-natten",
       description: "Tre Catan-rundor och pizza. Erik vann (igen).",
       location: "Stadsbiblioteket, Västerås",
       latitude: 59.6110, longitude: 16.5440,
@@ -651,7 +651,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "nyborjare", whoComes: "Mest kvinnor 25-50", latePolicy: "Kom 5 min innan" },
     },
     {
-      title: "Bakcafé — semlor i februaristil",
+      title: "Bakcafé - semlor i februaristil",
       description: "Vi bakade semlor från grunden. Allas blev ätbara, en del blev fantastiska.",
       location: "Folkets Hus, Västerås",
       latitude: 59.6095, longitude: 16.5470,
@@ -681,7 +681,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Alla nivåer", latePolicy: "Drop-in, kom när du vill" },
     },
     {
-      title: "Bokcirkel — Sara Lidman",
+      title: "Bokcirkel - Sara Lidman",
       description: "Vi diskuterade 'Tjärdalen'. Bra samtal, mer kaffe än planerat.",
       location: "Café August, Västerås",
       latitude: 59.6105, longitude: 16.5455,
@@ -729,7 +729,7 @@ async function seed() {
     },
     {
       title: "Söndagsbrunch + språkutbyte",
-      description: "Engelsk konversation över brunch. Alla nivåer välkomna — vi anpassar tempot.",
+      description: "Engelsk konversation över brunch. Alla nivåer välkomna - vi anpassar tempot.",
       location: "Café Stationen, Västerås",
       latitude: 59.6090, longitude: 16.5560,
       ...unsplashUrls("café"),
@@ -743,7 +743,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Internationell mix", latePolicy: "Drop-in mellan 11-12" },
     },
     {
-      title: "Kvällsspring vid Mälaren — 7 km",
+      title: "Kvällsspring vid Mälaren - 7 km",
       description: "Lite längre kvällspass i lugnt tempo. Vi pratar mer än vi flåsar.",
       location: "Östra hamnen, Västerås",
       latitude: 59.6118, longitude: 16.5584,
@@ -758,7 +758,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "medel", whoComes: "Tempot ca 6 min/km", latePolicy: "Punkligt 18:30 vid bryggan" },
     },
     {
-      title: "Fotokurs — porträtt utomhus",
+      title: "Fotokurs - porträtt utomhus",
       description: "Vi tränar på naturligt ljus och komposition. Modeller turas om. Ta med kamera/mobil.",
       location: "Djäkneberget, Västerås",
       latitude: 59.6140, longitude: 16.5380,
@@ -773,7 +773,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "nyborjare", whoComes: "Hobbyfotografer", latePolicy: "Vi börjar prick 10:00" },
     },
     {
-      title: "Trädgårdsmiddag — vegetariskt",
+      title: "Trädgårdsmiddag - vegetariskt",
       description: "Fyra rätter, allt vegetariskt, mest från egen odling. BYO vin.",
       location: "Privat trädgård, Västerås",
       latitude: 59.6180, longitude: 16.5640,
@@ -785,10 +785,10 @@ async function seed() {
       genderRestriction: "alla" as const,
       minAge: 25,
       tags: ["Matlagning", "Trädgård"],
-      whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Trädgårds- och matintresserade 25+", latePolicy: "Kom 17:45, vi sätter oss 18:00", courageMessage: "Det är okej att komma ensam — alla började så någon gång." },
+      whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Trädgårds- och matintresserade 25+", latePolicy: "Kom 17:45, vi sätter oss 18:00", courageMessage: "Det är okej att komma ensam - alla började så någon gång." },
     },
     {
-      title: "Cykling — Anundshögsslingan",
+      title: "Cykling - Anundshögsslingan",
       description: "Lugn 30 km-runda förbi historiska platser. Stopp vid Anundshög för fika.",
       location: "Centralstationen, Västerås",
       latitude: 59.6090, longitude: 16.5560,
@@ -818,7 +818,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "nyborjare", whoComes: "Mest kvinnor", latePolicy: "Kom 10 min innan" },
     },
     {
-      title: "Brädspelskväll — strategispel",
+      title: "Brädspelskväll - strategispel",
       description: "Tyngre strategispel: Terraforming Mars, Twilight Imperium-light, Wingspan. Erfarna spelare en fördel.",
       location: "Stadsbiblioteket, Västerås",
       latitude: 59.6110, longitude: 16.5440,
@@ -863,7 +863,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Filmälskare", latePolicy: "Kom 15:45 så hinner vi popcorn" },
     },
     {
-      title: "Kodkväll — JavaScript-projekt",
+      title: "Kodkväll - JavaScript-projekt",
       description: "Vi bygger en liten todo-app i React tillsammans. Egen laptop. Lite JS-vana hjälper.",
       location: "Stadsbiblioteket, Västerås",
       latitude: 59.6110, longitude: 16.5440,
@@ -878,7 +878,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "medel", whoComes: "Hobbyutvecklare", latePolicy: "Punkligt 18:00" },
     },
     {
-      title: "Stickfika — strumpor och kaffe",
+      title: "Stickfika - strumpor och kaffe",
       description: "Drop-in stickning med strumpgarn. Visar upp pågående projekt och fikar.",
       location: "Café August, Västerås",
       latitude: 59.6105, longitude: 16.5455,
@@ -893,7 +893,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Mest kvinnor", latePolicy: "Drop-in" },
     },
     {
-      title: "Padelkväll — nybörjare",
+      title: "Padelkväll - nybörjare",
       description: "Vi delar in i lag och kör matcher. Plan finns bokad. Inga förkunskaper krävs.",
       location: "Padelhall Erikslund, Västerås",
       latitude: 59.6190, longitude: 16.5110,
@@ -908,7 +908,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "nyborjare", whoComes: "Sportintresserade 25-45", latePolicy: "Var ombytt 18:50" },
     },
     {
-      title: "Fågelskådning vid Asköviken — vårfåglar",
+      title: "Fågelskådning vid Asköviken - vårfåglar",
       description: "Tidig morgon. Vi spanar efter sångare och vadare. Kikare finns att låna.",
       location: "Asköviken naturreservat, Västerås",
       latitude: 59.5880, longitude: 16.4730,
@@ -923,7 +923,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Fågelintresserade", latePolicy: "Samling vid p-platsen 06:30 sharp" },
     },
     {
-      title: "Vinprovning — naturviner",
+      title: "Vinprovning - naturviner",
       description: "Vi smakar 6 naturviner från Frankrike och Italien. Ostbricka ingår.",
       location: "Restaurang Bia, Västerås",
       latitude: 59.6120, longitude: 16.5420,
@@ -938,7 +938,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Vinintresserade 25+", latePolicy: "Punkligt 19:00" },
     },
     {
-      title: "Morgonsim — 1500 m",
+      title: "Morgonsim - 1500 m",
       description: "Strukturerat pass i 50-bassängen. Vi delar upp i hastighetsbanor.",
       location: "Lögarängsbadet, Västerås",
       latitude: 59.6070, longitude: 16.5535,
@@ -953,7 +953,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "medel", whoComes: "Vana simmare", latePolicy: "Var ombytt 06:25" },
     },
     {
-      title: "Stadsvandring — gatukonst",
+      title: "Stadsvandring - gatukonst",
       description: "Vi promenerar runt centrum och spanar efter graffiti och murals. Kamera = bra idé.",
       location: "Stora torget, Västerås",
       latitude: 59.6094, longitude: 16.5430,
@@ -968,7 +968,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Konstnyfikna", latePolicy: "14:00 vid torgklockan" },
     },
     {
-      title: "Indiskt matlagningskurs — vegetariskt",
+      title: "Indiskt matlagningskurs - vegetariskt",
       description: "Dal, paneer butter masala, naan, raita. Allt veganskt-anpassningsbart. Recept ingår.",
       location: "Folkets Hus, Västerås",
       latitude: 59.6095, longitude: 16.5470,
@@ -983,7 +983,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "nyborjare", whoComes: "Matintresserade", latePolicy: "Kom 17:15" },
     },
     {
-      title: "Bokcirkel — modern svensk skönlitteratur",
+      title: "Bokcirkel - modern svensk skönlitteratur",
       description: "Denna gång: 'Beredskapssamhället' av Pernilla Thunberg. Boken finns på biblioteket.",
       location: "Café August, Västerås",
       latitude: 59.6105, longitude: 16.5455,
@@ -998,7 +998,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Bokälskare", latePolicy: "Punkligt 19:00" },
     },
     {
-      title: "Konsertkväll — lokala band",
+      title: "Konsertkväll - lokala band",
       description: "Tre lokala band spelar på Black Sheep. Genrer: indie, folk, rock.",
       location: "Black Sheep, Västerås",
       latitude: 59.6090, longitude: 16.5440,
@@ -1013,7 +1013,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Musikintresserade 20-40", latePolicy: "Insläpp från 19:30" },
     },
     {
-      title: "Kvällsyoga — yin",
+      title: "Kvällsyoga - yin",
       description: "Lugn yin-yoga med långa stretchar. Bra avslutning på dagen.",
       location: "Vasaparken, Västerås",
       latitude: 59.6155, longitude: 16.5505,
@@ -1028,7 +1028,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Yogaintresserade", latePolicy: "Kom 18:50" },
     },
     {
-      title: "Fotopromenad — Skog & sjö",
+      title: "Fotopromenad - Skog & sjö",
       description: "Vi kör ut till Lövudden och fotograferar. Skjuts från centrum kan ordnas.",
       location: "Lövudden, Västerås",
       latitude: 59.6210, longitude: 16.6020,
@@ -1043,7 +1043,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Naturfotografer", latePolicy: "P-platsen 09:30" },
     },
     {
-      title: "Schackturnering — snabbschack",
+      title: "Schackturnering - snabbschack",
       description: "5+0 blixt-format, swissystem. Pris till topp 3. Anmäl klockslag!",
       location: "Stadsbiblioteket, Västerås",
       latitude: 59.6110, longitude: 16.5440,
@@ -1058,7 +1058,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "medel", whoComes: "Schackspelare alla nivåer", latePolicy: "Anmälan 12:30" },
     },
     {
-      title: "Långpromenad — 12 km runt Hammarby",
+      title: "Långpromenad - 12 km runt Hammarby",
       description: "Hela rundan runt sjön. Vi tar god tid på oss och pausar för fika.",
       location: "Hammarbyparken, Västerås",
       latitude: 59.6360, longitude: 16.5490,
@@ -1088,7 +1088,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Alla välkomna", latePolicy: "Drop-in", courageMessage: "Kom som du är, även ensam." },
     },
     {
-      title: "Bakdag — surdegsbröd",
+      title: "Bakdag - surdegsbröd",
       description: "Vi bakar surdegsbröd från grunden. Ta med en burk till deg och en till smula.",
       location: "Folkets Hus, Västerås",
       latitude: 59.6095, longitude: 16.5470,
@@ -1103,7 +1103,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "nyborjare", whoComes: "Bakintresserade", latePolicy: "10:00 sharp, vi börjar med skålen" },
     },
     {
-      title: "Cykla till Sala — heldagstur",
+      title: "Cykla till Sala - heldagstur",
       description: "ca 70 km en väg. Lunch i Sala, tåg hem. Krävs cykelvana.",
       location: "Centralstationen, Västerås",
       latitude: 59.6090, longitude: 16.5560,
@@ -1118,7 +1118,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "avancerad", whoComes: "Cyklister med kondition", latePolicy: "Sharp 08:00 vid stationen" },
     },
     {
-      title: "Yoga — power flow",
+      title: "Yoga - power flow",
       description: "Snabbare flow för dig som vill svettas. 60 minuter, intensiv stretch.",
       location: "Vasaparken, Västerås",
       latitude: 59.6155, longitude: 16.5505,
@@ -1133,7 +1133,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "medel", whoComes: "Yogaerfarna", latePolicy: "Kom 07:50" },
     },
     {
-      title: "Pubquiz — film & TV",
+      title: "Pubquiz - film & TV",
       description: "Specialtema: 90-talsfilm + 2000-talsserier. Lag på 4-6 personer.",
       location: "Bishops Arms, Västerås",
       latitude: 59.6100, longitude: 16.5430,
@@ -1148,7 +1148,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Filmälskare 25-45", latePolicy: "Anmälan 18:45" },
     },
     {
-      title: "Löpning — intervaller",
+      title: "Löpning - intervaller",
       description: "Kort uppvärmning + 8x400m intervaller på elljusspår. Krävs grundkondition.",
       location: "Lögarängen, Västerås",
       latitude: 59.6075, longitude: 16.5530,
@@ -1163,7 +1163,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "medel", whoComes: "Löpare med kondition", latePolicy: "Sharp 18:30" },
     },
     {
-      title: "Trädgårdsdag — vårplantering",
+      title: "Trädgårdsdag - vårplantering",
       description: "Vi förbereder odlingslådor och planterar förkultiverade plantor. Handskar finns.",
       location: "Stadsodlingen Ekbacken, Västerås",
       latitude: 59.6280, longitude: 16.5550,
@@ -1178,7 +1178,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Trädgårdsintresserade", latePolicy: "Drop-in mellan 10-12" },
     },
     {
-      title: "Vandring — Kvarnberget",
+      title: "Vandring - Kvarnberget",
       description: "Brant uppstigning, vacker utsikt. Tag rejäla skor. ca 6 km.",
       location: "Kvarnberget, Västerås",
       latitude: 59.6450, longitude: 16.6700,
@@ -1193,7 +1193,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "medel", whoComes: "Naturvana", latePolicy: "P-platsen 10:00" },
     },
     {
-      title: "Programmering — Rust för nybörjare",
+      title: "Programmering - Rust för nybörjare",
       description: "Intro till Rust. Vi går igenom ownership och bygger en kommandoradsapp.",
       location: "Stadsbiblioteket, Västerås",
       latitude: 59.6110, longitude: 16.5440,
@@ -1208,7 +1208,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "nyborjare", whoComes: "Utvecklare, alla språk", latePolicy: "Kom 17:50" },
     },
     {
-      title: "Kvinnor i naturen — vandring",
+      title: "Kvinnor i naturen - vandring",
       description: "Vandring och samtal om friluftsliv. Endast för kvinnor.",
       location: "Asköviken naturreservat, Västerås",
       latitude: 59.5880, longitude: 16.4730,
@@ -1223,7 +1223,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Kvinnor 18+", latePolicy: "P-platsen 10:00", courageMessage: "Bra format för dig som vill prova vandring i mindre grupp." },
     },
     {
-      title: "Höstpromenad — svampskådning",
+      title: "Höstpromenad - svampskådning",
       description: "Vi går genom skogen och letar svamp. Bra första-tur för nybörjare.",
       location: "Skälby skog, Västerås",
       latitude: 59.6360, longitude: 16.5790,
@@ -1238,7 +1238,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "nyborjare", whoComes: "Naturintresserade", latePolicy: "P-plats vid skogsbrynet 11:00" },
     },
     {
-      title: "Brädspel — familjekväll",
+      title: "Brädspel - familjekväll",
       description: "Familjevänliga spel: Carcassonne, Ticket to Ride, Codenames. Barn 10+.",
       location: "Stadsbiblioteket, Västerås",
       latitude: 59.6110, longitude: 16.5440,
@@ -1253,7 +1253,7 @@ async function seed() {
       whatToExpect: { audience: "familj", experienceLevel: "alla", whoComes: "Familjer med barn 10+", latePolicy: "Drop-in 17-18" },
     },
     {
-      title: "Kvällsbrunch — pannkakor & pajer",
+      title: "Kvällsbrunch - pannkakor & pajer",
       description: "Sallsemester-format brunch på kvällen. Vi gör tillsammans.",
       location: "Folkets Hus, Västerås",
       latitude: 59.6095, longitude: 16.5470,
@@ -1268,7 +1268,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "nyborjare", whoComes: "Matintresserade", latePolicy: "Kom 17:45" },
     },
     {
-      title: "Fågelguidning — för nybörjare",
+      title: "Fågelguidning - för nybörjare",
       description: "Vi lär oss känna igen 15-20 vanliga arter. Kikare och fågelbok finns att låna.",
       location: "Asköviken naturreservat, Västerås",
       latitude: 59.5880, longitude: 16.4730,
@@ -1283,7 +1283,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "nyborjare", whoComes: "Nyfikna naturmänniskor", latePolicy: "Sharp 07:00" },
     },
     {
-      title: "Vinprovning — ekologiskt & svenskt",
+      title: "Vinprovning - ekologiskt & svenskt",
       description: "Svenska vingårdar börjar göra sig hörda. Vi smakar 6 svenska viner med ostbricka.",
       location: "Restaurang Bia, Västerås",
       latitude: 59.6120, longitude: 16.5420,
@@ -1310,10 +1310,10 @@ async function seed() {
       genderRestriction: "alla" as const,
       minAge: null,
       tags: ["Bokcirkel"],
-      whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Alla välkomna", latePolicy: "Drop-in", courageMessage: "Du är välkommen även ensam — bordet är öppet." },
+      whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Alla välkomna", latePolicy: "Drop-in", courageMessage: "Du är välkommen även ensam - bordet är öppet." },
     },
     {
-      title: "Filmkväll — japansk anime",
+      title: "Filmkväll - japansk anime",
       description: "Två filmer ur Studio Ghibli-katalogen. Snacks och soba ingår.",
       location: "Folkets Hus, Västerås",
       latitude: 59.6095, longitude: 16.5470,
@@ -1328,7 +1328,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Animefans + filmnördar", latePolicy: "17:45" },
     },
     {
-      title: "Stickfika — fortsättningskurs",
+      title: "Stickfika - fortsättningskurs",
       description: "För dig som kan grunderna och vill lära dig mönsterstickning.",
       location: "Café August, Västerås",
       latitude: 59.6105, longitude: 16.5455,
@@ -1343,7 +1343,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "medel", whoComes: "Stickerskor med grunder", latePolicy: "15:00" },
     },
     {
-      title: "Morgonyoga — energiboost",
+      title: "Morgonyoga - energiboost",
       description: "Snabb 45-min-flow för att starta dagen. Inga förkunskaper.",
       location: "Lögarängen, Västerås",
       latitude: 59.6075, longitude: 16.5530,
@@ -1358,7 +1358,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Morgonpigga", latePolicy: "06:25" },
     },
     {
-      title: "Brädspel — för nybörjare",
+      title: "Brädspel - för nybörjare",
       description: "Nya till brädspelshobbyn? Vi börjar med Carcassonne och Splendor. Lugnt tempo.",
       location: "Stadsbiblioteket, Västerås",
       latitude: 59.6110, longitude: 16.5440,
@@ -1373,7 +1373,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "nyborjare", whoComes: "Nybörjare välkomna", latePolicy: "17:50", courageMessage: "Du behöver verkligen inte ha spelat förut." },
     },
     {
-      title: "Cykla & fika — söndagstur",
+      title: "Cykla & fika - söndagstur",
       description: "Lugn 25 km-tur med fikastopp halvvägs. Lämplig för alla.",
       location: "Centralstationen, Västerås",
       latitude: 59.6090, longitude: 16.5560,
@@ -1388,7 +1388,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Söndagscyklister", latePolicy: "11:00 vid stationen" },
     },
     {
-      title: "Konsertkväll — jazz på Black Sheep",
+      title: "Konsertkväll - jazz på Black Sheep",
       description: "Lokal jazztrio spelar i två set. Mat och dryck ingår ej.",
       location: "Black Sheep, Västerås",
       latitude: 59.6090, longitude: 16.5440,
@@ -1403,7 +1403,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Jazzälskare 30+", latePolicy: "Insläpp 19:30" },
     },
     {
-      title: "Söndagsbrunch — internationell mix",
+      title: "Söndagsbrunch - internationell mix",
       description: "Var och en bidrar med en rätt från sitt hemland. Vi äter och pratar.",
       location: "Folkets Hus, Västerås",
       latitude: 59.6095, longitude: 16.5470,
@@ -1418,7 +1418,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Internationell mix", latePolicy: "Drop-in 12-13" },
     },
     {
-      title: "Löpning — långpass 15 km",
+      title: "Löpning - långpass 15 km",
       description: "Lugn långkörning. Lämplig för dig som tränar för halv- eller helmaraton.",
       location: "Lögarängen, Västerås",
       latitude: 59.6075, longitude: 16.5530,
@@ -1433,7 +1433,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "avancerad", whoComes: "Vana löpare", latePolicy: "Sharp 08:00" },
     },
     {
-      title: "Fotopromenad — solnedgång över Mälaren",
+      title: "Fotopromenad - solnedgång över Mälaren",
       description: "Vi fångar solnedgången över sjön. Stativ rekommenderat.",
       location: "Östra hamnen, Västerås",
       latitude: 59.6118, longitude: 16.5584,
@@ -1448,7 +1448,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Hobbyfotografer", latePolicy: "Bryggan 19:30" },
     },
     {
-      title: "Stadsvandring — Västerås medeltid",
+      title: "Stadsvandring - Västerås medeltid",
       description: "Guidad tur fokus medeltid: domkyrkan, slottet, gamla stan. Ca 2 timmar.",
       location: "Domkyrkan, Västerås",
       latitude: 59.6115, longitude: 16.5395,
@@ -1463,7 +1463,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Historieintresserade", latePolicy: "Domkyrkans entré 13:00" },
     },
     {
-      title: "Bokcirkel — sci-fi och fantasy",
+      title: "Bokcirkel - sci-fi och fantasy",
       description: "Vi läser Ursula K. Le Guin. Ny grupp, alla välkomna.",
       location: "Café August, Västerås",
       latitude: 59.6105, longitude: 16.5455,
@@ -1478,7 +1478,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Sci-fi-fans", latePolicy: "Punkligt 19" },
     },
     {
-      title: "Trädgårdsdag — skörd och förvaring",
+      title: "Trädgårdsdag - skörd och förvaring",
       description: "Vi skördar säsongens grönsaker och lär oss konservera dem.",
       location: "Stadsodlingen Ekbacken, Västerås",
       latitude: 59.6280, longitude: 16.5550,
@@ -1493,7 +1493,7 @@ async function seed() {
       whatToExpect: { audience: "alla", experienceLevel: "alla", whoComes: "Trädgårdsintresserade", latePolicy: "Drop-in 10-12" },
     },
     {
-      title: "Bara män — bastu och samtal",
+      title: "Bara män - bastu och samtal",
       description: "Lugn bastukväll, fokus samtal. Bra format för killar i alla åldrar.",
       location: "Lögarängsbadet, Västerås",
       latitude: 59.6070, longitude: 16.5535,

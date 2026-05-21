@@ -92,6 +92,41 @@
 			"when": 1780099200000,
 			"tag": "0012_timestamptz_for_unread",
 			"breakpoints": true
+		},
+		{
+			"idx": 13,
+			"version": "7",
+			"when": 1780185600000,
+			"tag": "0013_timestamptz_for_comments_notifications",
+			"breakpoints": true
+		},
+		{
+			"idx": 14,
+			"version": "7",
+			"when": 1780272000000,
+			"tag": "0014_remove_creator_self_participations",
+			"breakpoints": true
+		},
+		{
+			"idx": 15,
+			"version": "7",
+			"when": 1780358400000,
+			"tag": "0015_comment_edit_admin_delete",
+			"breakpoints": true
+		},
+		{
+			"idx": 16,
+			"version": "7",
+			"when": 1780444800000,
+			"tag": "0016_comment_deleted_at",
+			"breakpoints": true
+		},
+		{
+			"idx": 17,
+			"version": "7",
+			"when": 1780531200000,
+			"tag": "0017_comment_deleted_by_creator",
+			"breakpoints": true
 		}
 	]
 }

@@ -33,6 +33,11 @@ interface ActivityItem {
   whatToExpect: unknown;
   tags: Array<{ id: number; name: string; slug: string }>;
   participantCount: number;
+  attendingPreview?: Array<{
+    id: string;
+    displayName: string;
+    avatarUrl: string | null;
+  }>;
   creatorId: string | null;
   userStatus?: "interested" | "attending" | null;
 }
@@ -194,7 +199,10 @@ export function ActivityFeed({
     <div className="p-4 lg:p-6">
       <h1 className="text-2xl font-bold text-heading mb-4">Aktiviteter i Västerås</h1>
 
-      {/* Interest filter bar (mobile only, sidebar handles desktop) */}
+      {/* Interest filter bar (mobile only, sidebar handles desktop).
+          Visas bara om användaren faktiskt har valda intressen att filtrera
+          på - annars är hela panelen meningslös och defaulten är Visa alla. */}
+      {userInterests.length > 0 && (
       <div className="mb-4 lg:hidden">
         <button
           type="button"
@@ -278,6 +286,7 @@ export function ActivityFeed({
           </div>
         )}
       </div>
+      )}
 
       {/* Search + Create */}
       <div className="flex gap-3 items-center mb-6">
@@ -334,6 +343,7 @@ export function ActivityFeed({
                   endTime: activity.endTime,
                   tags: activity.tags,
                   participantCount: activity.participantCount,
+                  attendingPreview: activity.attendingPreview,
                   maxParticipants: activity.maxParticipants,
                   whatToExpect: activity.whatToExpect as WhatToExpect | null,
                   imageThumbUrl: activity.imageThumbUrl,

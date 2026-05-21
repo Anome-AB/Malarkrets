@@ -8,7 +8,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CommentList } from "@/components/activity/comment-list";
 import { useToast } from "@/components/ui/toast";
 import { joinActivity, leaveActivity } from "@/actions/activities";
-import { createComment, deleteComment } from "@/actions/comments";
+import { createComment, deleteComment, editComment } from "@/actions/comments";
 
 interface Comment {
   id: string;
@@ -16,6 +16,10 @@ interface Comment {
   authorName: string;
   content: string;
   createdAt: Date | string;
+  editedAt?: Date | string | null;
+  deletedAt?: Date | string | null;
+  deletedByAdminId?: string | null;
+  deletedByCreatorId?: string | null;
 }
 
 interface ActivityDetailClientProps {
@@ -25,6 +29,7 @@ interface ActivityDetailClientProps {
   participationStatus: "interested" | "attending" | null;
   isCreator: boolean;
   currentUserId: string | null;
+  currentUserIsAdmin?: boolean;
   comments: Comment[];
   isCancelled?: boolean;
   /** When true, only render the action buttons (used by parent action-bar). Skip comments + mobile floating bar. */
@@ -38,6 +43,7 @@ export function ActivityDetailClient({
   participationStatus,
   isCreator,
   currentUserId,
+  currentUserIsAdmin = false,
   comments,
   isCancelled,
   actionsOnly = false,
@@ -116,6 +122,16 @@ export function ActivityDetailClient({
     } else {
       toast(result.error ?? "Kunde inte ta bort kommentar", "error");
     }
+  }
+
+  async function handleCommentEdit(commentId: string, content: string) {
+    const result = await editComment(commentId, content);
+    if (result.success) {
+      router.refresh();
+      return true;
+    }
+    toast(result.error ?? "Kunde inte redigera kommentar", "error");
+    return false;
   }
 
   const actionButtons = !isCancelled && (
@@ -203,8 +219,10 @@ export function ActivityDetailClient({
             isParticipant={isParticipant || isCreator}
             isCreator={isCreator}
             currentUserId={currentUserId ?? undefined}
+            currentUserIsAdmin={currentUserIsAdmin}
             onSubmit={handleCommentSubmit}
             onDelete={handleCommentDelete}
+            onEdit={handleCommentEdit}
           />
         )}
       </div>
