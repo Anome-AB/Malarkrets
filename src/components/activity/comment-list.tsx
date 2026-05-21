@@ -199,8 +199,6 @@ function CommentItem({
   onUnblock: (comment: Comment) => void;
 }) {
   const isBlocked = !!comment.isBlockedByViewer;
-  const [revealed, setRevealed] = useState(false);
-  const shouldBlur = isBlocked && !revealed;
   // Block/unblock-knappen visas bara för inloggade, mot andra användare,
   // och bara om författaren fortfarande har konto (userId != null).
   const canBlockOrUnblock =
@@ -300,23 +298,7 @@ function CommentItem({
           )}
         </div>
       </div>
-      <p
-        className={`text-sm text-heading transition-[filter] duration-200 ${
-          shouldBlur ? "blur-sm select-none pointer-events-none" : ""
-        }`}
-        aria-hidden={shouldBlur}
-      >
-        {comment.content}
-      </p>
-      {isBlocked && (
-        <button
-          type="button"
-          onClick={() => setRevealed((r) => !r)}
-          className="mt-1.5 text-xs text-primary hover:underline focus:outline-none focus:underline"
-        >
-          {revealed ? "Dölj kommentar" : "Visa kommentar"}
-        </button>
-      )}
+      <p className="text-sm text-heading">{comment.content}</p>
     </li>
   );
 }
