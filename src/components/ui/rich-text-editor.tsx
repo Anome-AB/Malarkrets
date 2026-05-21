@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
+import { EmojiPicker } from "frimousse";
 
 interface RichTextEditorProps {
   value: string;
@@ -102,6 +103,36 @@ interface ToolbarProps {
 }
 
 function Toolbar({ editor }: ToolbarProps) {
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const emojiWrapperRef = useRef<HTMLDivElement>(null);
+
+  // Stäng emoji-popovern vid klick utanför eller Escape.
+  useEffect(() => {
+    if (!emojiOpen) return;
+    function onClickOutside(e: MouseEvent) {
+      if (
+        emojiWrapperRef.current &&
+        !emojiWrapperRef.current.contains(e.target as Node)
+      ) {
+        setEmojiOpen(false);
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setEmojiOpen(false);
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClickOutside);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [emojiOpen]);
+
+  function insertEmoji(emoji: string) {
+    editor.chain().focus().insertContent(emoji).run();
+    setEmojiOpen(false);
+  }
+
   return (
     <div className="flex items-center gap-1 border-b border-border-light bg-background px-2 py-1.5">
       <ToolbarButton
@@ -145,9 +176,64 @@ function Toolbar({ editor }: ToolbarProps) {
           <line x1="3" y1="18" x2="3.01" y2="18" />
         </svg>
       </ToolbarButton>
-      <span className="ml-2 text-xs text-secondary select-none" aria-hidden="true">
-        😊 via emoji-tangenten (Win+. / Cmd+Ctrl+Space)
-      </span>
+      <div className="relative" ref={emojiWrapperRef}>
+        <ToolbarButton
+          active={emojiOpen}
+          onClick={() => setEmojiOpen((v) => !v)}
+          title="Lägg till emoji"
+          ariaLabel="Lägg till emoji"
+        >
+          <span aria-hidden="true">😊</span>
+        </ToolbarButton>
+        {emojiOpen && (
+          <div className="absolute left-0 top-full mt-1 z-50 rounded-card border border-border bg-white shadow-xl overflow-hidden">
+            <EmojiPicker.Root
+              onEmojiSelect={({ emoji }) => insertEmoji(emoji)}
+              className="frimousse-root h-[320px] w-[320px] flex flex-col bg-white"
+              locale="sv"
+            >
+              <EmojiPicker.Search
+                placeholder="Sök emoji…"
+                className="m-2 px-3 py-2 text-sm bg-background rounded-control border border-border focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+              <EmojiPicker.Viewport className="relative flex-1 outline-none">
+                <EmojiPicker.Loading className="absolute inset-0 flex items-center justify-center text-sm text-secondary">
+                  Laddar…
+                </EmojiPicker.Loading>
+                <EmojiPicker.Empty className="absolute inset-0 flex items-center justify-center text-sm text-secondary">
+                  Inga träffar
+                </EmojiPicker.Empty>
+                <EmojiPicker.List
+                  className="select-none pb-2"
+                  components={{
+                    CategoryHeader: ({ category, ...props }) => (
+                      <div
+                        {...props}
+                        className="bg-white px-2 pt-2 pb-1 text-xs font-semibold text-secondary uppercase tracking-wide"
+                      >
+                        {category.label}
+                      </div>
+                    ),
+                    Row: ({ children, ...props }) => (
+                      <div {...props} className="flex px-1">
+                        {children}
+                      </div>
+                    ),
+                    Emoji: ({ emoji, ...props }) => (
+                      <button
+                        {...props}
+                        className="flex items-center justify-center size-9 text-xl rounded-control hover:bg-primary-light data-[active]:bg-primary-light"
+                      >
+                        {emoji.emoji}
+                      </button>
+                    ),
+                  }}
+                />
+              </EmojiPicker.Viewport>
+            </EmojiPicker.Root>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
