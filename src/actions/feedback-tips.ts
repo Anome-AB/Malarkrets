@@ -328,8 +328,10 @@ export async function getMyTipDetail(tipId: string): Promise<MyTipDetail | null>
 
   if (!tip) return null;
 
-  // Sidoeffekt: markera tipset som läst för rapportören just nu. Triggar
-  // revalidate på /mina-tips så badge:n släcks vid nästa besök på listan.
+  // Sidoeffekt: markera tipset som läst för rapportören just nu. /mina-tips
+  // är dynamisk (kräver auth + DB-fetch på varje render) så ingen explicit
+  // revalidatePath behövs — Next.js 16 förbjuder revalidatePath under render
+  // och nästa navigering till listan re-fetchar ändå.
   await db
     .insert(feedbackTipViews)
     .values({ userId: user.id, tipId: tip.id })
@@ -337,7 +339,6 @@ export async function getMyTipDetail(tipId: string): Promise<MyTipDetail | null>
       target: [feedbackTipViews.userId, feedbackTipViews.tipId],
       set: { lastViewedAt: new Date() },
     });
-  revalidatePath("/mina-tips");
 
   const comments = await db
     .select({
