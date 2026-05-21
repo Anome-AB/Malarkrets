@@ -10,7 +10,7 @@ import {
   userInterests,
   users,
 } from "@/db/schema";
-import { eq, gt, and, isNull, count, desc, sql } from "drizzle-orm";
+import { eq, gt, and, isNull, isNotNull, count, desc, sql } from "drizzle-orm";
 import {
   getMatchedActivities,
   FEED_PAGE_SIZE,
@@ -45,6 +45,9 @@ async function getPopularActivities() {
     .where(and(
       gt(activities.startTime, now),
       isNull(activities.cancelledAt),
+      // Utkast (publishedAt IS NULL) ska inte hamna i "populära" eftersom
+      // /activity/[id] returnerar 404 för icke-creator/non-admin.
+      isNotNull(activities.publishedAt),
       sql`NOT EXISTS (SELECT 1 FROM ${users} WHERE ${users.id} = ${activities.creatorId} AND ${users.isBanned} = true)`,
     ))
     .groupBy(activities.id)

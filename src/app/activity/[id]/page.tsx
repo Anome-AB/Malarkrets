@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { ShareButton } from "@/components/ui/share-button";
 import { getColorHex } from "@/lib/color-themes";
 import { AppShell } from "@/components/layout/app-shell";
+import { UnsavedChangesProvider } from "@/contexts/unsaved-changes";
 import { ActivityDetailClient } from "./activity-detail-client";
 import { AdminActivityControls } from "@/components/activity/admin-activity-controls";
 
@@ -581,5 +582,9 @@ export default async function ActivityDetailPage({
     );
   }
 
-  return pageContent;
+  // Icke-inloggade får ingen AppShell men FeedLink/GuardedLink i headern
+  // kräver att UnsavedChangesProvider finns högre upp i trädet.
+  return (
+    <UnsavedChangesProvider>{pageContent}</UnsavedChangesProvider>
+  );
 }
