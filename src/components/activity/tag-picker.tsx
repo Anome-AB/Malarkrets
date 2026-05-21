@@ -89,6 +89,36 @@ export function TagPicker({
     [otherTags, matchesSearch],
   );
 
+  // Cappa antalet visade "Övriga intressen" när inget sökord är aktivt så
+  // formulärets layout håller en stabil höjd. Vid sök visas alla träffar
+  // - då söker användaren aktivt och vill se hela utfallet.
+  const COLLAPSED_LIMIT = 20;
+  const [expanded, setExpanded] = useState(false);
+  const isSearching = searchQuery.trim().length > 0;
+
+  const { visibleOtherTags, hiddenOtherCount } = useMemo(() => {
+    if (expanded || isSearching) {
+      return {
+        visibleOtherTags: filteredOtherTags,
+        hiddenOtherCount: 0,
+      };
+    }
+    // Valda taggar tas alltid med så användaren inte tappar bort dem
+    // bakom "Visa fler"-knappen.
+    const selected = filteredOtherTags.filter((t) =>
+      selectedTags.includes(t.id),
+    );
+    const unselected = filteredOtherTags.filter(
+      (t) => !selectedTags.includes(t.id),
+    );
+    const remainingSlots = Math.max(0, COLLAPSED_LIMIT - selected.length);
+    const visible = [...selected, ...unselected.slice(0, remainingSlots)];
+    return {
+      visibleOtherTags: visible,
+      hiddenOtherCount: filteredOtherTags.length - visible.length,
+    };
+  }, [expanded, isSearching, filteredOtherTags, selectedTags]);
+
   if (loading) {
     return <p className="text-sm text-secondary">Laddar taggar...</p>;
   }
@@ -150,16 +180,36 @@ export function TagPicker({
               : "Inga övriga intressen tillgängliga"}
           </p>
         ) : (
-          <div className="flex flex-wrap gap-2">
-            {filteredOtherTags.map((tag) => (
-              <Tag
-                key={tag.id}
-                label={tag.name}
-                active={selectedTags.includes(tag.id)}
-                onClick={() => onToggle(tag.id)}
-              />
-            ))}
-          </div>
+          <>
+            <div className="flex flex-wrap gap-2">
+              {visibleOtherTags.map((tag) => (
+                <Tag
+                  key={tag.id}
+                  label={tag.name}
+                  active={selectedTags.includes(tag.id)}
+                  onClick={() => onToggle(tag.id)}
+                />
+              ))}
+            </div>
+            {hiddenOtherCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setExpanded(true)}
+                className="mt-3 text-sm font-medium text-primary hover:text-primary-hover transition-colors"
+              >
+                Visa fler ({hiddenOtherCount} kvar)
+              </button>
+            )}
+            {expanded && !isSearching && filteredOtherTags.length > COLLAPSED_LIMIT && (
+              <button
+                type="button"
+                onClick={() => setExpanded(false)}
+                className="mt-3 text-sm font-medium text-secondary hover:text-heading transition-colors"
+              >
+                Visa färre
+              </button>
+            )}
+          </>
         )}
       </div>
 
