@@ -384,7 +384,7 @@ function ParticipantPopoverButton({
         title={blockTarget ? `Blockera ${blockTarget.displayName}?` : ""}
         message={
           blockTarget
-            ? `Du ser inte längre aktiviteter som ${blockTarget.displayName} arrangerar i flödet, och de ser inte dina. Ni kan dock fortfarande delta i samma aktiviteter som någon annan arrangerar - där syns ni kvar i deltagarlistan. Du kan avblockera senare via din profil.`
+            ? `Du ser inte längre aktiviteter som ${blockTarget.displayName} arrangerar i flödet, och de ser inte dina. Ni kan dock fortfarande delta i samma aktiviteter som någon annan arrangerar - där syns ni kvar i deltagarlistan. Du kan avblockera när som helst senare.`
             : ""
         }
         confirmLabel="Blockera"
