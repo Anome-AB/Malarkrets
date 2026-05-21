@@ -336,7 +336,7 @@ function ParticipantPopoverButton({
                         disabled={isBlocking}
                         aria-label={`Avblockera ${p.displayName}`}
                         title="Avblockera"
-                        className="shrink-0 p-1 rounded-control text-secondary hover:text-heading hover:bg-background focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 transition-colors"
+                        className="shrink-0 p-1 rounded-control text-secondary hover:text-primary hover:bg-primary-light focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 transition-colors"
                       >
                         <svg
                           width="16"
@@ -349,8 +349,10 @@ function ParticipantPopoverButton({
                           strokeLinejoin="round"
                           aria-hidden="true"
                         >
-                          <path d="M3 12a9 9 0 1 0 9-9" />
-                          <polyline points="3 4 3 12 11 12" />
+                          {/* user-check: person + bock = "godkänd användare" */}
+                          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                          <circle cx="9" cy="7" r="4" />
+                          <polyline points="16 11 18 13 22 9" />
                         </svg>
                       </button>
                     )}
