@@ -906,6 +906,8 @@ export async function getActivityDetail(activityId: string) {
       authorName: users.displayName,
       content: activityComments.content,
       createdAt: activityComments.createdAt,
+      editedAt: activityComments.editedAt,
+      deletedByAdminId: activityComments.deletedByAdminId,
     })
     .from(activityComments)
     .leftJoin(users, eq(users.id, activityComments.userId))
@@ -994,6 +996,8 @@ export async function getActivityDetail(activityId: string) {
       authorName: c.authorName ?? "Anonym",
       content: c.content,
       createdAt: c.createdAt!,
+      editedAt: c.editedAt,
+      deletedByAdminId: c.deletedByAdminId,
       isBlockedByViewer: c.isBlockedByViewer,
     })),
     feedbackTotal,

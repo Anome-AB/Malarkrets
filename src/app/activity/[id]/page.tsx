@@ -106,6 +106,8 @@ async function getActivity(id: string) {
       authorName: users.displayName,
       content: activityComments.content,
       createdAt: activityComments.createdAt,
+      editedAt: activityComments.editedAt,
+      deletedByAdminId: activityComments.deletedByAdminId,
     })
     .from(activityComments)
     .leftJoin(users, eq(users.id, activityComments.userId))
@@ -162,6 +164,8 @@ async function getActivity(id: string) {
       authorName: c.authorName ?? "Anonym",
       content: c.content,
       createdAt: c.createdAt!,
+      editedAt: c.editedAt,
+      deletedByAdminId: c.deletedByAdminId,
     })),
     feedbackTotal,
     feedbackPositive,
@@ -560,6 +564,7 @@ export default async function ActivityDetailPage({
                     participationStatus={participationStatus}
                     isCreator={isCreator}
                     currentUserId={currentUserId}
+                    currentUserIsAdmin={isAdmin}
                     comments={activity.comments}
                     isCancelled={!!activity.cancelledAt}
                     actionsOnly
@@ -584,6 +589,7 @@ export default async function ActivityDetailPage({
                 participationStatus={participationStatus}
                 isCreator={isCreator}
                 currentUserId={currentUserId}
+                currentUserIsAdmin={isAdmin}
                 comments={activity.comments}
                 isCancelled={!!activity.cancelledAt}
               />

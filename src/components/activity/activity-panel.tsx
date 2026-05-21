@@ -11,7 +11,7 @@ import { CommentList } from "@/components/activity/comment-list";
 import { AdminActivityControls } from "@/components/activity/admin-activity-controls";
 import { useToast } from "@/components/ui/toast";
 import { joinActivity, leaveActivity, getActivityDetail } from "@/actions/activities";
-import { createComment, deleteComment } from "@/actions/comments";
+import { createComment, deleteComment, editComment } from "@/actions/comments";
 import { ShareButton } from "@/components/ui/share-button";
 import {
   ParticipantAvatars,
@@ -183,7 +183,19 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
     const result = await deleteComment(commentId);
     if (result.success) {
       await refreshPanel();
+    } else {
+      toast(result.error ?? "Kunde inte ta bort kommentar", "error");
     }
+  }
+
+  async function handleCommentEdit(commentId: string, content: string) {
+    const result = await editComment(commentId, content);
+    if (result.success) {
+      await refreshPanel();
+      return true;
+    }
+    toast(result.error ?? "Kunde inte redigera kommentar", "error");
+    return false;
   }
 
   const feedbackText =
@@ -395,8 +407,10 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
                 isParticipant={detail.isParticipant}
                 isCreator={detail.isCreator}
                 currentUserId={detail.currentUserId}
+                currentUserIsAdmin={detail.viewerIsAdmin}
                 onSubmit={handleCommentSubmit}
                 onDelete={handleCommentDelete}
+                onEdit={handleCommentEdit}
               />
             </>
           )}

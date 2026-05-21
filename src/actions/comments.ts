@@ -6,8 +6,12 @@ import {
   activityComments,
   activityParticipants,
   activities,
+  users,
 } from "@/db/schema";
-import { createCommentSchema } from "@/lib/validations/comment";
+import {
+  createCommentSchema,
+  editCommentSchema,
+} from "@/lib/validations/comment";
 import { eq, and, count, gte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { log, errAttrs } from "@/lib/logger";
@@ -90,26 +94,47 @@ export async function deleteComment(commentId: string) {
     if (!comment) {
       return { success: false, error: "Kommentaren hittades inte" };
     }
+    if (comment.deletedByAdminId) {
+      return { success: false, error: "Kommentaren är redan borttagen" };
+    }
 
-    // Verify user is comment author OR activity creator
     const isAuthor = comment.userId === user.id!;
 
+    // Slå upp aktören för att veta admin-status och creator-relation.
+    const actor = await db.query.users.findFirst({
+      where: eq(users.id, user.id!),
+    });
+    const isAdmin = actor?.isAdmin ?? false;
+
+    let isActivityCreator = false;
     if (!isAuthor) {
       const activity = await db.query.activities.findFirst({
         where: eq(activities.id, comment.activityId),
       });
-
-      if (!activity || activity.creatorId !== user.id!) {
-        return {
-          success: false,
-          error: "Du kan bara ta bort dina egna kommentarer",
-        };
-      }
+      isActivityCreator = activity?.creatorId === user.id!;
     }
 
-    await db
-      .delete(activityComments)
-      .where(eq(activityComments.id, commentId));
+    if (!isAuthor && !isActivityCreator && !isAdmin) {
+      return {
+        success: false,
+        error: "Du har inte rätt att ta bort kommentaren",
+      };
+    }
+
+    // Admin som tar bort någon annans kommentar lämnar en tombstone så
+    // användaren ser att modereringen skett. Författarens egen borttagning
+    // och arrangörens borttagning av deltagar-kommentarer är fortfarande
+    // hard-delete (oförändrat beteende).
+    if (!isAuthor && isAdmin) {
+      await db
+        .update(activityComments)
+        .set({ deletedByAdminId: user.id! })
+        .where(eq(activityComments.id, commentId));
+    } else {
+      await db
+        .delete(activityComments)
+        .where(eq(activityComments.id, commentId));
+    }
 
     revalidatePath("/");
 
@@ -117,5 +142,48 @@ export async function deleteComment(commentId: string) {
   } catch (error) {
     log.error("deleteComment error", errAttrs(error));
     return { success: false, error: "Något gick fel vid borttagning av kommentar" };
+  }
+}
+
+export async function editComment(commentId: string, content: string) {
+  try {
+    const user = await requireAuth();
+
+    const parsed = editCommentSchema.safeParse({ commentId, content });
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0].message };
+    }
+
+    const comment = await db.query.activityComments.findFirst({
+      where: eq(activityComments.id, commentId),
+    });
+
+    if (!comment) {
+      return { success: false, error: "Kommentaren hittades inte" };
+    }
+    if (comment.deletedByAdminId) {
+      return { success: false, error: "Kommentaren är borttagen" };
+    }
+    if (comment.userId !== user.id!) {
+      // Bara författaren får redigera. Arrangörer + admins har bara
+      // delete-mandat, inte rewrite-mandat - då skulle de kunna sätta
+      // ord i någons mun.
+      return { success: false, error: "Du kan bara redigera dina egna kommentarer" };
+    }
+
+    await db
+      .update(activityComments)
+      .set({
+        content: parsed.data.content,
+        editedAt: new Date(),
+      })
+      .where(eq(activityComments.id, commentId));
+
+    revalidatePath("/");
+
+    return { success: true };
+  } catch (error) {
+    log.error("editComment error", errAttrs(error));
+    return { success: false, error: "Något gick fel vid redigering av kommentar" };
   }
 }

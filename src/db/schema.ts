@@ -315,6 +315,15 @@ export const activityComments = pgTable("activity_comments", {
   // timestamptz för konsekvent JS Date <-> postgres now()-jämförelse i
   // "X min sedan"-displayen. Se migration 0013.
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  // Sätts när författaren själv redigerar kommentaren. UI:t visar
+  // "(redigerad)"-markör om värdet är non-null.
+  editedAt: timestamp("edited_at", { withTimezone: true }),
+  // Sätts när en admin tar bort någon annans kommentar - rad finns kvar
+  // som tombstone så användaren ser att modereringen skett. Författaren
+  // som tar bort sin egen kommentar gör hard-delete istället.
+  deletedByAdminId: uuid("deleted_by_admin_id").references(() => users.id, {
+    onDelete: "set null",
+  }),
 });
 
 export const activityFeedback = pgTable(
