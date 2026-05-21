@@ -219,12 +219,6 @@ function ParticipantPopoverButton({
       const result = await blockUser(target.id);
       if (result.success) {
         toast(`${target.displayName} är nu blockerad`, "success");
-        if (result.affectedActivities && result.affectedActivities.length > 0) {
-          toast(
-            `Du är fortfarande anmäld till ${result.affectedActivities.length} aktivitet${result.affectedActivities.length === 1 ? "" : "er"} från denna användare - hantera manuellt om du vill.`,
-            "info",
-          );
-        }
         setBlockTarget(null);
         setOpen(false);
         if (onBlocked) {
@@ -318,7 +312,7 @@ function ParticipantPopoverButton({
         title={blockTarget ? `Blockera ${blockTarget.displayName}?` : ""}
         message={
           blockTarget
-            ? `Du kommer inte längre se ${blockTarget.displayName}s aktiviteter i flödet, och de kommer inte se dina. Befintliga anmälningar och kommentarer påverkas inte automatiskt - hantera dem manuellt vid behov. Du kan avblockera senare via din profil.`
+            ? `Du ser inte längre aktiviteter som ${blockTarget.displayName} arrangerar i flödet, och de ser inte dina. Ni kan dock fortfarande delta i samma aktiviteter som någon annan arrangerar - där syns ni kvar i deltagarlistan. Du kan avblockera senare via din profil.`
             : ""
         }
         confirmLabel="Blockera"
