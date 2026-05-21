@@ -226,28 +226,25 @@ export default async function ActivityDetailPage({
     participationStatus = (participation?.status as "interested" | "attending" | undefined) ?? null;
   }
 
-  // Markera vilka av attending-deltagarna som current user redan har blockerat,
-  // så popovern kan visa "Blockerad"-chip och byta blockera-knappen mot
-  // avblockera. Bara relevant för inloggade som inte är deltagaren själv.
-  if (currentUserId && activity.attendingPreview.length > 0) {
+  // Slå upp alla användare som inloggad viewer har blockerat. Använder vi
+  // för att (a) markera blockerade rader i deltagarpopovern, och (b)
+  // filtrera bort kommentarer från blockerade författare.
+  if (currentUserId) {
     const blockRows = await db
       .select({ blockedId: userBlocks.blockedId })
       .from(userBlocks)
-      .where(
-        and(
-          eq(userBlocks.blockerId, currentUserId),
-          inArray(
-            userBlocks.blockedId,
-            activity.attendingPreview.map((p) => p.id),
-          ),
-        ),
-      );
+      .where(eq(userBlocks.blockerId, currentUserId));
     const blockedSet = new Set(blockRows.map((r) => r.blockedId));
     if (blockedSet.size > 0) {
       activity.attendingPreview = activity.attendingPreview.map((p) => ({
         ...p,
         isBlockedByViewer: blockedSet.has(p.id),
       }));
+      // Filtrera bort kommentarer från blockerade. NULL-författare (raderade
+      // konton) släpps igenom - inte en blockad person, bara tomt namn.
+      activity.comments = activity.comments.filter(
+        (c) => c.userId === null || !blockedSet.has(c.userId),
+      );
     }
   }
 

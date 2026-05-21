@@ -312,7 +312,9 @@ export const activityComments = pgTable("activity_comments", {
     onDelete: "set null",
   }),
   content: text().notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
+  // timestamptz för konsekvent JS Date <-> postgres now()-jämförelse i
+  // "X min sedan"-displayen. Se migration 0013.
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
 export const activityFeedback = pgTable(
@@ -344,7 +346,9 @@ export const notifications = pgTable(
     }),
     params: jsonb(),
     read: boolean().default(false),
-    createdAt: timestamp("created_at").defaultNow(),
+    // timestamptz för konsekvent JS Date <-> postgres now()-jämförelse i
+    // "för X min sedan"-displayen. Se migration 0013.
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   (table) => [
     index("notifications_user_read_idx").on(

@@ -92,6 +92,13 @@
 			"when": 1780099200000,
 			"tag": "0012_timestamptz_for_unread",
 			"breakpoints": true
+		},
+		{
+			"idx": 13,
+			"version": "7",
+			"when": 1780185600000,
+			"tag": "0013_timestamptz_for_comments_notifications",
+			"breakpoints": true
 		}
 	]
 }

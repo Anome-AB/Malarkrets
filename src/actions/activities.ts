@@ -881,24 +881,14 @@ export async function getActivityDetail(activityId: string) {
     .orderBy(activityParticipants.createdAt)
     .limit(20);
 
-  // Slå upp vilka av deltagarna som viewern har blockat, så popovern kan
-  // visa "Blockerad"-chip och byta blockera-knappen mot avblockera.
-  const attendingIds = attendingRows.map((r) => r.userId);
-  const blockedIds = new Set<string>();
-  if (attendingIds.length > 0) {
-    const blockRows = await db
-      .select({ blockedId: userBlocks.blockedId })
-      .from(userBlocks)
-      .where(
-        and(
-          eq(userBlocks.blockerId, user.id!),
-          inArray(userBlocks.blockedId, attendingIds),
-        ),
-      );
-    for (const row of blockRows) {
-      blockedIds.add(row.blockedId);
-    }
-  }
+  // Slå upp alla användare som viewern har blockerat. Använder vi för att
+  // (a) markera blockerade rader i deltagarpopovern, och (b) filtrera bort
+  // kommentarer från blockerade författare nedan.
+  const viewerBlockRows = await db
+    .select({ blockedId: userBlocks.blockedId })
+    .from(userBlocks)
+    .where(eq(userBlocks.blockerId, user.id!));
+  const blockedIds = new Set<string>(viewerBlockRows.map((r) => r.blockedId));
 
   const comments = await db
     .select({
@@ -912,6 +902,13 @@ export async function getActivityDetail(activityId: string) {
     .leftJoin(users, eq(users.id, activityComments.userId))
     .where(eq(activityComments.activityId, activityId))
     .orderBy(activityComments.createdAt);
+
+  // Filtrera bort kommentarer från blockerade författare. NULL-författare
+  // (raderade konton) släpps igenom - det är inte en blockad person, bara
+  // ett tomt namn.
+  const filteredComments = comments.filter(
+    (c) => c.userId === null || !blockedIds.has(c.userId),
+  );
 
   const feedbackRows = await db
     .select({ rating: activityFeedback.rating, count: count() })
@@ -980,7 +977,7 @@ export async function getActivityDetail(activityId: string) {
     participantCount: displayParticipantCount,
     interestedCount,
     attendingPreview: attendingWithCreator,
-    comments: comments.map((c) => ({
+    comments: filteredComments.map((c) => ({
       id: c.id,
       userId: c.userId,
       authorName: c.authorName ?? "Anonym",
