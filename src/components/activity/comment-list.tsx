@@ -275,8 +275,10 @@ function CommentItem({
   onUnblock: (comment: Comment) => void;
 }) {
   const isTombstoned = !!comment.deletedAt;
-  const removedByAdmin = !!comment.deletedByAdminId;
-  const removedByCreator = !comment.deletedByAdminId && !!comment.deletedByCreatorId;
+  // Server sätter bara en av flaggorna åt gången - arrangör tar precedens
+  // över admin när personen råkar vara både och.
+  const removedByCreator = !!comment.deletedByCreatorId;
+  const removedByAdmin = !removedByCreator && !!comment.deletedByAdminId;
   const isBlocked = !!comment.isBlockedByViewer;
   const isEdited = !!comment.editedAt;
   const [isEditing, setIsEditing] = useState(false);
@@ -325,10 +327,10 @@ function CommentItem({
           </span>
         </div>
         <p className="text-sm text-secondary italic">
-          {removedByAdmin
-            ? "Kommentar borttagen av administratör"
-            : removedByCreator
-              ? "Kommentar borttagen av arrangör"
+          {removedByCreator
+            ? "Kommentar borttagen av arrangör"
+            : removedByAdmin
+              ? "Kommentar borttagen av administratör"
               : "Kommentar borttagen av användaren"}
         </p>
       </li>

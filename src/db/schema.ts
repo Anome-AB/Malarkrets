@@ -325,9 +325,10 @@ export const activityComments = pgTable("activity_comments", {
   deletedByAdminId: uuid("deleted_by_admin_id").references(() => users.id, {
     onDelete: "set null",
   }),
-  // Sätts BARA när aktivitetens arrangör tar bort någon annans kommentar
-  // (admin tar precedens om arrangören även är admin). UI:t differentierar
-  // tombstone-text: admin > arrangör > användaren själv.
+  // Sätts BARA när aktivitetens arrangör tar bort en deltagar-kommentar.
+  // Arrangör tar precedens om personen är både admin och arrangör - en
+  // host som är admin agerar i sin värd-kapacitet på sin egen aktivitet.
+  // UI:t differentierar tombstone-text: arrangör > admin > användaren själv.
   deletedByCreatorId: uuid("deleted_by_creator_id").references(() => users.id, {
     onDelete: "set null",
   }),
