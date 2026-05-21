@@ -53,13 +53,16 @@ export default function OnboardingPage() {
   }
 
   function handleSubmit() {
-    if (selectedIds.length < 3) return;
-
     startTransition(async () => {
       const result = await updateInterests(selectedIds);
 
       if (result.success) {
-        toast("Välkommen! Dina intressen har sparats.", "success");
+        toast(
+          selectedIds.length > 0
+            ? "Välkommen! Dina intressen har sparats."
+            : "Välkommen! Du kan välja intressen senare via profilen.",
+          "success",
+        );
         router.push("/");
       } else {
         toast(result.error ?? "Något gick fel", "error");
@@ -75,7 +78,8 @@ export default function OnboardingPage() {
             Välkommen till Mälarkrets!
           </h1>
           <p className="text-lg text-secondary">
-            Välj minst 3 intressen för att komma igång.
+            Välj intressen för att personalisera din feed. Du kan hoppa
+            över och välja senare via profilen.
           </p>
         </div>
 
@@ -114,14 +118,12 @@ export default function OnboardingPage() {
 
             <div className="text-center space-y-4">
               <p className="text-sm text-dimmed">
-                {selectedIds.length} av minst 3 valda
+                {selectedIds.length === 0
+                  ? "Inga intressen valda - feeden visar alla aktiviteter"
+                  : `${selectedIds.length} ${selectedIds.length === 1 ? "intresse" : "intressen"} valda`}
               </p>
-              <Button
-                disabled={selectedIds.length < 3}
-                loading={isPending}
-                onClick={handleSubmit}
-              >
-                Klar!
+              <Button loading={isPending} onClick={handleSubmit}>
+                {selectedIds.length === 0 ? "Hoppa över" : "Klar!"}
               </Button>
             </div>
           </>
