@@ -13,6 +13,7 @@ import {
 } from "@/db/schema";
 import { eq, and, desc, asc, count, sql } from "drizzle-orm";
 import { MyActivitiesClient } from "./my-activities-client";
+import { getAttendingPreviews } from "@/lib/queries/participants";
 
 export const metadata: Metadata = {
   title: "Mina aktiviteter - Malarkrets",
@@ -97,6 +98,8 @@ async function getCreatedActivities(userId: string) {
     countByActivity.set(row.activityId, row.count);
   }
 
+  const attendingPreviewsByActivity = await getAttendingPreviews(ids);
+
   return rows.map((a) => ({
     id: a.id,
     title: a.title,
@@ -118,6 +121,7 @@ async function getCreatedActivities(userId: string) {
     } | null,
     tags: tagsByActivity.get(a.id) ?? [],
     participantCount: countByActivity.get(a.id) ?? 0,
+    attendingPreview: attendingPreviewsByActivity.get(a.id) ?? [],
     cancelledAt: a.cancelledAt,
     cancelledReason: a.cancelledReason,
     deletedAt: a.deletedAt,
@@ -206,6 +210,8 @@ async function getParticipatingActivities(userId: string) {
     countByActivity.set(row.activityId, row.count);
   }
 
+  const attendingPreviewsByActivity = await getAttendingPreviews(ids);
+
   return rows.map((a) => ({
     id: a.id,
     title: a.title,
@@ -227,6 +233,7 @@ async function getParticipatingActivities(userId: string) {
     } | null,
     tags: tagsByActivity.get(a.id) ?? [],
     participantCount: countByActivity.get(a.id) ?? 0,
+    attendingPreview: attendingPreviewsByActivity.get(a.id) ?? [],
     cancelledAt: a.cancelledAt,
     cancelledReason: a.cancelledReason,
     deletedAt: a.deletedAt,

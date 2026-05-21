@@ -13,6 +13,10 @@ import { useToast } from "@/components/ui/toast";
 import { joinActivity, leaveActivity, getActivityDetail } from "@/actions/activities";
 import { createComment, deleteComment } from "@/actions/comments";
 import { ShareButton } from "@/components/ui/share-button";
+import {
+  ParticipantAvatars,
+  type ParticipantPreview,
+} from "@/components/activity/participant-avatars";
 
 interface ActivityDetail {
   id: string;
@@ -36,6 +40,7 @@ interface ActivityDetail {
   tags: Array<{ id: number; name: string; slug: string }>;
   participantCount: number;
   interestedCount: number;
+  attendingPreview: ParticipantPreview[];
   comments: Array<{
     id: string;
     userId: string | null;
@@ -335,22 +340,20 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
                         Skapad av{" "}
                         <span className="font-medium text-heading">{detail.creatorName}</span>
                       </p>
-                      <p>
-                        Deltagare:{" "}
-                        <span className="font-medium text-heading">
-                          {detail.participantCount}
-                          {detail.maxParticipants ? ` / ${detail.maxParticipants}` : ""}
-                        </span>
+                      <div className="pt-1">
+                        <ParticipantAvatars
+                          participants={detail.attendingPreview}
+                          total={detail.participantCount}
+                          max={detail.maxParticipants}
+                          variant="full"
+                        />
                         {detail.interestedCount > 0 && (
-                          <>
-                            <span className="mx-2 text-dimmed">·</span>
-                            Intresserade:{" "}
-                            <span className="font-medium text-heading">
-                              {detail.interestedCount}
-                            </span>
-                          </>
+                          <p className="mt-1 text-xs text-dimmed">
+                            + {detail.interestedCount}{" "}
+                            {detail.interestedCount === 1 ? "intresserad" : "intresserade"}
+                          </p>
                         )}
-                      </p>
+                      </div>
                       {feedbackText && (
                         <p className="text-primary font-medium">{feedbackText}</p>
                       )}

@@ -861,6 +861,25 @@ export async function getActivityDetail(activityId: string) {
       eq(activityParticipants.status, "interested"),
     ));
 
+  // Förhandsvisning av attending-deltagare för avatar-stacken. Hämtar upp
+  // till 20 så popovern täcker normala aktiviteter utan extra round-trip.
+  const attendingRows = await db
+    .select({
+      userId: activityParticipants.userId,
+      displayName: users.displayName,
+      avatarUrl: users.avatarUrl,
+    })
+    .from(activityParticipants)
+    .innerJoin(users, eq(users.id, activityParticipants.userId))
+    .where(
+      and(
+        eq(activityParticipants.activityId, activityId),
+        eq(activityParticipants.status, "attending"),
+      ),
+    )
+    .orderBy(activityParticipants.createdAt)
+    .limit(20);
+
   const comments = await db
     .select({
       id: activityComments.id,
@@ -919,6 +938,11 @@ export async function getActivityDetail(activityId: string) {
     tags,
     participantCount,
     interestedCount,
+    attendingPreview: attendingRows.map((r) => ({
+      id: r.userId,
+      displayName: r.displayName ?? "Anonym",
+      avatarUrl: r.avatarUrl,
+    })),
     comments: comments.map((c) => ({
       id: c.id,
       userId: c.userId,

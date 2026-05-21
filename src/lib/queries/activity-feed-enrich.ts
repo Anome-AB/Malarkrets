@@ -5,6 +5,10 @@ import {
   interestTags,
 } from "@/db/schema";
 import { and, count, eq, sql } from "drizzle-orm";
+import {
+  getAttendingPreviews,
+  type ParticipantPreview,
+} from "@/lib/queries/participants";
 
 export interface EnrichedFeedActivity {
   id: string;
@@ -21,6 +25,7 @@ export interface EnrichedFeedActivity {
   whatToExpect: unknown;
   tags: Array<{ id: number; name: string; slug: string }>;
   participantCount: number;
+  attendingPreview: ParticipantPreview[];
   creatorId: string | null;
   userStatus: "interested" | "attending" | null;
 }
@@ -100,6 +105,8 @@ export async function enrichFeedActivities(
       ),
     );
 
+  const attendingPreviewsByActivity = await getAttendingPreviews(activityIds);
+
   const tagsByActivity = new Map<
     string,
     Array<{ id: number; name: string; slug: string }>
@@ -138,6 +145,7 @@ export async function enrichFeedActivities(
     whatToExpect: a.whatToExpect,
     tags: tagsByActivity.get(a.id) ?? [],
     participantCount: countByActivity.get(a.id) ?? 0,
+    attendingPreview: attendingPreviewsByActivity.get(a.id) ?? [],
     creatorId: a.creatorId,
     userStatus: userStatusByActivity.get(a.id) ?? null,
   }));

@@ -33,6 +33,11 @@ interface ActivityItem {
   whatToExpect: unknown;
   tags: Array<{ id: number; name: string; slug: string }>;
   participantCount: number;
+  attendingPreview?: Array<{
+    id: string;
+    displayName: string;
+    avatarUrl: string | null;
+  }>;
   creatorId: string | null;
   userStatus?: "interested" | "attending" | null;
 }
@@ -338,6 +343,7 @@ export function ActivityFeed({
                   endTime: activity.endTime,
                   tags: activity.tags,
                   participantCount: activity.participantCount,
+                  attendingPreview: activity.attendingPreview,
                   maxParticipants: activity.maxParticipants,
                   whatToExpect: activity.whatToExpect as WhatToExpect | null,
                   imageThumbUrl: activity.imageThumbUrl,

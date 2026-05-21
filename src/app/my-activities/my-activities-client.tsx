@@ -54,6 +54,11 @@ interface Activity {
   whatToExpect: WhatToExpect | null;
   tags: Tag[];
   participantCount: number;
+  attendingPreview?: Array<{
+    id: string;
+    displayName: string;
+    avatarUrl: string | null;
+  }>;
   cancelledAt: Date | string | null;
   cancelledReason: string | null;
   publishedAt?: Date | string | null;

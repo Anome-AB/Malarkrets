@@ -26,6 +26,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { UnsavedChangesProvider } from "@/contexts/unsaved-changes";
 import { ActivityDetailClient } from "./activity-detail-client";
 import { AdminActivityControls } from "@/components/activity/admin-activity-controls";
+import { ParticipantAvatars } from "@/components/activity/participant-avatars";
 
 interface WhatToExpect {
   okAlone?: boolean;
@@ -77,6 +78,24 @@ async function getActivity(id: string) {
       eq(activityParticipants.status, "interested"),
     ));
 
+  // Förhandsvisning av attending-deltagare för avatar-stack + popover.
+  const attendingRows = await db
+    .select({
+      userId: activityParticipants.userId,
+      displayName: users.displayName,
+      avatarUrl: users.avatarUrl,
+    })
+    .from(activityParticipants)
+    .innerJoin(users, eq(users.id, activityParticipants.userId))
+    .where(
+      and(
+        eq(activityParticipants.activityId, id),
+        eq(activityParticipants.status, "attending"),
+      ),
+    )
+    .orderBy(activityParticipants.createdAt)
+    .limit(20);
+
   // Get comments with author info
   const comments = await db
     .select({
@@ -114,6 +133,11 @@ async function getActivity(id: string) {
     tags,
     participantCount,
     interestedCount,
+    attendingPreview: attendingRows.map((r) => ({
+      id: r.userId,
+      displayName: r.displayName ?? "Anonym",
+      avatarUrl: r.avatarUrl,
+    })),
     comments: comments.map((c) => ({
       id: c.id,
       userId: c.userId,
@@ -420,22 +444,20 @@ export default async function ActivityDetailPage({
                         </span>
                       </p>
                     )}
-                    <p>
-                      Deltagare:{" "}
-                      <span className="font-medium text-heading">
-                        {activity.participantCount}
-                        {activity.maxParticipants ? ` / ${activity.maxParticipants}` : ""}
-                      </span>
+                    <div className="pt-1">
+                      <ParticipantAvatars
+                        participants={activity.attendingPreview}
+                        total={activity.participantCount}
+                        max={activity.maxParticipants}
+                        variant="full"
+                      />
                       {activity.interestedCount > 0 && (
-                        <>
-                          <span className="mx-2 text-dimmed">·</span>
-                          Intresserade:{" "}
-                          <span className="font-medium text-heading">
-                            {activity.interestedCount}
-                          </span>
-                        </>
+                        <p className="mt-1 text-xs text-dimmed">
+                          + {activity.interestedCount}{" "}
+                          {activity.interestedCount === 1 ? "intresserad" : "intresserade"}
+                        </p>
                       )}
-                    </p>
+                    </div>
                     {feedbackText && (
                       <p className="text-primary font-medium">{feedbackText}</p>
                     )}

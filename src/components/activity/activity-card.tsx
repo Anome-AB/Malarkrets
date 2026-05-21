@@ -1,6 +1,10 @@
 "use client";
 
 import { getColorHex } from "@/lib/color-themes";
+import {
+  ParticipantAvatars,
+  type ParticipantPreview,
+} from "@/components/activity/participant-avatars";
 
 interface WhatToExpect {
   okAlone?: boolean;
@@ -34,6 +38,8 @@ interface ActivityCardProps {
     imageAccentColor?: string | null;
     colorTheme?: string | null;
     genderRestriction?: "alla" | "kvinnor" | "man" | null;
+    /** Förhandsvisning av attending-deltagare för avatar-stack på kortet. */
+    attendingPreview?: ParticipantPreview[];
   };
   isCreator?: boolean;
   userStatus?: "interested" | "attending" | null;
@@ -81,32 +87,6 @@ function formatLocation(raw: string): string {
   const parts = raw.split(",").map((s) => s.trim()).filter(Boolean);
   if (parts.length >= 3) return `${parts[0]}, ${parts[parts.length - 1]}`;
   return parts.join(", ");
-}
-
-function ParticipantDots({
-  count,
-  max,
-}: {
-  count: number;
-  max: number | null;
-}) {
-  const shown = Math.min(count, 5);
-  return (
-    <div className="flex items-center gap-1.5">
-      <div className="flex gap-[3px]">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div
-            key={i}
-            className={`w-1.5 h-1.5 rounded-full ${i < shown ? "bg-primary" : "bg-border"}`}
-          />
-        ))}
-      </div>
-      <span className="text-xs text-secondary">
-        {count}
-        {max != null ? ` / ${max}` : ""} deltagare
-      </span>
-    </div>
-  );
 }
 
 export function ActivityCard({
@@ -279,9 +259,11 @@ export function ActivityCard({
         {/* Footer: participants only. The courage-message heart icon is now
             redundant because the message itself is visible above. */}
         <div className="mt-auto pt-2 md:pt-3 md:border-t md:border-border flex items-center justify-between gap-2">
-          <ParticipantDots
-            count={activity.participantCount}
+          <ParticipantAvatars
+            participants={activity.attendingPreview ?? []}
+            total={activity.participantCount}
             max={activity.maxParticipants}
+            variant="compact"
           />
         </div>
       </div>
