@@ -1,6 +1,34 @@
 {
   "releases": [
     {
+      "version": "0.4.0",
+      "date": "2026-05-21",
+      "title": "Rikare beskrivningar, kopiera aktiviteter och se vilka som kommer",
+      "summary": "Stort paket: skriv beskrivningar med fetstil och emoji, kopiera en gammal aktivitet istället för att börja om från scratch, se vilka som kommer direkt på korten, dela till åtta plattformar och redigera/ta bort egna kommentarer.",
+      "sections": {
+        "added": [
+          "Rich text i aktivitetsbeskrivningar: fetstil, kursiv, punktlistor och inbyggd emoji-väljare.",
+          "Kopiera en tidigare aktivitet: välj en av dina gamla, formuläret förifylls med all info och datum föreslås en vecka fram.",
+          "Deltagar-avatarer på aktivitetskort, sidopanel och detaljsida. Klicka stacken för att se hela listan med namn.",
+          "Ny dela-dialog med åtta plattformar: WhatsApp, Messenger, Facebook, Telegram, Snapchat, TikTok, e-post, kopiera länk.",
+          "Redigera och ta bort dina egna kommentarer. Borttagna kommentarer visar en tydlig markör om det var du, arrangören eller en admin som tog bort.",
+          "Blockera eller avblockera en användare direkt från deltagarlistan eller en kommentar — du behöver inte gå via profilen längre.",
+          "Du kan välja inga intressen alls och få hela utbudet (Visa alla) som default. Tidigare krävdes minst tre."
+        ],
+        "improved": [
+          "Notifikationer skriver ut aktivitetens namn (\"Bokcirkel har uppdaterats\" istället för \"Aktiviteten har uppdaterats\") och visar arrangörens eller admins anledning direkt under headlinen.",
+          "Utkast får en egen sektion överst på \"Mina aktiviteter\" så du hittar dem snabbt.",
+          "Klick på en aktivitet under \"Mina aktiviteter\" öppnar samma slide-in-panel som feeden på desktop, så du behåller listan i synfältet.",
+          "Onboarding: knappen byter etikett från \"Hoppa över\" till \"Klar!\" när du valt minst ett intresse, så det blir tydligare vad nästa steg är."
+        ],
+        "fixed": [
+          "\"X min sedan\"-tidsstämplar är nu konsekventa över tidszoner — slår inte längre slumpvis om till \"just nu\".",
+          "Du kan inte längre anmäla dig till din egen aktivitet (en gammal kvarstående anomali är städad).",
+          "\"Vad väntar dig\"-fältet flaggas inte längre felaktigt som ändrat i admin-loggen när inget faktiskt ändrats."
+        ]
+      }
+    },
+    {
       "version": "0.3.0",
       "date": "2026-05-20",
       "title": "Skicka tips till oss",
