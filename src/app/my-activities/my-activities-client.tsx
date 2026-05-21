@@ -2,10 +2,28 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ActivityCard } from "@/components/activity/activity-card";
+import { ActivityPanel } from "@/components/activity/activity-panel";
 import { FeedLink } from "@/components/layout/feed-link";
+
+// Matchar feedens beteende: på desktop öppnar vi den glidande sidopanelen
+// istället för att navigera till /activity/<id>. På mobil saknar vi yta för
+// en split-vy så då navigerar vi som vanligt.
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing till matchMedia (extern); ej tillgänglig under SSR.
+    setIsDesktop(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+  return isDesktop;
+}
 
 interface WhatToExpect {
   okAlone?: boolean;
@@ -55,10 +73,23 @@ export function MyActivitiesClient({
   participatingActivities,
 }: MyActivitiesClientProps) {
   const router = useRouter();
+  const isDesktop = useIsDesktop();
+  const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
 
-  const handleClick = (id: string) => {
-    router.push(`/activity/${id}`);
-  };
+  const handleClick = useCallback(
+    (id: string) => {
+      if (isDesktop) {
+        setSelectedActivityId(id);
+      } else {
+        router.push(`/activity/${id}`);
+      }
+    },
+    [isDesktop, router],
+  );
+
+  const handlePanelClose = useCallback(() => {
+    setSelectedActivityId(null);
+  }, []);
 
   return (
     <div className="px-6 py-8">
@@ -196,6 +227,17 @@ export function MyActivitiesClient({
           </div>
         )}
       </section>
+
+      {/* Sliding panel (desktop only) - speglar feedens beteende så
+          användaren får samma vy oavsett om de klickar från Utforska eller
+          Mina aktiviteter. */}
+      {selectedActivityId && (
+        <ActivityPanel
+          activityId={selectedActivityId}
+          open={!!selectedActivityId}
+          onClose={handlePanelClose}
+        />
+      )}
     </div>
   );
 }
