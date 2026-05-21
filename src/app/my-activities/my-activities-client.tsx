@@ -89,17 +89,42 @@ export function MyActivitiesClient({
                   isCreator={true}
                   onClick={handleClick}
                 />
-                {activity.cancelledAt ? (
-                  <span className="absolute top-3 right-3 inline-block text-xs font-semibold px-2.5 py-1 rounded-full z-10 bg-red-100 text-red-700">
-                    Inställd
-                  </span>
-                ) : (
-                  <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
-                    {!activity.publishedAt && (
+                <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
+                  {activity.cancelledAt ? (
+                    <span className="inline-block text-xs font-semibold px-2.5 py-1 rounded-full bg-red-100 text-red-700">
+                      Inställd
+                    </span>
+                  ) : (
+                    !activity.publishedAt && (
                       <span className="inline-block text-xs font-semibold px-2.5 py-1 rounded-full bg-alert-bg text-alert-text">
                         Utkast
                       </span>
-                    )}
+                    )
+                  )}
+                  {/* Kopiera-knapp finns på alla egna aktiviteter (inkl. avbokade
+                      och utkast). Borttagna visas inte i listan över huvud taget. */}
+                  <Link
+                    href={`/activity/new?from=${activity.id}`}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-primary bg-white border border-primary rounded-lg hover:bg-primary-light transition-colors"
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label={`Kopiera ${activity.title} till ny aktivitet`}
+                  >
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                    Kopiera
+                  </Link>
+                  {!activity.cancelledAt && (
                     <Link
                       href={`/activity/${activity.id}/edit`}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-primary bg-white border border-primary rounded-lg hover:bg-primary-light transition-colors"
@@ -120,8 +145,8 @@ export function MyActivitiesClient({
                       </svg>
                       Redigera
                     </Link>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             ))}
           </div>

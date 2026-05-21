@@ -934,3 +934,69 @@ export async function getActivityDetail(activityId: string) {
     currentUserId: user.id!,
   };
 }
+
+/**
+ * Hämta en aktivitet för kopiering till en ny aktivitet. Returnerar bara de
+ * fält som ska prefilas i create-formuläret - datum/tid lämnas alltid tomma,
+ * och deltagare/kommentarer/status följer aldrig med.
+ *
+ * Kräver att anroparen är skaparen av källaktiviteten. Borttagna aktiviteter
+ * kan inte kopieras. Avbokade och utkast får kopieras.
+ */
+export async function getActivityForCopy(activityId: string) {
+  const user = await requireAuth();
+
+  const activity = await db.query.activities.findFirst({
+    where: eq(activities.id, activityId),
+  });
+
+  if (!activity) {
+    return { success: false as const, error: "Aktivitet hittades inte" };
+  }
+  if (activity.deletedAt) {
+    return {
+      success: false as const,
+      error: "Borttagna aktiviteter kan inte kopieras",
+    };
+  }
+  if (activity.creatorId !== user.id) {
+    return {
+      success: false as const,
+      error: "Du kan bara kopiera dina egna aktiviteter",
+    };
+  }
+
+  const tagRows = await db
+    .select({ tagId: activityTags.tagId })
+    .from(activityTags)
+    .where(eq(activityTags.activityId, activityId));
+
+  const wte = activity.whatToExpect as Record<string, unknown> | null;
+
+  return {
+    success: true as const,
+    activity: {
+      title: activity.title,
+      description: activity.description,
+      location: activity.location,
+      latitude: activity.latitude,
+      longitude: activity.longitude,
+      imageThumbUrl: activity.imageThumbUrl,
+      imageMediumUrl: activity.imageMediumUrl,
+      imageOgUrl: activity.imageOgUrl,
+      imageAccentColor: activity.imageAccentColor,
+      colorTheme: activity.colorTheme,
+      maxParticipants: activity.maxParticipants,
+      genderRestriction: activity.genderRestriction,
+      minAge: activity.minAge,
+      tagIds: tagRows.map((r) => r.tagId),
+      whatToExpect: {
+        audience: (wte?.audience as string | undefined) ?? "alla",
+        experienceLevel: (wte?.experienceLevel as string | undefined) ?? "alla",
+        whoComes: (wte?.whoComes as string | undefined) ?? "",
+        latePolicy: (wte?.latePolicy as string | undefined) ?? "",
+        courageMessage: (wte?.courageMessage as string | undefined) ?? "",
+      },
+    },
+  };
+}
