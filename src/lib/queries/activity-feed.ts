@@ -88,7 +88,11 @@ export async function getMatchedActivities(
     // creator + admin via /my-activities respektive moderation-vyer.
     isNotNull(activities.publishedAt),
     gt(activities.startTime, now),
-    sql`NOT EXISTS (${blockedByCreator})`,
+    // Admins bypassar creator-blocks så de kan moderera även när de blockerats
+    // av en användare. Deras egna blocks (blockedByViewer) gäller fortfarande
+    // - en admin som personligen blockerat någon ska inte heller se den i
+    // sitt eget flöde. För admin-moderering finns "Visa alla"-läget.
+    ...(isAdmin ? [] : [sql`NOT EXISTS (${blockedByCreator})`]),
     sql`NOT EXISTS (${blockedByViewer})`,
     // Hide activities from banned creators
     sql`NOT EXISTS (SELECT 1 FROM ${users} WHERE ${users.id} = ${activities.creatorId} AND ${users.isBanned} = true)`,
