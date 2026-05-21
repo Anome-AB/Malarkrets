@@ -263,7 +263,10 @@ async function AuthenticatedFeed({
 
   // "Visa alla" mode: available to all users; admins get full bypass,
   // regular users still respect gender and minAge constraints.
-  const showAll = params.alla === "1";
+  // Användare utan valda intressen får automatiskt "Visa alla" som default,
+  // annars skulle feeden vara nästan tom (bara egna aktiviteter + de man
+  // anmält sig till).
+  const showAll = params.alla === "1" || userInterestsList.length === 0;
 
   // Determine active tag filters (comma-separated slugs)
   const interestParam = typeof params.intresse === "string" ? params.intresse : null;

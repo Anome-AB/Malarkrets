@@ -129,7 +129,6 @@ export function ProfileClient({
     value: selectedTags,
     save: async (tags) => updateInterests(tags),
     debounceMs: 1500,
-    enabled: selectedTags.length >= 3,
     toastOnSuccess: "Intressen sparade",
   });
 
@@ -234,7 +233,8 @@ export function ProfileClient({
 
       <Card title="Mina intressen">
         <p className="text-sm text-secondary mb-3">
-          Välj minst 3 intressen. Dessa styr vilka aktiviteter du ser.
+          Välj intressen som styr vilka aktiviteter du ser. Utan val visas alla
+          aktiviteter i feeden.
         </p>
         <input
           type="search"
@@ -259,7 +259,9 @@ export function ProfileClient({
           )}
         </div>
         <p className="text-xs text-dimmed">
-          {selectedTags.length} av minst 3 valda
+          {selectedTags.length === 0
+            ? "Inga intressen valda - feeden visar alla aktiviteter"
+            : `${selectedTags.length} ${selectedTags.length === 1 ? "intresse" : "intressen"} valda`}
         </p>
       </Card>
 
