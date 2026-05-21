@@ -17,6 +17,9 @@ import {
 } from "@/lib/queries/activity-feed";
 import { enrichFeedActivities } from "@/lib/queries/activity-feed-enrich";
 import { stripHtmlForExcerpt } from "@/lib/rich-text";
+import { getColorHex } from "@/lib/color-themes";
+
+const NEUTRAL_ACCENT = "#7a8088";
 import { getNotificationCount } from "@/lib/queries/notifications";
 import { AppShell } from "@/components/layout/app-shell";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -32,6 +35,8 @@ async function getPopularActivities() {
       location: activities.location,
       startTime: activities.startTime,
       imageThumbUrl: activities.imageThumbUrl,
+      imageAccentColor: activities.imageAccentColor,
+      colorTheme: activities.colorTheme,
       participantCount: count(activityParticipants.userId),
     })
     .from(activities)
@@ -116,19 +121,40 @@ function LandingPage({
           </p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {popularActivities.map((activity) => (
+            {popularActivities.map((activity) => {
+              // Visa-bild eller gradient-fallback: matchar mönstret i
+              // ActivityCard så bildlösa aktiviteter inte ser tomma ut.
+              const themeHex = getColorHex(activity.colorTheme);
+              const accent =
+                activity.imageAccentColor ?? themeHex ?? NEUTRAL_ACCENT;
+              const heroStyle: React.CSSProperties = activity.imageThumbUrl
+                ? {
+                    backgroundImage: `url(${activity.imageThumbUrl})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                  }
+                : {
+                    backgroundImage: `linear-gradient(135deg, color-mix(in srgb, ${accent} 60%, white) 0%, ${accent} 55%, color-mix(in srgb, ${accent} 80%, black) 100%)`,
+                  };
+              return (
               <Link
                 key={activity.id}
                 href={`/activity/${activity.id}`}
                 className="bg-white border border-border rounded-card p-4 hover:shadow-md hover:border-primary transition block"
               >
-                {activity.imageThumbUrl && (
-                  <img
-                    src={activity.imageThumbUrl}
-                    alt=""
-                    className="w-full h-40 object-cover rounded-lg mb-3"
-                  />
-                )}
+                <div
+                  className="w-full h-40 rounded-lg mb-3 flex items-end p-3"
+                  style={heroStyle}
+                  aria-hidden="true"
+                >
+                  {!activity.imageThumbUrl && (
+                    <span
+                      className="font-display font-black text-white text-2xl leading-tight line-clamp-2 drop-shadow-[0_1px_6px_rgba(0,0,0,0.35)]"
+                    >
+                      {activity.title}
+                    </span>
+                  )}
+                </div>
                 <h3 className="text-base font-semibold text-heading">
                   {activity.title}
                 </h3>
@@ -149,7 +175,8 @@ function LandingPage({
                   {activity.participantCount} deltagare
                 </p>
               </Link>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>
