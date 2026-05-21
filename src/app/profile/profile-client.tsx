@@ -124,7 +124,7 @@ export function ProfileClient({
   }, [allTags, tagSearch]);
 
   // Längre debounce för tag-toggles eftersom användare ofta klickar fler i
-  // burst — slår ihop bursts till en toast istället för en per klick.
+  // burst - slår ihop bursts till en toast istället för en per klick.
   useAutoSave({
     value: selectedTags,
     save: async (tags) => updateInterests(tags),

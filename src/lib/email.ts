@@ -18,7 +18,7 @@ function getFrom(): string {
 }
 
 // Reply-To pekar på en bevakad mailbox (Office 365 shared mailbox), så
-// password-reset-mottagare som svarar på mailet faktiskt når någon — och
+// password-reset-mottagare som svarar på mailet faktiskt når någon - och
 // så strikta corporate-spam-filter (särskilt EOP) viktar inte ner mailet
 // för att from-adressen är obesvarbar.
 function getReplyTo(): string {

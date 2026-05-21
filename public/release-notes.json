@@ -8,20 +8,20 @@
       "sections": {
         "added": [
           "Utkast på aktiviteter: spara halvfärdigt utan att publicera. Du hittar dina utkast under \"Mina aktiviteter\" och kan publicera när du är redo.",
-          "Sökbar taggväljare när du skapar aktivitet — välj från dina egna intressen eller bläddra/sök bland alla taggar.",
+          "Sökbar taggväljare när du skapar aktivitet - välj från dina egna intressen eller bläddra/sök bland alla taggar.",
           "Profilbild: ladda upp en egen, eller välj bland 100 färdiga avatarer.",
           "Dela-knapp på varje aktivitet. Länken får en snygg förhandsgranskning när den klistras in i sociala medier eller chatt.",
-          "Drop-pin på kartan när du skapar aktivitet — markera den exakta platsen istället för bara adressen.",
+          "Drop-pin på kartan när du skapar aktivitet - markera den exakta platsen istället för bara adressen.",
           "Auto-save på profilsidan: ändringar sparas medan du skriver, ingen Spara-knapp att glömma.",
           "Ny intressetagg: \"Motion & Träning\"."
         ],
         "improved": [
-          "Bekräftelse innan du lämnar en sida med osparade ändringar — så du inte tappar bort en halvfärdig aktivitet av misstag.",
+          "Bekräftelse innan du lämnar en sida med osparade ändringar - så du inte tappar bort en halvfärdig aktivitet av misstag.",
           "Egna aktiviteter och de du anmält dig till visas alltid i feeden, oavsett vilka taggar du filtrerat på.",
           "Långa aktivitetsbeskrivningar viks ihop i sidopanelen med en \"visa mer\"-knapp.",
           "Intresselistan sorteras alfabetiskt med svensk bokstavsordning (å, ä, ö hamnar sist där de hör hemma).",
           "Aktivitetsformuläret har fått en luftigare layout som anpassar sig bättre på breda skärmar.",
-          "Mail från oss (t.ex. återställning av lösenord) går nu att svara på — svar landar hos support@malarkrets.se istället för att studsa."
+          "Mail från oss (t.ex. återställning av lösenord) går nu att svara på - svar landar hos support@malarkrets.se istället för att studsa."
         ],
         "fixed": [
           "Du kan inte längre råka skapa en aktivitet med starttid som redan passerat."

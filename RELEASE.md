@@ -164,8 +164,8 @@ health poll. Läs scriptet innan ändringar.
 
 ### Ops-jobb (admin-scripts mot körande DB)
 
-För engångskörningar som inte är migrationer — `bounce-test-data.mjs`,
-`cleanup-expired-tokens.mjs`, ad-hoc-scripts — finns en `ops`-service i
+För engångskörningar som inte är migrationer - `bounce-test-data.mjs`,
+`cleanup-expired-tokens.mjs`, ad-hoc-scripts - finns en `ops`-service i
 docker-compose.yml. Den återanvänder `migrate`-imagen (samma minimala
 Node + postgres + drizzle-deps), ligger bakom `tools`-profilen så den
 inte startas av `docker compose up`, och har `node` som hårdkodad
@@ -187,7 +187,7 @@ automatiskt. Lägg nytt ops-script → committa → nästa release har det
 tillgängligt via `docker compose run --rm ops scripts/<name>.mjs`.
 
 **Varför inte `docker compose exec app ...`?** App-imagen är slim Next.js
-standalone — `postgres`-paketet är bundlat i `.next/server/` och inte
+standalone - `postgres`-paketet är bundlat i `.next/server/` och inte
 tillgängligt för fristående scripts. Ops-imagen är rätt verktyg.
 
 ### Städa disk efter deploys

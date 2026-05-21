@@ -30,7 +30,7 @@ type UpdateProfilePatch = {
 // förändrade fält. Validerar partial schema, uppdaterar bara de kolumner
 // som finns i payload. Kallas från useAutoSave-hooken.
 //
-// revalidatePath skippas medvetet — auto-save fires många gånger per
+// revalidatePath skippas medvetet - auto-save fires många gånger per
 // editing-session och cache-invalidering är onödig (lokal UI är optimistisk,
 // nästa page-load hämtar färskt).
 export async function updateProfile(patch: UpdateProfilePatch) {

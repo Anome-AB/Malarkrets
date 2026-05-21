@@ -180,7 +180,7 @@ export function AdminFeedbackClient({
                       </div>
                     </td>
                     <td className="py-3 pr-3 text-secondary text-xs">
-                      {tip.commentCount > 0 ? `${tip.commentCount}` : "—"}
+                      {tip.commentCount > 0 ? `${tip.commentCount}` : "-"}
                     </td>
                     <td className="py-3 pr-3 text-secondary">
                       {tip.reporterDisplayName ?? tip.reporterEmail ?? "okänd"}

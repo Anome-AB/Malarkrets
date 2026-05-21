@@ -330,7 +330,7 @@ export async function getMyTipDetail(tipId: string): Promise<MyTipDetail | null>
 
   // Sidoeffekt: markera tipset som läst för rapportören just nu. /mina-tips
   // är dynamisk (kräver auth + DB-fetch på varje render) så ingen explicit
-  // revalidatePath behövs — Next.js 16 förbjuder revalidatePath under render
+  // revalidatePath behövs - Next.js 16 förbjuder revalidatePath under render
   // och nästa navigering till listan re-fetchar ändå.
   await db
     .insert(feedbackTipViews)
