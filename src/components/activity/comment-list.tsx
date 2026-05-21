@@ -9,6 +9,12 @@ interface Comment {
   authorName: string;
   content: string;
   createdAt: Date | string;
+  /**
+   * Sätts av server-render när författaren är blockerad av viewer. UI:t
+   * renderar kommentaren som en spoiler - suddig text + "Visa"-knapp tills
+   * användaren själv väljer att avslöja innehållet.
+   */
+  isBlockedByViewer?: boolean;
 }
 
 interface CommentListProps {
@@ -74,43 +80,12 @@ export function CommentList({
             const canDelete =
               isCreator || comment.userId === currentUserId;
             return (
-              <li
+              <CommentItem
                 key={comment.id}
-                className="bg-white border border-border rounded-lg p-3"
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-heading">
-                      {comment.authorName}
-                    </span>
-                    <span className="text-xs text-secondary">
-                      {timeAgo(comment.createdAt)}
-                    </span>
-                  </div>
-                  {canDelete && (
-                    <button
-                      onClick={() => onDelete?.(comment.id)}
-                      className="text-xs text-dimmed hover:text-warning transition-colors"
-                      aria-label={`Ta bort kommentar av ${comment.authorName}`}
-                    >
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <polyline points="3 6 5 6 21 6" />
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-                <p className="text-sm text-heading">{comment.content}</p>
-              </li>
+                comment={comment}
+                canDelete={canDelete}
+                onDelete={onDelete}
+              />
             );
           })}
         </ul>
@@ -135,5 +110,83 @@ export function CommentList({
         </p>
       )}
     </section>
+  );
+}
+
+/**
+ * En enskild kommentar. Blockerade författares texter renderas som spoiler
+ * - innehållet suddigt + osökbart, med en Visa-knapp som avslöjar texten.
+ * Avslöjat tillstånd är per-render (försvinner vid reload) så användaren
+ * inte permanent har bjudit in obekväma kommentarer i sin vy.
+ */
+function CommentItem({
+  comment,
+  canDelete,
+  onDelete,
+}: {
+  comment: Comment;
+  canDelete: boolean;
+  onDelete?: (commentId: string) => void;
+}) {
+  const isBlocked = !!comment.isBlockedByViewer;
+  const [revealed, setRevealed] = useState(false);
+  const shouldBlur = isBlocked && !revealed;
+
+  return (
+    <li className="bg-white border border-border rounded-lg p-3">
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-sm font-medium text-heading truncate">
+            {comment.authorName}
+          </span>
+          {isBlocked && (
+            <span className="shrink-0 inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-50 text-error">
+              Blockerad
+            </span>
+          )}
+          <span className="shrink-0 text-xs text-secondary">
+            {timeAgo(comment.createdAt)}
+          </span>
+        </div>
+        {canDelete && (
+          <button
+            onClick={() => onDelete?.(comment.id)}
+            className="text-xs text-dimmed hover:text-warning transition-colors"
+            aria-label={`Ta bort kommentar av ${comment.authorName}`}
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
+          </button>
+        )}
+      </div>
+      <p
+        className={`text-sm text-heading transition-[filter] duration-200 ${
+          shouldBlur ? "blur-sm select-none pointer-events-none" : ""
+        }`}
+        aria-hidden={shouldBlur}
+      >
+        {comment.content}
+      </p>
+      {isBlocked && (
+        <button
+          type="button"
+          onClick={() => setRevealed((r) => !r)}
+          className="mt-1.5 text-xs text-primary hover:underline focus:outline-none focus:underline"
+        >
+          {revealed ? "Dölj kommentaren igen" : "Visa kommentaren"}
+        </button>
+      )}
+    </li>
   );
 }

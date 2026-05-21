@@ -912,12 +912,14 @@ export async function getActivityDetail(activityId: string) {
     .where(eq(activityComments.activityId, activityId))
     .orderBy(activityComments.createdAt);
 
-  // Filtrera bort kommentarer från blockerade författare. NULL-författare
-  // (raderade konton) släpps igenom - det är inte en blockad person, bara
-  // ett tomt namn.
-  const filteredComments = comments.filter(
-    (c) => c.userId === null || !blockedIds.has(c.userId),
-  );
+  // Annotera kommentarer från blockerade författare istället för att dölja
+  // dem helt. UI:t använder isBlockedByViewer för att rendera en spoiler-
+  // stil där innehållet är suddigt tills användaren klickar "Visa".
+  const annotatedComments = comments.map((c) => ({
+    ...c,
+    isBlockedByViewer:
+      c.userId !== null && blockedIds.has(c.userId),
+  }));
 
   const feedbackRows = await db
     .select({ rating: activityFeedback.rating, count: count() })
@@ -986,12 +988,13 @@ export async function getActivityDetail(activityId: string) {
     participantCount: displayParticipantCount,
     interestedCount,
     attendingPreview: attendingWithCreator,
-    comments: filteredComments.map((c) => ({
+    comments: annotatedComments.map((c) => ({
       id: c.id,
       userId: c.userId,
       authorName: c.authorName ?? "Anonym",
       content: c.content,
       createdAt: c.createdAt!,
+      isBlockedByViewer: c.isBlockedByViewer,
     })),
     feedbackTotal,
     feedbackPositive,

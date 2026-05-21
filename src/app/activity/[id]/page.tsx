@@ -227,8 +227,8 @@ export default async function ActivityDetailPage({
   }
 
   // Slå upp alla användare som inloggad viewer har blockerat. Använder vi
-  // för att (a) markera blockerade rader i deltagarpopovern, och (b)
-  // filtrera bort kommentarer från blockerade författare.
+  // för att markera blockerade rader i deltagarpopovern och kommentarer
+  // (spoiler-suddiga med "Visa"-knapp).
   if (currentUserId) {
     const blockRows = await db
       .select({ blockedId: userBlocks.blockedId })
@@ -240,11 +240,11 @@ export default async function ActivityDetailPage({
         ...p,
         isBlockedByViewer: blockedSet.has(p.id),
       }));
-      // Filtrera bort kommentarer från blockerade. NULL-författare (raderade
-      // konton) släpps igenom - inte en blockad person, bara tomt namn.
-      activity.comments = activity.comments.filter(
-        (c) => c.userId === null || !blockedSet.has(c.userId),
-      );
+      activity.comments = activity.comments.map((c) => ({
+        ...c,
+        isBlockedByViewer:
+          c.userId !== null && blockedSet.has(c.userId),
+      }));
     }
   }
 
