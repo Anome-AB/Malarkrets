@@ -346,6 +346,8 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
                           total={detail.participantCount}
                           max={detail.maxParticipants}
                           variant="full"
+                          currentUserId={detail.currentUserId}
+                          onBlocked={() => refreshPanel()}
                         />
                         {detail.interestedCount > 0 && (
                           <p className="mt-1 text-xs text-dimmed">

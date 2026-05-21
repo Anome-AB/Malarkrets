@@ -450,6 +450,7 @@ export default async function ActivityDetailPage({
                         total={activity.participantCount}
                         max={activity.maxParticipants}
                         variant="full"
+                        currentUserId={currentUserId ?? undefined}
                       />
                       {activity.interestedCount > 0 && (
                         <p className="mt-1 text-xs text-dimmed">

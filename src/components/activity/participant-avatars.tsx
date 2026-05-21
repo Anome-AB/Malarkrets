@@ -1,7 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { computeInitials } from "@/lib/initials";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useToast } from "@/components/ui/toast";
+import { blockUser } from "@/actions/blocking";
 
 export interface ParticipantPreview {
   id: string;
@@ -26,6 +30,16 @@ interface ParticipantAvatarsProps {
    *   lista. För detalj/panel-vyer.
    */
   variant?: "compact" | "full";
+  /**
+   * Current user-id. När satt visar popovern blockera-knapp på alla rader
+   * utom den egna. Lämna ut för publika vyer.
+   */
+  currentUserId?: string;
+  /**
+   * Anropas när en användare har blockats. Föräldern brukar refresha datan
+   * (router.refresh eller motsvarande) så den blockade inte syns kvar.
+   */
+  onBlocked?: (userId: string) => void;
 }
 
 const SIZE_BY_VARIANT = {
@@ -55,6 +69,8 @@ export function ParticipantAvatars({
   total,
   max,
   variant = "full",
+  currentUserId,
+  onBlocked,
 }: ParticipantAvatarsProps) {
   const sizes = SIZE_BY_VARIANT[variant];
   const visible = participants.slice(0, 5);
@@ -110,7 +126,16 @@ export function ParticipantAvatars({
     );
   }
 
-  return <ParticipantPopoverButton stack={stack} counter={counter} participants={participants} total={total} />;
+  return (
+    <ParticipantPopoverButton
+      stack={stack}
+      counter={counter}
+      participants={participants}
+      total={total}
+      currentUserId={currentUserId}
+      onBlocked={onBlocked}
+    />
+  );
 }
 
 function Avatar({
@@ -142,19 +167,31 @@ function Avatar({
 /**
  * Klickbar wrapper kring stacken + räknaren. Öppnar en popover med alla
  * deltagares namn + avatar. ESC och click-outside stänger popovern.
+ *
+ * När currentUserId är satt visas en blockera-ikon på varje rad utom den
+ * egna. Klick öppnar en bekräftelsedialog som förklarar konsekvenserna
+ * innan blockUser-action:en körs.
  */
 function ParticipantPopoverButton({
   stack,
   counter,
   participants,
   total,
+  currentUserId,
+  onBlocked,
 }: {
   stack: React.ReactNode;
   counter: React.ReactNode;
   participants: ParticipantPreview[];
   total: number;
+  currentUserId?: string;
+  onBlocked?: (userId: string) => void;
 }) {
+  const { toast } = useToast();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [blockTarget, setBlockTarget] = useState<ParticipantPreview | null>(null);
+  const [isBlocking, startBlockTransition] = useTransition();
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -175,49 +212,122 @@ function ParticipantPopoverButton({
     };
   }, [open]);
 
-  return (
-    <div className="relative inline-block" ref={wrapperRef}>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        aria-label={`Visa lista över ${total} deltagare`}
-        className="flex items-center gap-2 rounded-control px-1.5 py-1 -mx-1.5 -my-1 hover:bg-background focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
-      >
-        {stack}
-        {counter}
-      </button>
+  function confirmBlock() {
+    const target = blockTarget;
+    if (!target) return;
+    startBlockTransition(async () => {
+      const result = await blockUser(target.id);
+      if (result.success) {
+        toast(`${target.displayName} är nu blockerad`, "success");
+        if (result.affectedActivities && result.affectedActivities.length > 0) {
+          toast(
+            `Du är fortfarande anmäld till ${result.affectedActivities.length} aktivitet${result.affectedActivities.length === 1 ? "" : "er"} från denna användare - hantera manuellt om du vill.`,
+            "info",
+          );
+        }
+        setBlockTarget(null);
+        setOpen(false);
+        if (onBlocked) {
+          onBlocked(target.id);
+        } else {
+          // Server-renderade kallare (t.ex. /activity/[id]) använder
+          // router.refresh för att fasa ut den blockade ur listan.
+          router.refresh();
+        }
+      } else {
+        toast(result.error ?? "Något gick fel", "error");
+      }
+    });
+  }
 
-      {open && (
-        <div
-          role="dialog"
-          aria-label="Deltagarlista"
-          className="absolute left-0 top-full mt-2 min-w-[220px] max-w-[320px] max-h-[60vh] overflow-y-auto bg-white border border-border rounded-card shadow-lg z-30 py-2"
+  return (
+    <>
+      <div className="relative inline-block" ref={wrapperRef}>
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-label={`Visa lista över ${total} deltagare`}
+          className="flex items-center gap-2 rounded-control px-1.5 py-1 -mx-1.5 -my-1 hover:bg-background focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
         >
-          <div className="px-4 pt-1 pb-2 text-xs font-semibold text-secondary uppercase tracking-wider">
-            {total === 1 ? "1 deltagare" : `${total} deltagare`}
+          {stack}
+          {counter}
+        </button>
+
+        {open && (
+          <div
+            role="dialog"
+            aria-label="Deltagarlista"
+            className="absolute left-0 top-full mt-2 min-w-[260px] max-w-[340px] max-h-[60vh] overflow-y-auto bg-white border border-border rounded-card shadow-lg z-30 py-2"
+          >
+            <div className="px-4 pt-1 pb-2 text-xs font-semibold text-secondary uppercase tracking-wider">
+              {total === 1 ? "1 deltagare" : `${total} deltagare`}
+            </div>
+            <ul className="space-y-0.5">
+              {participants.map((p) => {
+                const isSelf = currentUserId === p.id;
+                return (
+                  <li
+                    key={p.id}
+                    className="group flex items-center gap-3 px-4 py-1.5 text-sm text-heading hover:bg-background"
+                  >
+                    <Avatar
+                      participant={p}
+                      className="w-7 h-7 text-[10px]"
+                    />
+                    <span className="flex-1 min-w-0 truncate">{p.displayName}</span>
+                    {currentUserId && !isSelf && (
+                      <button
+                        type="button"
+                        onClick={() => setBlockTarget(p)}
+                        aria-label={`Blockera ${p.displayName}`}
+                        title="Blockera"
+                        className="shrink-0 p-1 rounded-control text-error/70 hover:text-error hover:bg-red-50 opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-error transition-opacity"
+                      >
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden="true"
+                        >
+                          <circle cx="12" cy="12" r="10" />
+                          <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                        </svg>
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
+              {participants.length < total && (
+                <li className="px-4 py-1.5 text-xs text-dimmed italic">
+                  {total - participants.length} till visas inte i listan
+                </li>
+              )}
+            </ul>
           </div>
-          <ul className="space-y-0.5">
-            {participants.map((p) => (
-              <li
-                key={p.id}
-                className="flex items-center gap-3 px-4 py-1.5 text-sm text-heading"
-              >
-                <Avatar
-                  participant={p}
-                  className="w-7 h-7 text-[10px]"
-                />
-                <span className="truncate">{p.displayName}</span>
-              </li>
-            ))}
-            {participants.length < total && (
-              <li className="px-4 py-1.5 text-xs text-dimmed italic">
-                {total - participants.length} till visas inte i listan
-              </li>
-            )}
-          </ul>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+
+      <ConfirmDialog
+        open={!!blockTarget}
+        title={blockTarget ? `Blockera ${blockTarget.displayName}?` : ""}
+        message={
+          blockTarget
+            ? `Du kommer inte längre se ${blockTarget.displayName}s aktiviteter i flödet, och de kommer inte se dina. Befintliga anmälningar och kommentarer påverkas inte automatiskt - hantera dem manuellt vid behov. Du kan avblockera senare via din profil.`
+            : ""
+        }
+        confirmLabel="Blockera"
+        cancelLabel="Avbryt"
+        variant="danger"
+        loading={isBlocking}
+        onCancel={() => setBlockTarget(null)}
+        onConfirm={confirmBlock}
+      />
+    </>
   );
 }
