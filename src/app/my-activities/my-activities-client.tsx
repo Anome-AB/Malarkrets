@@ -98,29 +98,25 @@ export function MyActivitiesClient({
   const published = createdActivities.filter((a) => a.publishedAt);
 
   function renderCreatedCard(activity: Activity) {
-    // Utkast-overlayen kommunicerar redan att aktiviteten är användarens egen
-    // arbete, så vi hoppar över den inbyggda Arrangerar-badgen för att inte
-    // visa två chips med överlappande betydelse på samma kort.
+    // Utkast-badgen renderas inuti ActivityCard via isDraft-prop:en så att den
+    // hamnar bredvid titeln (samma position som Arrangerar normalt). Inställd
+    // är fortfarande en overlay-chip i topp-höger eftersom det är ett mer
+    // alarmerande tillstånd som ska sticka ut.
     const isDraft = !activity.publishedAt;
     return (
       <div key={activity.id} className="relative">
         <ActivityCard
           activity={activity}
-          isCreator={!isDraft}
+          isCreator
+          isDraft={isDraft}
           onClick={handleClick}
           reserveTopActionSpace
         />
         <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
-          {activity.cancelledAt ? (
+          {activity.cancelledAt && (
             <span className="inline-block text-xs font-semibold px-2.5 py-1 rounded-full bg-red-100 text-red-700">
               Inställd
             </span>
-          ) : (
-            !activity.publishedAt && (
-              <span className="inline-block text-xs font-semibold px-2.5 py-1 rounded-full bg-alert-bg text-alert-text">
-                Utkast
-              </span>
-            )
           )}
           {/* Kopiera-knapp finns på alla egna aktiviteter (inkl. avbokade
               och utkast). Borttagna visas inte i listan över huvud taget. */}

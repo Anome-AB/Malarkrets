@@ -44,6 +44,11 @@ interface ActivityCardProps {
    * av föräldern som faktiskt renderar overlayen.
    */
   reserveTopActionSpace?: boolean;
+  /**
+   * När true visas en "Utkast"-badge i titelraden istället för "Arrangerar".
+   * Båda badgar är exklusiva - utkast ersätter arrangerar-statusen.
+   */
+  isDraft?: boolean;
 }
 
 // Fallback used when an activity has neither an extracted accent nor a colorTheme
@@ -110,6 +115,7 @@ export function ActivityCard({
   userStatus,
   onClick,
   reserveTopActionSpace = false,
+  isDraft = false,
 }: ActivityCardProps) {
   const wte = activity.whatToExpect;
   const start =
@@ -230,7 +236,12 @@ export function ActivityCard({
           <h3 className="flex-1 min-w-0 font-display font-bold text-heading tracking-tight text-sm md:text-lg leading-tight truncate">
             {activity.title}
           </h3>
-          {isCreator && (
+          {isDraft && (
+            <span className="shrink-0 inline-block text-[10px] md:text-xs font-semibold px-2 py-0.5 rounded-full bg-alert-bg text-alert-text">
+              Utkast
+            </span>
+          )}
+          {isCreator && !isDraft && (
             <span className="shrink-0 inline-block text-[10px] md:text-xs font-semibold px-2 py-0.5 rounded-full bg-success-bg text-success-text">
               Arrangerar
             </span>
