@@ -53,6 +53,28 @@ export function RichTextEditor({
         class:
           "rich-text-prose min-h-[140px] px-4 py-3 outline-none focus:outline-none",
       },
+      // Blockera bildklistring och bild-drag-drop. Windows emoji-panel
+      // har en GIF-flik som annars infogar img-element. Vi tillåter
+      // bara text, emojis och formaterad text (inte bilder).
+      handlePaste(_view, event) {
+        const dt = event.clipboardData;
+        if (!dt) return false;
+        // Stoppa direkt om paste innehåller fil(er) eller bild-MIME.
+        if (dt.types.includes("Files")) return true;
+        for (const item of Array.from(dt.items)) {
+          if (item.type.startsWith("image/")) return true;
+        }
+        return false;
+      },
+      handleDrop(_view, event) {
+        const dt = (event as DragEvent).dataTransfer;
+        if (!dt) return false;
+        if (dt.types.includes("Files")) {
+          event.preventDefault();
+          return true;
+        }
+        return false;
+      },
     },
   });
 
