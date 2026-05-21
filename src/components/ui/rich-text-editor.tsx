@@ -91,7 +91,7 @@ export function RichTextEditor({
   if (!editor) return null;
 
   return (
-    <div className="rounded-control border border-border bg-white focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent transition-shadow overflow-hidden">
+    <div className="rounded-control border border-border bg-white focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent transition-shadow">
       <Toolbar editor={editor} />
       <EditorContent editor={editor} />
     </div>
