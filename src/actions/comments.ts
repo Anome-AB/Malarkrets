@@ -94,7 +94,7 @@ export async function deleteComment(commentId: string) {
     if (!comment) {
       return { success: false, error: "Kommentaren hittades inte" };
     }
-    if (comment.deletedByAdminId) {
+    if (comment.deletedAt) {
       return { success: false, error: "Kommentaren är redan borttagen" };
     }
 
@@ -121,20 +121,17 @@ export async function deleteComment(commentId: string) {
       };
     }
 
-    // Admin som tar bort någon annans kommentar lämnar en tombstone så
-    // användaren ser att modereringen skett. Författarens egen borttagning
-    // och arrangörens borttagning av deltagar-kommentarer är fortfarande
-    // hard-delete (oförändrat beteende).
-    if (!isAuthor && isAdmin) {
-      await db
-        .update(activityComments)
-        .set({ deletedByAdminId: user.id! })
-        .where(eq(activityComments.id, commentId));
-    } else {
-      await db
-        .delete(activityComments)
-        .where(eq(activityComments.id, commentId));
-    }
+    // Alla borttagningar är soft-delete - tombstone lämnas så det syns att
+    // en kommentar funnits på platsen. deletedByAdminId sätts bara när en
+    // admin tog bort någon annans kommentar; UI:t differentierar texten
+    // utifrån vilken kombination som är satt.
+    await db
+      .update(activityComments)
+      .set({
+        deletedAt: new Date(),
+        ...(!isAuthor && isAdmin ? { deletedByAdminId: user.id! } : {}),
+      })
+      .where(eq(activityComments.id, commentId));
 
     revalidatePath("/");
 
@@ -161,7 +158,7 @@ export async function editComment(commentId: string, content: string) {
     if (!comment) {
       return { success: false, error: "Kommentaren hittades inte" };
     }
-    if (comment.deletedByAdminId) {
+    if (comment.deletedAt) {
       return { success: false, error: "Kommentaren är borttagen" };
     }
     if (comment.userId !== user.id!) {

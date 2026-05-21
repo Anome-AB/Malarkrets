@@ -318,9 +318,13 @@ export const activityComments = pgTable("activity_comments", {
   // Sätts när författaren själv redigerar kommentaren. UI:t visar
   // "(redigerad)"-markör om värdet är non-null.
   editedAt: timestamp("edited_at", { withTimezone: true }),
-  // Sätts när en admin tar bort någon annans kommentar - rad finns kvar
-  // som tombstone så användaren ser att modereringen skett. Författaren
-  // som tar bort sin egen kommentar gör hard-delete istället.
+  // Sätts när kommentaren tagits bort - vare sig av författaren själv eller
+  // av en admin. Raden lämnas kvar som tombstone så det syns att det funnits
+  // en kommentar där.
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  // Sätts BARA när en admin tar bort någon annans kommentar. UI:t använder
+  // detta för att differentiera tombstone-text ("av användaren" vs "av
+  // administratör").
   deletedByAdminId: uuid("deleted_by_admin_id").references(() => users.id, {
     onDelete: "set null",
   }),

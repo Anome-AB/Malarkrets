@@ -113,6 +113,13 @@
 			"when": 1780358400000,
 			"tag": "0015_comment_edit_admin_delete",
 			"breakpoints": true
+		},
+		{
+			"idx": 16,
+			"version": "7",
+			"when": 1780444800000,
+			"tag": "0016_comment_deleted_at",
+			"breakpoints": true
 		}
 	]
 }

@@ -907,6 +907,7 @@ export async function getActivityDetail(activityId: string) {
       content: activityComments.content,
       createdAt: activityComments.createdAt,
       editedAt: activityComments.editedAt,
+      deletedAt: activityComments.deletedAt,
       deletedByAdminId: activityComments.deletedByAdminId,
     })
     .from(activityComments)
@@ -997,6 +998,7 @@ export async function getActivityDetail(activityId: string) {
       content: c.content,
       createdAt: c.createdAt!,
       editedAt: c.editedAt,
+      deletedAt: c.deletedAt,
       deletedByAdminId: c.deletedByAdminId,
       isBlockedByViewer: c.isBlockedByViewer,
     })),

@@ -19,8 +19,13 @@ interface Comment {
    */
   editedAt?: Date | string | null;
   /**
-   * Sätts när en admin tagit bort kommentaren. Innehållet ersätts av en
-   * tombstone-text - författarnamn och tidsstämpel behålls för kontext.
+   * Sätts när kommentaren tagits bort (av författaren själv eller en admin).
+   * Tombstone renderas så det syns att en kommentar funnits där.
+   */
+  deletedAt?: Date | string | null;
+  /**
+   * Sätts BARA när en admin tagit bort kommentaren. Avgör om tombstone-texten
+   * är "av administratör" (set) eller "av användaren" (null).
    */
   deletedByAdminId?: string | null;
   /**
@@ -221,7 +226,7 @@ export function CommentList({
         title="Ta bort kommentar?"
         message={
           deleteTarget?.isOwn
-            ? "Din kommentar tas bort permanent."
+            ? "Din kommentar ersätts med 'Kommentar borttagen av användaren'. Andra deltagare ser då att det funnits en kommentar där, men inte innehållet."
             : "Kommentaren ersätts med en notis om att en administratör tagit bort den. Författaren kan se att den blivit borttagen."
         }
         confirmLabel="Ta bort"
@@ -264,7 +269,8 @@ function CommentItem({
   onRequestBlock: (comment: Comment) => void;
   onUnblock: (comment: Comment) => void;
 }) {
-  const isTombstoned = !!comment.deletedByAdminId;
+  const isTombstoned = !!comment.deletedAt;
+  const removedByAdmin = !!comment.deletedByAdminId;
   const isBlocked = !!comment.isBlockedByViewer;
   const isEdited = !!comment.editedAt;
   const [isEditing, setIsEditing] = useState(false);
@@ -313,7 +319,9 @@ function CommentItem({
           </span>
         </div>
         <p className="text-sm text-secondary italic">
-          Kommentar borttagen av administratör
+          {removedByAdmin
+            ? "Kommentar borttagen av administratör"
+            : "Kommentar borttagen av användaren"}
         </p>
       </li>
     );

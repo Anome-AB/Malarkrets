@@ -17,6 +17,7 @@ interface Comment {
   content: string;
   createdAt: Date | string;
   editedAt?: Date | string | null;
+  deletedAt?: Date | string | null;
   deletedByAdminId?: string | null;
 }
 

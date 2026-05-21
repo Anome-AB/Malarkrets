@@ -107,6 +107,7 @@ async function getActivity(id: string) {
       content: activityComments.content,
       createdAt: activityComments.createdAt,
       editedAt: activityComments.editedAt,
+      deletedAt: activityComments.deletedAt,
       deletedByAdminId: activityComments.deletedByAdminId,
     })
     .from(activityComments)
@@ -165,6 +166,7 @@ async function getActivity(id: string) {
       content: c.content,
       createdAt: c.createdAt!,
       editedAt: c.editedAt,
+      deletedAt: c.deletedAt,
       deletedByAdminId: c.deletedByAdminId,
     })),
     feedbackTotal,
