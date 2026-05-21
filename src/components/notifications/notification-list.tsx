@@ -73,11 +73,9 @@ export function NotificationList({ items, onItemClick, emptyMessage }: Props) {
                   item.read ? "text-secondary" : "text-heading font-medium"
                 }`}
               >
-                {notificationMessage(item.type, item.params)}
+                {notificationMessage(item.type, item.params, item.activityTitle)}
               </p>
-              <p className="text-xs text-dimmed mt-0.5 truncate">
-                {item.activityTitle ?? "Aktivitet borttagen"}
-                <span className="mx-1.5">•</span>
+              <p className="text-xs text-dimmed mt-0.5">
                 {timeAgo(item.createdAt)}
               </p>
             </div>

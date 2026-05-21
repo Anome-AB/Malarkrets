@@ -152,6 +152,7 @@ export async function adminEditActivity(input: unknown, sourceReportId?: string)
           type: "activity_edited_by_admin",
           activityId,
           params: {
+            activityTitle: activity.title,
             reason,
             changedFields: formatChangedFieldsSv(diff),
           },
@@ -245,7 +246,7 @@ export async function adminCancelActivity(input: unknown, sourceReportId?: strin
             userId,
             type: "activity_cancelled" as const,
             activityId,
-            params: { reason },
+            params: { activityTitle: activity.title, reason },
           })),
         );
       }
@@ -358,7 +359,11 @@ export async function adminDeleteActivity(input: unknown, sourceReportId?: strin
             userId,
             type: "activity_deleted" as const,
             activityId,
-            params: { reason, isForCreator: userId === creatorId },
+            params: {
+              activityTitle: activity.title,
+              reason,
+              isForCreator: userId === creatorId,
+            },
           })),
         );
       }

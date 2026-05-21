@@ -441,7 +441,11 @@ export async function updateActivity(
           userId: activity.creatorId,
           type: "activity_edited_by_admin",
           activityId: id,
-          params: { reason: adminReason, changedFields: changedLabels },
+          params: {
+            activityTitle: activity.title,
+            reason: adminReason,
+            changedFields: changedLabels,
+          },
         });
       }
     }
@@ -466,6 +470,7 @@ export async function updateActivity(
           userId: p.userId,
           type: "activity_updated" as const,
           activityId: id,
+          params: { activityTitle: activity.title },
         })),
       );
     }
@@ -721,7 +726,10 @@ export async function joinActivity(
         userId: activity.creatorId,
         type: "participant_joined",
         activityId,
-        params: { participantName: joiner.displayName || "Anonym" },
+        params: {
+          activityTitle: activity.title,
+          actorName: joiner.displayName || "Anonym",
+        },
       });
     }
 
@@ -776,7 +784,10 @@ export async function leaveActivity(activityId: string) {
         userId: activity.creatorId,
         type: "participant_left",
         activityId,
-        params: { participantName: leaver?.displayName || "Anonym" },
+        params: {
+          activityTitle: activity.title,
+          actorName: leaver?.displayName || "Anonym",
+        },
       });
     }
 
