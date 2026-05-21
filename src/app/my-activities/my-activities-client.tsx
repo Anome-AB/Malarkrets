@@ -88,8 +88,9 @@ export function MyActivitiesClient({
                   activity={activity}
                   isCreator={true}
                   onClick={handleClick}
+                  reserveTopActionSpace
                 />
-                <div className="absolute top-3 right-3 flex flex-col items-end gap-2 z-10">
+                <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
                   {activity.cancelledAt ? (
                     <span className="inline-block text-xs font-semibold px-2.5 py-1 rounded-full bg-red-100 text-red-700">
                       Inställd

@@ -38,6 +38,12 @@ interface ActivityCardProps {
   isCreator?: boolean;
   userStatus?: "interested" | "attending" | null;
   onClick?: (id: string) => void;
+  /**
+   * Reserverar extra padding i topp av info-blocket så att absolut-positionerade
+   * action-knappar (Kopiera, Redigera) ovanpå kortet inte döljer titeln. Sätts
+   * av föräldern som faktiskt renderar overlayen.
+   */
+  reserveTopActionSpace?: boolean;
 }
 
 // Fallback used when an activity has neither an extracted accent nor a colorTheme
@@ -103,6 +109,7 @@ export function ActivityCard({
   isCreator = false,
   userStatus,
   onClick,
+  reserveTopActionSpace = false,
 }: ActivityCardProps) {
   const wte = activity.whatToExpect;
   const start =
@@ -211,7 +218,11 @@ export function ActivityCard({
       </div>
 
       {/* ───── Info block (right) ───── */}
-      <div className="flex-1 min-w-0 p-3 md:p-5 flex flex-col">
+      <div
+        className={`flex-1 min-w-0 p-3 md:p-5 flex flex-col ${
+          reserveTopActionSpace ? "pt-10 md:pt-14" : ""
+        }`}
+      >
         {/* Title + badge share the top row via flex. Title truncates at the
             badge's left edge, so the break point shifts with viewport width
             instead of being pinned to a fixed pr-24. No wrap, just ellipsis. */}
