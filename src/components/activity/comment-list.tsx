@@ -24,10 +24,15 @@ interface Comment {
    */
   deletedAt?: Date | string | null;
   /**
-   * Sätts BARA när en admin tagit bort kommentaren. Avgör om tombstone-texten
-   * är "av administratör" (set) eller "av användaren" (null).
+   * Sätts BARA när en admin tagit bort kommentaren. Avgör tombstone-text:
+   * admin > arrangör > användaren själv.
    */
   deletedByAdminId?: string | null;
+  /**
+   * Sätts BARA när aktivitetens arrangör tagit bort en deltagar-kommentar.
+   * Mutuellt exklusivt med deletedByAdminId.
+   */
+  deletedByCreatorId?: string | null;
   /**
    * Sätts av server-render när författaren är blockerad av viewer. Visas
    * som en "Blockerad"-chip - innehållet visas dock som vanligt (ingen
@@ -271,6 +276,7 @@ function CommentItem({
 }) {
   const isTombstoned = !!comment.deletedAt;
   const removedByAdmin = !!comment.deletedByAdminId;
+  const removedByCreator = !comment.deletedByAdminId && !!comment.deletedByCreatorId;
   const isBlocked = !!comment.isBlockedByViewer;
   const isEdited = !!comment.editedAt;
   const [isEditing, setIsEditing] = useState(false);
@@ -321,7 +327,9 @@ function CommentItem({
         <p className="text-sm text-secondary italic">
           {removedByAdmin
             ? "Kommentar borttagen av administratör"
-            : "Kommentar borttagen av användaren"}
+            : removedByCreator
+              ? "Kommentar borttagen av arrangör"
+              : "Kommentar borttagen av användaren"}
         </p>
       </li>
     );

@@ -109,6 +109,7 @@ async function getActivity(id: string) {
       editedAt: activityComments.editedAt,
       deletedAt: activityComments.deletedAt,
       deletedByAdminId: activityComments.deletedByAdminId,
+      deletedByCreatorId: activityComments.deletedByCreatorId,
     })
     .from(activityComments)
     .leftJoin(users, eq(users.id, activityComments.userId))
@@ -168,6 +169,7 @@ async function getActivity(id: string) {
       editedAt: c.editedAt,
       deletedAt: c.deletedAt,
       deletedByAdminId: c.deletedByAdminId,
+      deletedByCreatorId: c.deletedByCreatorId,
     })),
     feedbackTotal,
     feedbackPositive,

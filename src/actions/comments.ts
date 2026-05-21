@@ -122,14 +122,24 @@ export async function deleteComment(commentId: string) {
     }
 
     // Alla borttagningar är soft-delete - tombstone lämnas så det syns att
-    // en kommentar funnits på platsen. deletedByAdminId sätts bara när en
-    // admin tog bort någon annans kommentar; UI:t differentierar texten
-    // utifrån vilken kombination som är satt.
+    // en kommentar funnits på platsen. Tombstone-text differentieras via
+    // vilken roll-flagga som sätts:
+    //   - deletedByAdminId: admin tog bort någon annans kommentar
+    //   - deletedByCreatorId: arrangör tog bort en deltagar-kommentar
+    //   - (ingen flagga): författaren själv tog bort
+    // Admin tar precedens om personen är både admin och arrangör.
+    const moderationMarker: Partial<typeof activityComments.$inferInsert> =
+      !isAuthor && isAdmin
+        ? { deletedByAdminId: user.id! }
+        : !isAuthor && isActivityCreator
+          ? { deletedByCreatorId: user.id! }
+          : {};
+
     await db
       .update(activityComments)
       .set({
         deletedAt: new Date(),
-        ...(!isAuthor && isAdmin ? { deletedByAdminId: user.id! } : {}),
+        ...moderationMarker,
       })
       .where(eq(activityComments.id, commentId));
 

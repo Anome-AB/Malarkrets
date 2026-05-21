@@ -19,6 +19,7 @@ interface Comment {
   editedAt?: Date | string | null;
   deletedAt?: Date | string | null;
   deletedByAdminId?: string | null;
+  deletedByCreatorId?: string | null;
 }
 
 interface ActivityDetailClientProps {
