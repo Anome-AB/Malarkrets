@@ -56,24 +56,16 @@ export async function getCreatorProfiles(
 }
 
 /**
- * Slår in arrangören som första rad i deltagar-listan. Om arrangören redan
- * finns bland attending markeras den befintliga raden istället; annars
- * prepend:as en ny. Returnerar dessutom hur mycket participantCount ska
- * justeras för att hålla räknaren konsistent med listan.
+ * Slår in arrangören som första rad i deltagar-listan. Arrangören är
+ * implicit deltagare och finns aldrig i activity_participants-tabellen
+ * (joinActivity hindrar det och migration 0014 rensar äldre rader), så
+ * det är alltid en ren prepend + 1 till räknaren.
  */
 export function mergeCreatorIntoPreview(
   attending: ParticipantPreview[],
   creator: CreatorProfile | null,
 ): { participants: ParticipantPreview[]; countDelta: number } {
   if (!creator) return { participants: attending, countDelta: 0 };
-  const existingIndex = attending.findIndex((p) => p.id === creator.id);
-  if (existingIndex >= 0) {
-    const updated = [...attending];
-    updated[existingIndex] = { ...updated[existingIndex], isCreator: true };
-    // Lyft creator-raden till första plats för konsistent layout.
-    const [creatorRow] = updated.splice(existingIndex, 1);
-    return { participants: [creatorRow, ...updated], countDelta: 0 };
-  }
   return {
     participants: [{ ...creator, isCreator: true }, ...attending],
     countDelta: 1,

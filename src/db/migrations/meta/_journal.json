@@ -99,6 +99,13 @@
 			"when": 1780185600000,
 			"tag": "0013_timestamptz_for_comments_notifications",
 			"breakpoints": true
+		},
+		{
+			"idx": 14,
+			"version": "7",
+			"when": 1780272000000,
+			"tag": "0014_remove_creator_self_participations",
+			"breakpoints": true
 		}
 	]
 }

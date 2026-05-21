@@ -645,6 +645,15 @@ export async function joinActivity(
       return { success: false, error: "Aktiviteten är inställd" };
     }
 
+    // Arrangören är implicit deltagare och kan inte anmäla sig till sin
+    // egen aktivitet - det skulle skapa en dubbelroll i deltagar-listan.
+    if (activity.creatorId === user.id) {
+      return {
+        success: false,
+        error: "Du är arrangör för aktiviteten och räknas redan som deltagare",
+      };
+    }
+
     const joiner = await db.query.users.findFirst({
       where: eq(users.id, user.id!),
     });
