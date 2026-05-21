@@ -122,8 +122,8 @@ function LandingPage({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {popularActivities.map((activity) => {
-              // Visa-bild eller gradient-fallback: matchar mönstret i
-              // ActivityCard så bildlösa aktiviteter inte ser tomma ut.
+              // Bild eller gradient-fallback: matchar ActivityCard så att
+              // bildlösa aktiviteter inte ser tomma ut.
               const themeHex = getColorHex(activity.colorTheme);
               const accent =
                 activity.imageAccentColor ?? themeHex ?? NEUTRAL_ACCENT;
@@ -136,6 +136,14 @@ function LandingPage({
                 : {
                     backgroundImage: `linear-gradient(135deg, color-mix(in srgb, ${accent} 60%, white) 0%, ${accent} 55%, color-mix(in srgb, ${accent} 80%, black) 100%)`,
                   };
+              const startDate = new Date(activity.startTime);
+              const weekday = startDate
+                .toLocaleDateString("sv-SE", { weekday: "short" })
+                .replace(".", "");
+              const day = String(startDate.getDate()).padStart(2, "0");
+              const month = startDate
+                .toLocaleDateString("sv-SE", { month: "short" })
+                .replace(".", "");
               return (
               <Link
                 key={activity.id}
@@ -143,17 +151,31 @@ function LandingPage({
                 className="bg-white border border-border rounded-card p-4 hover:shadow-md hover:border-primary transition block"
               >
                 <div
-                  className="w-full h-40 rounded-lg mb-3 flex items-end p-3"
+                  className="relative w-full h-40 rounded-lg mb-3 overflow-hidden"
                   style={heroStyle}
                   aria-hidden="true"
                 >
-                  {!activity.imageThumbUrl && (
-                    <span
-                      className="font-display font-black text-white text-2xl leading-tight line-clamp-2 drop-shadow-[0_1px_6px_rgba(0,0,0,0.35)]"
-                    >
-                      {activity.title}
+                  {/* Datum-badge i övre vänstra hörnet, samma struktur
+                      som ActivityCards datumblock (weekday / day / month
+                      i vit display-typografi). Backdrop-overlay för att
+                      datumet ska kunna läsas mot både bild och gradient. */}
+                  <div
+                    className="absolute top-3 left-3 flex flex-col items-center text-white px-3 py-2 rounded-control"
+                    style={{
+                      backgroundColor: "rgba(0, 0, 0, 0.28)",
+                      textShadow: "0 1px 6px rgba(0,0,0,0.35)",
+                    }}
+                  >
+                    <span className="text-[10px] font-display font-bold uppercase tracking-[0.2em] leading-none">
+                      {weekday}
                     </span>
-                  )}
+                    <span className="font-display font-black text-[32px] leading-none my-1">
+                      {day}
+                    </span>
+                    <span className="text-[10px] font-display font-bold uppercase tracking-[0.2em] leading-none">
+                      {month}
+                    </span>
+                  </div>
                 </div>
                 <h3 className="text-base font-semibold text-heading">
                   {activity.title}
@@ -162,10 +184,7 @@ function LandingPage({
                   {stripHtmlForExcerpt(activity.description, 200)}
                 </p>
                 <p className="text-sm text-secondary mt-2">
-                  {new Date(activity.startTime).toLocaleDateString("sv-SE", {
-                    weekday: "short",
-                    day: "numeric",
-                    month: "short",
+                  {startDate.toLocaleTimeString("sv-SE", {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}{" "}
