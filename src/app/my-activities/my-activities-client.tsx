@@ -98,11 +98,15 @@ export function MyActivitiesClient({
   const published = createdActivities.filter((a) => a.publishedAt);
 
   function renderCreatedCard(activity: Activity) {
+    // Utkast-overlayen kommunicerar redan att aktiviteten är användarens egen
+    // arbete, så vi hoppar över den inbyggda Arrangerar-badgen för att inte
+    // visa två chips med överlappande betydelse på samma kort.
+    const isDraft = !activity.publishedAt;
     return (
       <div key={activity.id} className="relative">
         <ActivityCard
           activity={activity}
-          isCreator={true}
+          isCreator={!isDraft}
           onClick={handleClick}
           reserveTopActionSpace
         />
