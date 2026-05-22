@@ -1,0 +1,53 @@
+; Zone file för vanligavasteras.se (Vänliga Västerås).
+;
+; Initial-import till Loopia: bara basala records som kan sättas innan
+; Office 365 + Resend är konfade. Mail-records läggs till manuellt via
+; Loopia-UI:t när vi har värden från:
+;
+;   - Office 365 domain verification (MS=...-TXT, MX, selector1/2 DKIM-CNAMEs)
+;   - Resend domain registration (resend._domainkey TXT, send-subdomän
+;     SPF/MX)
+;
+; Sedan exporterar vi en uppdaterad version av denna fil från Loopia
+; som "frusen snapshot" av target state, samma sätt som vi har
+; docs/malarkrets-se.zone.
+
+$ORIGIN vanligavasteras.se.
+$TTL 300
+@ SOA ns1.loopia.se. registry.loopia.se. (
+                                1778112000
+                                3H  ; Refresh after three hours
+                                1H  ; Retry after one hour
+                                1W  ; Expire after one week
+                                1D )    ; Minimum one day TTL
+
+@                               IN      3600    NS      ns1.loopia.se.
+@                               IN      3600    NS      ns2.loopia.se.
+
+@                               IN      3600    A       213.188.155.69
+www                             IN      3600    A       213.188.155.69
+
+; ── Läggs till manuellt i Loopia-UI:t när värden finns ──────────────────
+;
+; Steg 1 — Office 365 domain verification (samma flöde som malarkrets.se 6 maj):
+;   @            IN  3600  TXT     MS=ms<id-från-MS-admin-UI>
+;
+; Steg 2 — Office 365 mail records (efter Verify-knappen klickad):
+;   @                     IN  3600  MX     10 vanligavasteras-se.mail.protection.outlook.com.
+;   autodiscover          IN  3600  CNAME  autodiscover.outlook.com.
+;
+; Steg 3 — Resend domain (efter "Add domain" + Verify i Resend-UI:t):
+;   resend._domainkey     IN  300   TXT    p=<DKIM-public-key-från-Resend>
+;   send                  IN  300   MX     10 feedback-smtp.eu-west-1.amazonses.com.
+;   send                  IN  300   TXT    v=spf1 include:amazonses.com ~all
+;
+; Steg 4 — SPF + DMARC på roten (efter både Office 365 och Resend är klara,
+;          så strikta filter inte avvisar mail under uppsättningen):
+;   @       IN  3600  TXT  v=spf1 include:_spf.resend.com include:spf.protection.outlook.com ~all
+;   _dmarc  IN  300   TXT  v=DMARC1; p=none; rua=mailto:support@vanligavasteras.se; fo=1; adkim=r; aspf=r;
+;
+; Steg 5 — Office 365 DKIM (efter Enable DKIM i security.microsoft.com):
+;   selector1._domainkey  IN  3600  CNAME  selector1-vanligavasteras-se._domainkey.anome.w-v1.dkim.mail.microsoft.com.
+;   selector2._domainkey  IN  3600  CNAME  selector2-vanligavasteras-se._domainkey.anome.w-v1.dkim.mail.microsoft.com.
+;
+; ─────────────────────────────────────────────────────────────────────────
