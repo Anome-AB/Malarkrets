@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { getMyTips, type MyTip } from "@/actions/feedback-tips";
 
 export const metadata = {
-  title: "Mina tips - Mälarkrets",
+  title: "Mina tips - Vänliga Västerås",
 };
 
 interface StatusDisplay {

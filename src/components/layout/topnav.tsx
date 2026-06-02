@@ -34,7 +34,7 @@ export function TopNav({ unreadCount, userInitials, userAvatarUrl }: TopNavProps
 
   return (
     <nav className="bg-primary text-white h-topnav flex justify-between items-center px-6">
-      <FeedLink className="text-xl font-semibold">Mälarkrets</FeedLink>
+      <FeedLink className="text-xl font-semibold">Vänliga Västerås</FeedLink>
 
       <div className="flex items-center gap-4">
         <FeedbackTipButton />

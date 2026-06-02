@@ -4,7 +4,7 @@ import { getMyTipDetail } from "@/actions/feedback-tips";
 import { TipDetailClient } from "./tip-detail-client";
 
 export const metadata = {
-  title: "Tipsdetalj - Mälarkrets",
+  title: "Tipsdetalj - Vänliga Västerås",
 };
 
 interface PageProps {

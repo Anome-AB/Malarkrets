@@ -12,7 +12,7 @@ export default async function VerifyPage({
     return (
       <div className="w-full max-w-md rounded-card bg-white p-8 shadow">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-primary">Mälarkrets</h1>
+          <h1 className="text-2xl font-bold text-primary">Vänliga Västerås</h1>
           <p className="mt-4 text-sm text-error">
             Ogiltig eller utgången verifieringslänk.
           </p>
@@ -27,7 +27,7 @@ export default async function VerifyPage({
     return (
       <div className="w-full max-w-md rounded-card bg-white p-8 shadow">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-primary">Mälarkrets</h1>
+          <h1 className="text-2xl font-bold text-primary">Vänliga Västerås</h1>
           <p className="mt-4 text-sm text-error">
             Ogiltig eller utgången verifieringslänk.
           </p>
@@ -39,7 +39,7 @@ export default async function VerifyPage({
   return (
     <div className="w-full max-w-md rounded-card bg-white p-8 shadow">
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-primary">Mälarkrets</h1>
+        <h1 className="text-2xl font-bold text-primary">Vänliga Västerås</h1>
         <p className="mt-4 text-sm text-heading">
           Din e-post är verifierad! Du kan nu logga in.
         </p>

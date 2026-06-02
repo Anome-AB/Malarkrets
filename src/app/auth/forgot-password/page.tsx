@@ -45,7 +45,7 @@ export default function ForgotPasswordPage() {
     return (
       <div className="w-full max-w-md rounded-card bg-white p-8 shadow">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-primary">Mälarkrets</h1>
+          <h1 className="text-2xl font-bold text-primary">Vänliga Västerås</h1>
           <p className="mt-4 text-sm text-heading">{submitted}</p>
           <p className="mt-2 text-xs text-secondary">
             Hittar du inte mailet? Kolla skräpposten. Länken är giltig i en
@@ -65,7 +65,7 @@ export default function ForgotPasswordPage() {
   return (
     <div className="w-full max-w-md rounded-card bg-white p-8 shadow">
       <div className="mb-8 text-center">
-        <h1 className="text-2xl font-bold text-primary">Mälarkrets</h1>
+        <h1 className="text-2xl font-bold text-primary">Vänliga Västerås</h1>
         <p className="mt-1 text-sm text-secondary">Återställ ditt lösenord</p>
       </div>
 

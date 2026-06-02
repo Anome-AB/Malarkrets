@@ -152,7 +152,7 @@ describe("submitTip", () => {
     const result = await submitTip({
       kind: "idea",
       description: "Vore kul med en kalendervy på aktiviteter",
-      pageUrl: "https://malarkrets.se/aktiviteter",
+      pageUrl: "https://vanligavasteras.se/aktiviteter",
       userAgent: "Mozilla/5.0 Test",
       viewportWidth: 1920,
       viewportHeight: 1080,

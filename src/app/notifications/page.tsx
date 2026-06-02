@@ -9,7 +9,7 @@ import type { NotificationItem } from "@/components/notifications/notification-l
 import type { NotificationType } from "@/lib/notifications/copy";
 
 export const metadata: Metadata = {
-  title: "Notiser - Mälarkrets",
+  title: "Notiser - Vänliga Västerås",
 };
 
 export default async function NotificationsPage() {

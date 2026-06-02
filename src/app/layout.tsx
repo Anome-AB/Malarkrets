@@ -16,7 +16,7 @@ const baseUrl = process.env.AUTH_URL ?? "http://localhost:3000";
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
-  title: "Mälarkrets",
+  title: "Vänliga Västerås",
   description: "Hitta ditt sammanhang i Västerås",
 };
 

@@ -75,7 +75,7 @@ export default function OnboardingPage() {
       <div className="max-w-2xl w-full px-6 py-12">
         <div className="text-center mb-10">
           <h1 className="text-3xl font-bold text-primary mb-3">
-            Välkommen till Mälarkrets!
+            Välkommen till Vänliga Västerås!
           </h1>
           <p className="text-lg text-secondary">
             Välj intressen för att personalisera din feed. Du kan hoppa

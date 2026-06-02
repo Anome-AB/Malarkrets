@@ -185,11 +185,11 @@ export async function generateMetadata({
   const activity = await getActivity(id);
 
   if (!activity) {
-    return { title: "Aktivitet hittades inte - Mälarkrets" };
+    return { title: "Aktivitet hittades inte - Vänliga Västerås" };
   }
 
   return {
-    title: `${activity.title} - Mälarkrets`,
+    title: `${activity.title} - Vänliga Västerås`,
     description: stripHtmlForExcerpt(activity.description, 160),
     openGraph: {
       title: activity.title,
@@ -455,7 +455,7 @@ export default async function ActivityDetailPage({
                     <ShareButton
                       url={`/activity/${id}`}
                       title={activity.title}
-                      text={`Kolla in "${activity.title}" på Mälarkrets`}
+                      text={`Kolla in "${activity.title}" på Vänliga Västerås`}
                       iconOnly
                       variant="ghost"
                       size="compact"

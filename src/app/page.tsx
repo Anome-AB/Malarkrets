@@ -87,7 +87,7 @@ function LandingPage({
             stays legible regardless of what part of the image shows through. */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/60" />
         <div className="relative max-w-5xl mx-auto px-6 py-20 md:py-28 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold mb-3 drop-shadow-lg">Mälarkrets</h1>
+          <h1 className="text-5xl md:text-6xl font-bold mb-3 drop-shadow-lg">Vänliga Västerås</h1>
           <p className="text-xl text-white/95 mb-2 drop-shadow">
             Hitta ditt sammanhang
           </p>
