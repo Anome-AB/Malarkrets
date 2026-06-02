@@ -188,7 +188,7 @@ const TARGETS: ShareTarget[] = [
     fgClass: "text-white",
     icon: Icons.email,
     share: ({ url, title, text }) => {
-      const subject = encodeURIComponent(title || "Tips från Mälarkrets");
+      const subject = encodeURIComponent(title || "Tips från Vänliga Västerås");
       const body = encodeURIComponent(`${text ? `${text}\n\n` : ""}${url}`);
       // location.href istället för window.open: mailto öppnas av OS-handler
       // och fungerar inte bra i ny tab på alla browsers.

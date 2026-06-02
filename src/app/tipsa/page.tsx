@@ -2,7 +2,7 @@ import { requireAuth } from "@/lib/auth";
 import { TipsaForm } from "./tipsa-form";
 
 export const metadata = {
-  title: "Tipsa oss - Mälarkrets",
+  title: "Tipsa oss - Vänliga Västerås",
 };
 
 export default async function TipsaPage() {

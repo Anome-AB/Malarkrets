@@ -20,7 +20,7 @@ import {
 } from "@/lib/queries/participants";
 
 export const metadata: Metadata = {
-  title: "Mina aktiviteter - Malarkrets",
+  title: "Mina aktiviteter - Vänliga Västerås",
 };
 
 async function getCreatedActivities(userId: string) {

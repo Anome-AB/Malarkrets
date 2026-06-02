@@ -54,7 +54,7 @@ function LoginForm() {
   return (
     <div className="w-full max-w-md rounded-card bg-white p-8 shadow">
       <div className="mb-8 text-center">
-        <h1 className="text-2xl font-bold text-primary">Mälarkrets</h1>
+        <h1 className="text-2xl font-bold text-primary">Vänliga Västerås</h1>
         <p className="mt-1 text-sm text-secondary">Logga in på ditt konto</p>
       </div>
 

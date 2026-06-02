@@ -5,8 +5,8 @@ import { join } from "node:path";
 import { Card } from "@/components/ui/card";
 
 export const metadata: Metadata = {
-  title: "Nyheter · Mälarkrets",
-  description: "Vad som är nytt i Mälarkrets - ändringar, fixar och tillägg.",
+  title: "Nyheter · Vänliga Västerås",
+  description: "Vad som är nytt i Vänliga Västerås - ändringar, fixar och tillägg.",
 };
 
 // Release-notes läses från public/release-notes.json vid build-tid.
@@ -85,7 +85,7 @@ export default function NyheterPage() {
           </nav>
           <h1 className="text-3xl md:text-4xl font-bold mb-2">Nyheter</h1>
           <p className="text-white/85">
-            Vad som hänt i Mälarkrets - nya funktioner, förbättringar och fixar.
+            Vad som hänt i Vänliga Västerås - nya funktioner, förbättringar och fixar.
           </p>
         </div>
       </header>

@@ -14,7 +14,7 @@ function getClient(): Resend {
 }
 
 function getFrom(): string {
-  return process.env.EMAIL_FROM ?? "noreply@malarkrets.se";
+  return process.env.EMAIL_FROM ?? "noreply@vanligavasteras.se";
 }
 
 // Reply-To pekar på en bevakad mailbox (Office 365 shared mailbox), så
@@ -22,7 +22,7 @@ function getFrom(): string {
 // så strikta corporate-spam-filter (särskilt EOP) viktar inte ner mailet
 // för att from-adressen är obesvarbar.
 function getReplyTo(): string {
-  return process.env.EMAIL_REPLY_TO ?? "support@malarkrets.se";
+  return process.env.EMAIL_REPLY_TO ?? "support@vanligavasteras.se";
 }
 
 function getBaseUrl(): string {
@@ -83,7 +83,7 @@ export async function sendVerificationEmail(
   await sendAuthEmail({
     to: email,
     subject: "Bekräfta din e-postadress",
-    heading: "Välkommen till Mälarkrets",
+    heading: "Välkommen till Vänliga Västerås",
     paragraph:
       "Tack för att du registrerat dig. Klicka på knappen för att bekräfta din e-postadress så kommer du igång.",
     ctaLabel: "Bekräfta e-post",

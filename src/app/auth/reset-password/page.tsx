@@ -53,7 +53,7 @@ function ResetPasswordForm() {
     return (
       <div className="w-full max-w-md rounded-card bg-white p-8 shadow">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-primary">Mälarkrets</h1>
+          <h1 className="text-2xl font-bold text-primary">Vänliga Västerås</h1>
           <p className="mt-4 text-sm text-error">
             Länken saknar token. Begär en ny återställningslänk.
           </p>
@@ -72,7 +72,7 @@ function ResetPasswordForm() {
     return (
       <div className="w-full max-w-md rounded-card bg-white p-8 shadow">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-primary">Mälarkrets</h1>
+          <h1 className="text-2xl font-bold text-primary">Vänliga Västerås</h1>
           <p className="mt-4 text-sm text-heading">
             Lösenordet är uppdaterat. Du kan logga in med det nya lösenordet.
           </p>
@@ -90,7 +90,7 @@ function ResetPasswordForm() {
   return (
     <div className="w-full max-w-md rounded-card bg-white p-8 shadow">
       <div className="mb-8 text-center">
-        <h1 className="text-2xl font-bold text-primary">Mälarkrets</h1>
+        <h1 className="text-2xl font-bold text-primary">Vänliga Västerås</h1>
         <p className="mt-1 text-sm text-secondary">Välj ett nytt lösenord</p>
       </div>
 

@@ -236,7 +236,7 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
             <ShareButton
               url={`/activity/${activityId}`}
               title={detail?.title}
-              text={detail?.title ? `Kolla in "${detail.title}" på Mälarkrets` : undefined}
+              text={detail?.title ? `Kolla in "${detail.title}" på Vänliga Västerås` : undefined}
               iconOnly
               variant="ghost"
               size="compact"

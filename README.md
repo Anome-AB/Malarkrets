@@ -1,4 +1,4 @@
-# Mälarkrets
+# Vänliga Västerås
 
 Community-plattform för aktiviteter i Västerås. Användare skapar, hittar och deltar
 i lokala aktiviteter - vandring, fika, sport, kultur, kodning. Byggd som ett
@@ -34,8 +34,8 @@ Alla seedade konton har lösenordet `testlosen123`.
 | `sara@example.com` | Sara Lindqvist | Användare |
 | `omar@example.com` | Omar Hassan | Användare |
 | `lisa@example.com` | Lisa Johansson | Användare |
-| `testanv1@malarkrets.se` | Test Användare 1 | Användare |
-| `testadmin1@malarkrets.se` | Test Admin | **Admin** |
+| `testanv1@vanligavasteras.se` | Test Användare 1 | Användare |
+| `testadmin1@vanligavasteras.se` | Test Admin | **Admin** |
 
 ## Tester
 

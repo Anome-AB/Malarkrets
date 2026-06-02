@@ -232,10 +232,10 @@ async function seed() {
   const testPasswordHash = await hash("testm", 12);
 
   const testUserDefs = [
-    { email: "testanv1@malarkrets.se", firstName: "Test", lastName: "Användare 1", displayName: "Test A", gender: "ej_angett" as const, birthDate: null, isAdmin: false },
-    { email: "testanv2@malarkrets.se", firstName: "Test", lastName: "Användare 2", displayName: "Test A", gender: "man" as const, birthDate: "1990-01-15", isAdmin: false },
-    { email: "testanv3@malarkrets.se", firstName: "Test", lastName: "Användare 3", displayName: "Test A", gender: "kvinna" as const, birthDate: "1995-06-20", isAdmin: false },
-    { email: "testadmin1@malarkrets.se", firstName: "Test", lastName: "Admin", displayName: "Test A", gender: "ej_angett" as const, birthDate: null, isAdmin: true },
+    { email: "testanv1@vanligavasteras.se", firstName: "Test", lastName: "Användare 1", displayName: "Test A", gender: "ej_angett" as const, birthDate: null, isAdmin: false },
+    { email: "testanv2@vanligavasteras.se", firstName: "Test", lastName: "Användare 2", displayName: "Test A", gender: "man" as const, birthDate: "1990-01-15", isAdmin: false },
+    { email: "testanv3@vanligavasteras.se", firstName: "Test", lastName: "Användare 3", displayName: "Test A", gender: "kvinna" as const, birthDate: "1995-06-20", isAdmin: false },
+    { email: "testadmin1@vanligavasteras.se", firstName: "Test", lastName: "Admin", displayName: "Test A", gender: "ej_angett" as const, birthDate: null, isAdmin: true },
   ];
 
   const insertedTestUsers = await db

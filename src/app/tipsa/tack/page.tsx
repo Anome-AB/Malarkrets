@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { requireAuth } from "@/lib/auth";
 
 export const metadata = {
-  title: "Tack för tipset - Mälarkrets",
+  title: "Tack för tipset - Vänliga Västerås",
 };
 
 export default async function TipsaTackPage() {

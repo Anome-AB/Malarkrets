@@ -1,4 +1,4 @@
-# Design System - Mälarkrets
+# Design System - Vänliga Västerås
 
 ## Product Context
 - **What this is:** Community activity platform for people in Västerås to find and join local activities (hiking, photography, board games, cooking, etc.)
