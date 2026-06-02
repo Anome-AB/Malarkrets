@@ -108,6 +108,8 @@ export async function deleteAccount() {
     await db
       .update(users)
       .set({
+        email: `${crypto.randomUUID()}@anonymized.invalid`,
+        emailVerified: false,
         firstName: null,
         lastName: null,
         displayName: "Borttagen användare",
