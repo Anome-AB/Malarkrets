@@ -4,6 +4,14 @@
 This version has breaking changes - APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+### Konkreta skillnader du kommer att snubbla på
+
+- Request-gaten ligger i `src/proxy.ts` och exporterar `proxy()`. Det finns
+  ingen `middleware.ts` i det här projektet. Letar du efter middleware är det
+  den filen du menar.
+- `src/instrumentation.ts` körs en gång vid serverstart och sätter upp
+  OpenTelemetry. Rör den inte utan att läsa `docs/dash0.md`.
+
 ## Team context
 
 This repository is maintained by two Claude-backed teams. Before editing any

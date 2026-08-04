@@ -44,7 +44,7 @@ Key routing rules:
 
 Tools /health runs when scoring code quality. Skip a tool = drop its weight from the composite.
 
-- typecheck: `npx tsc --noEmit`
+- typecheck: `bunx tsc --noEmit` (samma som CI, projektet kör bun)
 - lint: `bun run lint`
-- test: `bun run test -- --run`
+- test: `bun run test` (är redan engångskörning, `-- --run` behövs inte)
 - shell: `shellcheck scripts/*.sh` (optional - install shellcheck locally to enable)

@@ -32,7 +32,8 @@ Obs: flera punkter måste påbörjas i god tid före flipp-datum, de är inte ef
   `'unsafe-eval'` i `script-src` (Next.js 16-krav) och `https:`-wildcard i
   `img-src`. Efter go-live: byt till nonce-baserade scripts via Next.js-
   middleware, och ersätt `https:` i img-src med konkreta domäner användare
-  faktiskt laddar bilder från.
+  faktiskt laddar bilder från. Rör inte `api.fontshare.com` / `cdn.fontshare.com`
+  i den städningen, de behövs av typografin (se `DESIGN.md`).
 
 <!-- Migrations-journal-normalisering löst av PR #41 (migration squash
      2026-04-22). Alla gamla fake-timestamps försvann med squash. -->
@@ -142,6 +143,13 @@ Ramverket i schema:t finns redan (`user_blocks`-tabell), men den används inte. 
   på `script-src` (krävs av Next.js 16 runtime) och `https:` wildcard på
   `img-src`. Härdning via nonces + specifika CDN-origins är en POST-GO-LIVE-
   uppgift, se parking lot.
+- **Efterspel:** policyn som skeppades här räknade upp Google Fonts men missade
+  Fontshare, som redan låg i `src/app/layout.tsx` sedan 2026-04-01. Satoshi och
+  Instrument Sans blockerades därför i prod tills PR #69 la till
+  `api.fontshare.com` i `style-src` och `cdn.fontshare.com` i `font-src`.
+  Läxa: när en font- eller CDN-host läggs till i appen måste CSP:n uppdateras i
+  samma veva, och båda direktiven behöver öppnas, inte bara det som felmeddelandet
+  nämner.
 
 ### ~~MEDIUM - Google Maps API-nyckel i image-layer metadata~~ KLAR 2026-04-23
 - GHCR-paketet privat, HTTP referrer + API-restriktioner satta i Google Cloud Console.
