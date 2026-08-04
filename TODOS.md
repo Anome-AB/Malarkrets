@@ -182,6 +182,7 @@ Ramverket i schema:t finns redan (`user_blocks`-tabell), men den används inte. 
 - **Restriktera nyckeln i Google Cloud Console**:
   - ✅ HTTP referrers begränsade till localhost (2026-04-15).
   - ✅ `malarkrets.se` tillagd som tillåten referrer (2026-04-23).
+  - ❌ **`vanligavasteras.se` är INTE tillagd.** Bekräftat i prod 2026-08-04: kartan på `/activity/new` dör med `RefererNotAllowedMapError`. Lägg till `https://vanligavasteras.se/*` och `https://www.vanligavasteras.se/*` i HTTP referrers. Ingen kodändring hjälper, det är enbart en inställning i Google Cloud Console.
   - ✅ API restrictions: endast Maps JavaScript API + Maps Static API (2026-04-23).
   - ⏳ Dygns-/månadskvot så stulen nyckel inte kan debiteras oändligt.
 - Om ni har fler hemligheter (SMTP, VPS SSH-nyckel osv) - lägg dem som secrets samtidigt, säg till så uppdaterar vi pipelinen.
