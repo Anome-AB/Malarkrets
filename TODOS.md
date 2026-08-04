@@ -32,7 +32,8 @@ Obs: flera punkter måste påbörjas i god tid före flipp-datum, de är inte ef
   `'unsafe-eval'` i `script-src` (Next.js 16-krav) och `https:`-wildcard i
   `img-src`. Efter go-live: byt till nonce-baserade scripts via Next.js-
   middleware, och ersätt `https:` i img-src med konkreta domäner användare
-  faktiskt laddar bilder från.
+  faktiskt laddar bilder från. Rör inte `api.fontshare.com` / `cdn.fontshare.com`
+  i den städningen, de behövs av typografin (se `DESIGN.md`).
 
 <!-- Migrations-journal-normalisering löst av PR #41 (migration squash
      2026-04-22). Alla gamla fake-timestamps försvann med squash. -->
@@ -142,6 +143,13 @@ Ramverket i schema:t finns redan (`user_blocks`-tabell), men den används inte. 
   på `script-src` (krävs av Next.js 16 runtime) och `https:` wildcard på
   `img-src`. Härdning via nonces + specifika CDN-origins är en POST-GO-LIVE-
   uppgift, se parking lot.
+- **Efterspel:** policyn som skeppades här räknade upp Google Fonts men missade
+  Fontshare, som redan låg i `src/app/layout.tsx` sedan 2026-04-01. Satoshi och
+  Instrument Sans blockerades därför i prod tills PR #69 la till
+  `api.fontshare.com` i `style-src` och `cdn.fontshare.com` i `font-src`.
+  Läxa: när en font- eller CDN-host läggs till i appen måste CSP:n uppdateras i
+  samma veva, och båda direktiven behöver öppnas, inte bara det som felmeddelandet
+  nämner.
 
 ### ~~MEDIUM - Google Maps API-nyckel i image-layer metadata~~ KLAR 2026-04-23
 - GHCR-paketet privat, HTTP referrer + API-restriktioner satta i Google Cloud Console.
@@ -182,8 +190,8 @@ Ramverket i schema:t finns redan (`user_blocks`-tabell), men den används inte. 
 - **Restriktera nyckeln i Google Cloud Console**:
   - ✅ HTTP referrers begränsade till localhost (2026-04-15).
   - ✅ `malarkrets.se` tillagd som tillåten referrer (2026-04-23).
-  - ❌ **`vanligavasteras.se` är INTE tillagd.** Bekräftat i prod 2026-08-04: kartan på `/activity/new` dör med `RefererNotAllowedMapError`. Lägg till `https://vanligavasteras.se/*` och `https://www.vanligavasteras.se/*` i HTTP referrers. Ingen kodändring hjälper, det är enbart en inställning i Google Cloud Console.
-  - ✅ API restrictions: endast Maps JavaScript API + Maps Static API (2026-04-23).
+  - ✅ `vanligavasteras.se` tillagd som tillåten referrer (2026-08-04). Fram tills dess gav kartan på `/activity/new` `RefererNotAllowedMapError` i prod, som fallout från domänbytet.
+  - ✅ API restrictions: Maps JavaScript API + Maps Static API (2026-04-23), samt `Places API` och `Places API (New)` (verifierat i konsolen 2026-08-04). Places krävs av `places.Autocomplete` i adressökningen. Den tidigare formuleringen "endast Maps JavaScript API + Maps Static API" stämde inte.
   - ⏳ Dygns-/månadskvot så stulen nyckel inte kan debiteras oändligt.
 - Om ni har fler hemligheter (SMTP, VPS SSH-nyckel osv) - lägg dem som secrets samtidigt, säg till så uppdaterar vi pipelinen.
 

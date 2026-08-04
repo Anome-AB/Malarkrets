@@ -19,6 +19,7 @@
 - **Data/Tables:** Geist Mono (tabular-nums) - clean monospace for numbers in admin tables, participant counts, timestamps
 - **Code:** Geist Mono
 - **Loading:** Fontshare CDN for Satoshi + Instrument Sans. Geist Mono via Google Fonts. Inter as fallback only.
+- **CSP dependency:** Fontshare needs TWO hosts allowed in the Content-Security-Policy that Caddy sets (`Caddyfile`, RedFox-owned): `api.fontshare.com` in `style-src` for the stylesheet, and `cdn.fontshare.com` in `font-src` for the woff2/woff/ttf files. Allowing only `style-src` loads the CSS and then silently drops every `@font-face`, so the page renders in the system fallback and looks almost right. This shipped broken between 2026-04-19 and PR #69. If you ever add a font host, update both directives and reload a page to confirm the console is clean.
 - **Scale:**
 
 | Level | Size | Weight | Font | Usage |
