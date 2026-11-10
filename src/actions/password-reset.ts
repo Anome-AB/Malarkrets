@@ -10,7 +10,7 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
 } from "@/lib/validations/auth";
-import { sendPasswordResetEmail } from "@/lib/email";
+import { sendPasswordResetEmail, sendVerificationEmail } from "@/lib/email";
 import {
   createToken,
   consumeToken,
@@ -91,10 +91,34 @@ export async function forgotPassword(
           userId: user.id,
         });
       }
-    } else if (user) {
-      log.info("password-reset: skipped (banned or unverified)", {
+    } else if (user && !user.isBanned) {
+      // Kontot finns men adressen är inte bekräftad än. En återställningslänk
+      // hjälper inte, för inloggning kräver bekräftad adress ändå. Skicka
+      // bekräftelsemailet istället så att användaren kommer vidare själv.
+      // Tidigare tömdes den här grenen tyst, och då var glömt-lösenord en
+      // återvändsgränd för exakt de konton som behövde hjälp mest.
+      // Svaret utåt är oförändrat, så formuläret avslöjar fortfarande inte
+      // vilka adresser som har konto.
+      const { rawToken } = await createToken({
         userId: user.id,
+        email,
+        ip,
+        type: "verify_email",
       });
+
+      try {
+        await sendVerificationEmail(user.email, rawToken);
+        log.info("password-reset: sent verification instead (unverified)", {
+          userId: user.id,
+        });
+      } catch (err) {
+        log.error("password-reset: sendVerificationEmail failed", {
+          ...errAttrs(err),
+          userId: user.id,
+        });
+      }
+    } else if (user) {
+      log.info("password-reset: skipped (banned)", { userId: user.id });
     } else {
       log.info("password-reset: unknown email");
     }

@@ -74,8 +74,10 @@ vi.mock("next/headers", () => ({
 }));
 
 const mockSendReset = vi.fn().mockResolvedValue(undefined);
+const mockSendVerify = vi.fn().mockResolvedValue(undefined);
 vi.mock("@/lib/email", () => ({
   sendPasswordResetEmail: (...args: unknown[]) => mockSendReset(...args),
+  sendVerificationEmail: (...args: unknown[]) => mockSendVerify(...args),
 }));
 
 const mockCheckRate = vi
@@ -120,6 +122,7 @@ beforeEach(async () => {
   vi.clearAllMocks();
   mockCheckRate.mockResolvedValue({ allowed: true, remaining: 5 });
   mockSendReset.mockResolvedValue(undefined);
+  mockSendVerify.mockResolvedValue(undefined);
   mockCreateToken.mockResolvedValue({
     rawToken: "RAW_TOKEN_FAKE_VALUE_123456",
     expiresAt: new Date(Date.now() + 3600_000),
@@ -182,7 +185,7 @@ describe("forgotPassword", () => {
     expect(mockCreateToken).not.toHaveBeenCalled();
   });
 
-  it("skips email send for unverified user but returns neutral success", async () => {
+  it("sends verification instead of reset for unverified user", async () => {
     mockFindUserFirst.mockResolvedValueOnce({
       id: "u1",
       email: "unverified@x.se",
@@ -193,7 +196,46 @@ describe("forgotPassword", () => {
       makeFormData({ email: "unverified@x.se" }),
     );
     expect(res.success).toBe(true);
+    // En återställningslänk är värdelös för ett obekräftat konto, eftersom
+    // inloggning kräver bekräftad adress. Bekräftelsemailet ska gå istället.
     expect(mockSendReset).not.toHaveBeenCalled();
+    expect(mockSendVerify).toHaveBeenCalledWith(
+      "unverified@x.se",
+      "RAW_TOKEN_FAKE_VALUE_123456",
+    );
+    expect(mockCreateToken).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "u1", type: "verify_email" }),
+    );
+  });
+
+  it("returns the same neutral message for unverified as for unknown", async () => {
+    mockFindUserFirst.mockResolvedValueOnce({
+      id: "u1",
+      email: "unverified@x.se",
+      isBanned: false,
+      emailVerified: false,
+    });
+    const unverified = await forgotPassword(
+      makeFormData({ email: "unverified@x.se" }),
+    );
+    mockFindUserFirst.mockResolvedValueOnce(undefined);
+    const unknown = await forgotPassword(makeFormData({ email: "nope@x.se" }));
+    // Svaren måste vara ordagrant lika, annars går formuläret att använda
+    // för att kartlägga vilka adresser som har konto.
+    expect(unverified).toEqual(unknown);
+  });
+
+  it("sends nothing at all for a banned unverified user", async () => {
+    mockFindUserFirst.mockResolvedValueOnce({
+      id: "u1",
+      email: "banned@x.se",
+      isBanned: true,
+      emailVerified: false,
+    });
+    const res = await forgotPassword(makeFormData({ email: "banned@x.se" }));
+    expect(res.success).toBe(true);
+    expect(mockSendReset).not.toHaveBeenCalled();
+    expect(mockSendVerify).not.toHaveBeenCalled();
   });
 
   it("returns neutral success when rate limit is exceeded, skips DB", async () => {
