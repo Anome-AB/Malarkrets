@@ -244,6 +244,85 @@ Fördelen är att docker-compose:s default-beteende funkar rakt av -
 `${VAR}`-interpolering i compose-filer + `env_file:`-direktivet läser
 samma fil utan `--env-file`-flagga.
 
+### Rotera hemligheter
+
+Alla runtime-hemligheter ligger i `.env` på VPS:n (`/home/deploy/malarkrets/.env`,
+mode 0600). Efter varje rotation: uppdatera posten i password managern så
+kopian där matchar VPS:n.
+
+| Hemlighet | Går ut av sig själv? | Vad som händer vid byte |
+|---|---|---|
+| ghcr-token (`docker login`) | **Ja**, enligt vald giltighet | Inget för användare. Utan giltig token failar `deploy-local.sh` med `denied`/`403` |
+| `AUTH_SECRET` | Nej | Alla användare loggas ut |
+| `POSTGRES_PASSWORD` | Nej | Ingen påverkan om stegen följs i ordning |
+| `RESEND_API_KEY` | Nej | Mail failar tyst om nyckeln är fel |
+| `DASH0_AUTH_TOKEN` | Nej | Telemetri slutar skickas om token är fel |
+
+#### ghcr-token (pull av images)
+
+Symptom på utgången token: `error from registry: denied` eller `403 Forbidden`
+när `deploy-local.sh` pullar. Sajten påverkas inte, deployen avbryts innan
+något startas om.
+
+1. https://github.com/settings/tokens → **Generate new token (classic)**.
+   Anome-AB:s policy gör fine-grained tokens krångliga (de kräver org-godkännande),
+   classic fungerar.
+2. Note `vps-ghcr-pull`, giltighet **1 år**, scope **bara** `read:packages`.
+3. Lägg en kalenderpåminnelse en vecka före utgångsdatum.
+4. På VPS:n (mellanslaget först håller raden utanför bash-historiken):
+   ```bash
+    echo 'ghp_...' | docker login ghcr.io -u <github-användare> --password-stdin
+   docker pull ghcr.io/anome-ab/malarkrets:migrate-latest
+   ```
+5. Ta bort den gamla tokenen i GitHub-listan.
+
+#### `AUTH_SECRET`
+
+```bash
+openssl rand -base64 32          # nytt värde
+nano .env                        # ersätt AUTH_SECRET=
+docker compose up -d --force-recreate app
+```
+
+Alla sessioner blir ogiltiga, så alla måste logga in igen. Gör det inte mitt
+i en testsession utan att förvarna testarna.
+
+#### `POSTGRES_PASSWORD`
+
+`POSTGRES_PASSWORD` i `.env` läses **bara när volymen skapas första gången**.
+Att ändra den i `.env` ändrar inte lösenordet i en befintlig databas, så
+lösenordet måste bytas i Postgres först.
+
+```bash
+NEW=$(openssl rand -hex 24)      # hex: inga tecken som måste URL-escapas i DATABASE_URL
+docker compose exec -T postgres psql -U malarkrets -c "ALTER USER malarkrets PASSWORD '$NEW';"
+echo "$NEW"                      # kopiera till password managern
+nano .env                        # uppdatera POSTGRES_PASSWORD= OCH lösenordet i DATABASE_URL=
+docker compose up -d --force-recreate app
+curl -s http://localhost:3000/api/health
+```
+
+Byt user/DB-namn i kommandona om `DATABASE_URL` pekar på något annat än
+`malarkrets`. `migrate` och `ops` läser `.env` vid varje körning och behöver
+inget extra steg.
+
+#### `RESEND_API_KEY`
+
+1. Resend → API Keys → skapa en ny nyckel (Sending access, domän
+   vanligavasteras.se).
+2. `nano .env` → ersätt `RESEND_API_KEY=`, sedan
+   `docker compose up -d --force-recreate app`.
+3. Testa: begär lösenordsåterställning på https://vanligavasteras.se/auth/forgot-password
+   och kontrollera att mailet kommer fram.
+4. Ta bort den gamla nyckeln i Resend **först när testet gått igenom**.
+
+#### `DASH0_AUTH_TOKEN`
+
+1. Dash0 → skapa en ny ingestion-token.
+2. `nano .env` → ersätt `DASH0_AUTH_TOKEN=`, sedan
+   `docker compose up -d --force-recreate otel-collector`.
+3. Kontrollera att nya traces/metrics syns i Dash0, ta sedan bort den gamla.
+
 ### Telemetri - Dash0 via OTel Collector
 
 `otel-collector`-servicen i compose shippar traces + metrics via OTLP/HTTP

@@ -173,9 +173,7 @@ Ramverket i schema:t finns redan (`user_blocks`-tabell), men den används inte. 
   - Lösning: kryptera med `age --encrypt -r <public-key> .env > env-backup.age` i backup-scriptet. Privata nyckeln förvaras utanför VPS:n (password manager + offline-kopia).
   - Beror på: backup-strategin.
 
-- **Rotations-runbook i RELEASE.md** - S. POST-GO-LIVE-dokumentation.
-  - Idag finns ingen dokumenterad process för att rotera AUTH_SECRET (alla sessioner invalideras), POSTGRES_PASSWORD (kräver DB-side update + env-update + restart), RESEND_API_KEY (ny key i Resend UI → .env → restart app).
-  - Värt att skriva innan behovet uppstår - en engångs-operation på tre rader skapar ett prejudikat. Tar 30 minuter när det görs som förberedelse, flera timmar i panikläge under ett äkta incident.
+- ~~**Rotations-runbook i RELEASE.md**~~ KLAR 2026-11-10. Se "Rotera hemligheter" i RELEASE.md: ghcr-token, AUTH_SECRET, POSTGRES_PASSWORD, RESEND_API_KEY, DASH0_AUTH_TOKEN.
 
 - ~~**Synka `.env`-värdena till en password manager**~~ KLAR 2026-04-23. Staging + prod `.env` kopierade till password manager med datum-naming. Uppdatera vid varje rotation.
 
