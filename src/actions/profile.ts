@@ -17,6 +17,7 @@ import {
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { log, errAttrs } from "@/lib/logger";
+import { anonymizedEmail } from "@/lib/anonymized";
 
 type UpdateProfilePatch = {
   firstName?: string;
@@ -108,7 +109,7 @@ export async function deleteAccount() {
     await db
       .update(users)
       .set({
-        email: `${crypto.randomUUID()}@anonymized.invalid`,
+        email: anonymizedEmail(),
         emailVerified: false,
         firstName: null,
         lastName: null,

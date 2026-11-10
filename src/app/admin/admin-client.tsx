@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
 import { Modal } from "@/components/ui/modal";
+import { isAnonymizedEmail } from "@/lib/anonymized";
 import {
   anonymizeUser,
   deleteTag,
@@ -14,6 +15,7 @@ import {
   banUser,
   unbanUser,
   searchUsers,
+  verifyUserEmail,
   addCourageMessage,
   updateCourageMessage,
   deleteCourageMessage,
@@ -25,6 +27,7 @@ interface UserRow {
   id: string;
   email: string;
   displayName: string | null;
+  emailVerified: boolean | null;
   isAdmin: boolean;
   isBanned: boolean;
   bannedAt: string | null;
@@ -50,6 +53,15 @@ interface CourageMessageRow {
   id: number;
   audience: string;
   message: string;
+}
+
+/**
+ * Ett anonymiserat konto har också `emailVerified: false`, men där är det en
+ * följd av raderingen. Att visa knappen för ett sådant konto skulle erbjuda
+ * admin att återuppliva det, så både märket och knappen hålls borta.
+ */
+function needsEmailVerification(user: UserRow): boolean {
+  return !user.emailVerified && !isAnonymizedEmail(user.email);
 }
 
 interface AdminClientProps {
@@ -170,6 +182,27 @@ export function AdminClient({ initialUsers, tags, courageMessages: initialCourag
           const result = await unbanUser(userId);
           if (result.success) {
             toast("Användaren har avblockerats", "success");
+            loadUsers(userSearch, usersData.page);
+          } else {
+            toast(result.error ?? "Något gick fel", "error");
+          }
+        });
+      },
+    });
+  }
+
+  function handleVerifyEmail(userId: string, email: string) {
+    showConfirm({
+      title: "Bekräfta e-postadress",
+      message: `Vill du markera ${email} som bekräftad? Använd detta bara när användaren inte kan bekräfta själv, till exempel när bekräftelsemailet inte går fram. Åtgärden loggas.`,
+      confirmLabel: "Bekräfta adressen",
+      variant: "primary",
+      onConfirm: () => {
+        setConfirmOpen(false);
+        startTransition(async () => {
+          const result = await verifyUserEmail(userId);
+          if (result.success) {
+            toast("E-postadressen är bekräftad", "success");
             loadUsers(userSearch, usersData.page);
           } else {
             toast(result.error ?? "Något gick fel", "error");
@@ -412,17 +445,33 @@ export function AdminClient({ initialUsers, tags, courageMessages: initialCourag
                         {user.createdAt ? new Date(user.createdAt).toLocaleDateString("sv-SE") : "-"}
                       </td>
                       <td className="px-4 py-3">
-                        {user.isAdmin ? (
-                          <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-primary-light text-primary">Admin</span>
-                        ) : user.isBanned ? (
-                          <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-error" title={user.banReason ?? undefined}>Blockerad</span>
-                        ) : (
-                          <span className="text-secondary">Aktiv</span>
-                        )}
+                        <div className="flex flex-wrap items-center gap-2">
+                          {user.isAdmin ? (
+                            <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-primary-light text-primary">Admin</span>
+                          ) : user.isBanned ? (
+                            <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-error" title={user.banReason ?? undefined}>Blockerad</span>
+                          ) : (
+                            <span className="text-secondary">Aktiv</span>
+                          )}
+                          {needsEmailVerification(user) && (
+                            <span
+                              className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-100 text-warning"
+                              title="Adressen är inte bekräftad, så användaren kan inte logga in"
+                            >
+                              Obekräftad
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        {!user.isAdmin && (
-                          <div className="flex gap-2 justify-end">
+                        <div className="flex gap-2 justify-end">
+                          {needsEmailVerification(user) && (
+                            <Button variant="primary" size="sm" onClick={() => handleVerifyEmail(user.id, user.email)} disabled={isPending}>
+                              Bekräfta e-post
+                            </Button>
+                          )}
+                          {!user.isAdmin && (
+                            <>
                             {user.isBanned ? (
                               <Button variant="secondary" size="sm" onClick={() => handleUnban(user.id, user.email)} disabled={isPending}>
                                 Avblockera
@@ -435,8 +484,9 @@ export function AdminClient({ initialUsers, tags, courageMessages: initialCourag
                             <Button variant="secondary" size="sm" onClick={() => handleAnonymize(user.id, user.email)} disabled={isPending} className="!border-error !text-error hover:!bg-red-50">
                               Anonymisera
                             </Button>
-                          </div>
-                        )}
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))
