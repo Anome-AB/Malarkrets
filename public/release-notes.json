@@ -1,6 +1,25 @@
 {
   "releases": [
     {
+      "version": "0.5.0",
+      "date": "2026-11-10",
+      "title": "Nytt namn: Vänliga Västerås",
+      "summary": "Plattformen har bytt namn. Allt du skapat och alla du följer finns kvar, nu under namnet Vänliga Västerås på vanligavasteras.se.",
+      "sections": {
+        "added": [
+          "Plattformen heter nu Vänliga Västerås och finns på vanligavasteras.se.",
+          "Har du inte fått bekräftelsemailet kan du be om ett nytt direkt från inloggningssidan."
+        ],
+        "improved": [
+          "Typsnitten laddas nu som det var tänkt. Tidigare visades ibland reservtypsnitt.",
+          "Om kartan inte går att ladda visas ett tydligt meddelande i stället för en trasig bild."
+        ],
+        "fixed": [
+          "Den som inte hade bekräftat sin e-post kunde i vissa lägen bli helt utelåst. Nu går kontot alltid att rädda."
+        ]
+      }
+    },
+    {
       "version": "0.4.0",
       "date": "2026-05-21",
       "title": "Rikare beskrivningar, kopiera aktiviteter och se vilka som kommer",
