@@ -21,6 +21,19 @@ const OUT_OF_BOUNDS_MSG = "Platsen måste ligga i Västerås kommun";
 
 let optionsSet = false;
 
+declare global {
+  interface Window {
+    gm_authFailure?: () => void;
+  }
+}
+
+// Maps rapporterar auth-fel (ogiltig nyckel, spärrad referrer, avstängd
+// fakturering) via den globala window.gm_authFailure, inte via
+// importLibrary-promisen - den resolvar så länge själva scriptet laddar.
+// Callbacken har bara en slot, så lyssnarna ligger i ett modul-scope Set
+// istället för att sist monterade picker skriver över de andras hake.
+const authFailureListeners = new Set<() => void>();
+
 /**
  * Komponent som låter användaren välja plats antingen via Google Places-
  * autocomplete eller genom att klicka/dra en pin på en interaktiv karta.
@@ -31,8 +44,10 @@ let optionsSet = false;
  * dropp:a en pin direkt på kartan; reverse geocode föreslår en adress om
  * textfältet är tomt, men skriver aldrig över egen text.
  *
- * Vid Maps-load-fail degraderar komponenten till search-only via
- * mapLoadFailed-flaggan.
+ * Går Maps inte att ladda, eller avvisar Maps nyckeln efter att scriptet
+ * laddat, degraderar komponenten till manuell adressinmatning via
+ * mapLoadFailed-flaggan. Koordinater krävs inte för att skapa en aktivitet,
+ * bara en icke-tom adresstext.
  */
 export function PlacesAutocomplete({
   value,
@@ -58,9 +73,16 @@ export function PlacesAutocomplete({
     onChangeRef.current = onChange;
   });
 
-  // Ladda Maps + Places-libben en gång. Sätt mapLoadFailed om SDK inte
-  // går att ladda - komponenten degraderar då till search-only utan karta.
+  // Ladda Maps + Places-libben en gång. Sätt mapLoadFailed både om SDK inte
+  // går att ladda och om Maps avvisar nyckeln efteråt - komponenten
+  // degraderar då till manuell adressinmatning utan karta.
   useEffect(() => {
+    const onAuthFailure = () => setMapLoadFailed(true);
+    authFailureListeners.add(onAuthFailure);
+    window.gm_authFailure = () => {
+      for (const listener of authFailureListeners) listener();
+    };
+
     if (!optionsSet) {
       setOptions({
         key: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
@@ -71,6 +93,10 @@ export function PlacesAutocomplete({
     Promise.all([importLibrary("places"), importLibrary("maps")])
       .then(() => setLibrariesLoaded(true))
       .catch(() => setMapLoadFailed(true));
+
+    return () => {
+      authFailureListeners.delete(onAuthFailure);
+    };
   }, []);
 
   // Drop / drag pin-handler. Kollar bbox, sätter marker, och kör
@@ -294,9 +320,9 @@ export function PlacesAutocomplete({
       )}
 
       {mapLoadFailed && (
-        <p className="text-xs text-dimmed mt-1">
-          Kartan kunde inte laddas. Du kan fortfarande söka efter en plats i
-          fältet ovan.
+        <p className="text-xs text-secondary mt-1">
+          Kartan kunde inte laddas, så platssökningen fungerar inte just nu.
+          Skriv in adressen manuellt i fältet ovan.
         </p>
       )}
     </div>

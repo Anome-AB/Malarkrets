@@ -18,6 +18,7 @@ import {
 import { eq, and, count, inArray, sql } from "drizzle-orm";
 import { CourageSection } from "@/components/activity/courage-section";
 import { RichTextDisplay } from "@/components/ui/rich-text-display";
+import { StaticMapImage } from "@/components/ui/static-map-image";
 import { stripHtmlForExcerpt } from "@/lib/rich-text";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -533,9 +534,11 @@ export default async function ActivityDetailPage({
                     rel="noopener noreferrer"
                     className="flex-shrink-0 w-full sm:w-64 h-fit rounded-control overflow-hidden border border-border hover:shadow-md transition-shadow"
                   >
-                    <img
-                      src={`https://maps.googleapis.com/maps/api/staticmap?center=${activity.latitude},${activity.longitude}&zoom=15&size=400x300&scale=2&markers=color:0x3d6b5e%7C${activity.latitude},${activity.longitude}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`}
-                      alt={`Karta: ${activity.location}`}
+                    <StaticMapImage
+                      lat={activity.latitude}
+                      lng={activity.longitude}
+                      location={activity.location}
+                      size="400x300"
                       className="w-full h-detail-map object-cover block"
                     />
                     <div className="px-3 py-2 bg-white text-xs text-primary font-medium flex items-center gap-1">
