@@ -119,6 +119,16 @@ function LoginForm() {
           Registrera dig
         </Link>
       </p>
+
+      <p className="mt-2 text-center text-xs text-secondary">
+        Väntar du på bekräftelsemailet?{" "}
+        <Link
+          href="/auth/verify-resend"
+          className="font-medium text-primary hover:underline"
+        >
+          Skicka en ny länk
+        </Link>
+      </p>
     </div>
   );
 }
