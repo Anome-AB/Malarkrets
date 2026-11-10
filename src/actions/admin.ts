@@ -16,6 +16,7 @@ import {
 import { eq, and, gt, isNull, or, ilike, count, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { log, errAttrs } from "@/lib/logger";
+import { anonymizedEmail, isAnonymizedEmail } from "@/lib/anonymized";
 
 async function requireAdmin() {
   const { user } = await requireAdminFromAuth();
@@ -41,7 +42,7 @@ export async function anonymizeUser(userId: string) {
     await db
       .update(users)
       .set({
-        email: `${crypto.randomUUID()}@anonymized.invalid`,
+        email: anonymizedEmail(),
         emailVerified: false,
         firstName: null,
         lastName: null,
@@ -167,6 +168,61 @@ export async function unbanUser(userId: string) {
   }
 }
 
+/**
+ * Nödutgång när mailutskicket är trasigt: bekräftar en användares adress
+ * manuellt. Inloggning kräver `emailVerified` (se `src/lib/auth.ts`), så ett
+ * konto som aldrig fick sitt bekräftelsemail är annars helt inlåst.
+ */
+export async function verifyUserEmail(userId: string) {
+  try {
+    const admin = await requireAdmin();
+
+    const target = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+    });
+    if (!target) return { success: false, error: "Användaren hittades inte" };
+
+    // Anonymisering nollar `emailVerified` och ersätter adressen. Att bekräfta
+    // ett sådant konto skulle återuppliva ett raderat konto - aldrig tillåtet.
+    if (isAnonymizedEmail(target.email)) {
+      return {
+        success: false,
+        error: "Kontot är anonymiserat och kan inte bekräftas",
+      };
+    }
+
+    // Ett blockerat konto ska inte kunna logga in. Avblockera först, så att
+    // bekräftelsen blir ett medvetet val och inte en bieffekt.
+    if (target.isBanned) {
+      return {
+        success: false,
+        error: "Avblockera användaren innan du bekräftar adressen",
+      };
+    }
+
+    if (target.emailVerified) {
+      return { success: false, error: "Adressen är redan bekräftad" };
+    }
+
+    await db
+      .update(users)
+      .set({ emailVerified: true, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+
+    log.info("admin verified user email manually", {
+      userId,
+      adminId: admin.id,
+    });
+
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error) {
+    log.error("verifyUserEmail error", errAttrs(error));
+    const msg = error instanceof Error ? error.message : "Något gick fel";
+    return { success: false, error: msg };
+  }
+}
+
 export async function deleteTag(tagId: number) {
   try {
     await requireAdmin();
@@ -203,6 +259,7 @@ export async function searchUsers(query: string, page: number) {
           id: users.id,
           email: users.email,
           displayName: users.displayName,
+          emailVerified: users.emailVerified,
           isAdmin: users.isAdmin,
           isBanned: users.isBanned,
           bannedAt: users.bannedAt,

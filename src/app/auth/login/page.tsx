@@ -44,7 +44,13 @@ function LoginForm() {
         setBanInfo({ reason: ban.reason });
         return;
       }
-      setError("Felaktig e-post eller lösenord");
+      // Inloggning nekas också när adressen inte är bekräftad, och authorize
+      // kan inte skilja fallen åt utåt utan att avslöja vilka adresser som
+      // har konto. Nämn möjligheten i meddelandet istället, så att den som
+      // väntar på bekräftelsemailet inte sitter och provar lösenord.
+      setError(
+        "Felaktig e-post eller lösenord. Om du nyligen registrerat dig kan kontot vänta på bekräftelse.",
+      );
       return;
     }
 
@@ -117,6 +123,16 @@ function LoginForm() {
           className="font-medium text-primary hover:underline"
         >
           Registrera dig
+        </Link>
+      </p>
+
+      <p className="mt-2 text-center text-xs text-secondary">
+        Väntar du på bekräftelsemailet?{" "}
+        <Link
+          href="/auth/verify-resend"
+          className="font-medium text-primary hover:underline"
+        >
+          Skicka en ny länk
         </Link>
       </p>
     </div>

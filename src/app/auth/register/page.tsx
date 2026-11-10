@@ -15,6 +15,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [emailSent, setEmailSent] = useState(true);
 
   const {
     register,
@@ -41,10 +42,17 @@ export default function RegisterPage() {
       return;
     }
 
+    // Gick mailet inte iväg ska användaren få läsa varför och hinna klicka
+    // vidare till om-skicka-sidan, så vi skickar inte vidare automatiskt då.
+    const sent = result.emailSent !== false;
+    setEmailSent(sent);
     setSuccess(true);
-    setTimeout(() => {
-      router.push("/auth/login");
-    }, 3000);
+
+    if (sent) {
+      setTimeout(() => {
+        router.push("/auth/login");
+      }, 3000);
+    }
   }
 
   if (success) {
@@ -52,15 +60,45 @@ export default function RegisterPage() {
       <div className="w-full max-w-md rounded-card bg-white p-8 shadow">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-primary">Vänliga Västerås</h1>
-          <p className="mt-4 text-sm text-heading">
-            Konto skapat! Kolla din e-post för verifiering.
-          </p>
-          <Link
-            href="/auth/login"
-            className="mt-4 inline-block text-sm font-medium text-primary hover:underline"
-          >
-            Gå till inloggning
-          </Link>
+          {emailSent ? (
+            <>
+              <p className="mt-4 text-sm text-heading">
+                Konto skapat! Kolla din e-post för verifiering.
+              </p>
+              <Link
+                href="/auth/login"
+                className="mt-4 inline-block text-sm font-medium text-primary hover:underline"
+              >
+                Gå till inloggning
+              </Link>
+              <p className="mt-4 text-xs text-secondary">
+                Inget mail?{" "}
+                <Link
+                  href="/auth/verify-resend"
+                  className="font-medium text-primary hover:underline"
+                >
+                  Skicka en ny länk
+                </Link>
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="mt-4 text-sm text-heading">
+                Kontot är skapat, men bekräftelsemailet kunde inte skickas just
+                nu.
+              </p>
+              <p className="mt-2 text-xs text-secondary">
+                Du behöver bekräfta adressen innan du kan logga in. Försök
+                skicka länken igen om en liten stund.
+              </p>
+              <Link
+                href="/auth/verify-resend"
+                className="mt-4 inline-block text-sm font-medium text-primary hover:underline"
+              >
+                Skicka ny bekräftelselänk
+              </Link>
+            </>
+          )}
         </div>
       </div>
     );

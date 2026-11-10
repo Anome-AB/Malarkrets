@@ -66,6 +66,12 @@ vi.mock("@/lib/tokens", () => ({
   createToken: (...args: unknown[]) => mockCreateToken(...args),
   consumeToken: (...args: unknown[]) => mockConsumeToken(...args),
   getClientIp: () => null,
+  hashEmail: (s: string) => `H(${s.toLowerCase().trim()})`,
+}));
+
+const mockCheckRate = vi.fn().mockResolvedValue({ allowed: true, remaining: 3 });
+vi.mock("@/lib/rate-limit", () => ({
+  checkTokenRateLimit: (...args: unknown[]) => mockCheckRate(...args),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -80,6 +86,7 @@ vi.mock("bcryptjs", () => ({
 let register: typeof import("@/actions/auth").register;
 let verifyEmail: typeof import("@/actions/auth").verifyEmail;
 let checkBanStatus: typeof import("@/actions/auth").checkBanStatus;
+let resendVerificationEmail: typeof import("@/actions/auth").resendVerificationEmail;
 
 function makeFormData(data: Record<string, string>): FormData {
   const fd = new FormData();
@@ -93,11 +100,14 @@ beforeEach(async () => {
     rawToken: "FAKE_VERIFY_TOKEN",
     expiresAt: new Date(Date.now() + 86400_000),
   });
+  mockSendVerification.mockResolvedValue(undefined);
+  mockCheckRate.mockResolvedValue({ allowed: true, remaining: 3 });
 
   const mod = await import("@/actions/auth");
   register = mod.register;
   verifyEmail = mod.verifyEmail;
   checkBanStatus = mod.checkBanStatus;
+  resendVerificationEmail = mod.resendVerificationEmail;
 });
 
 describe("register (creates verify-email token via user_tokens)", () => {
@@ -135,6 +145,142 @@ describe("register (creates verify-email token via user_tokens)", () => {
       "new@user.se",
       "FAKE_VERIFY_TOKEN",
     );
+    expect(res.emailSent).toBe(true);
+  });
+
+  // Regression: utskicket sväljs med flit så kontot inte rivs, men tidigare
+  // returnerades success utan att säga att mailet aldrig gick iväg. Då fick
+  // användaren "Kolla din e-post" för ett mail som inte fanns.
+  it("reports emailSent:false when the verification mail throws", async () => {
+    mockFindUserFirst.mockResolvedValueOnce(null);
+    mockSendVerification.mockRejectedValueOnce(new Error("Resend failed"));
+
+    const res = await register(
+      makeFormData({
+        email: "new@user.se",
+        password: "validpassword12",
+        confirmPassword: "validpassword12",
+      }),
+    );
+
+    expect(res.success).toBe(true);
+    expect(res.emailSent).toBe(false);
+    expect(mockInsert).toHaveBeenCalled();
+  });
+});
+
+describe("resendVerificationEmail", () => {
+  const NEUTRAL = /Om adressen finns hos oss/;
+
+  it("rejects a malformed email without touching the database", async () => {
+    const res = await resendVerificationEmail(
+      makeFormData({ email: "inte-en-adress" }),
+    );
+
+    expect(res.success).toBe(false);
+    expect(mockCheckRate).not.toHaveBeenCalled();
+    expect(mockCreateToken).not.toHaveBeenCalled();
+  });
+
+  it("issues a new verify_email token for an unverified user", async () => {
+    mockFindUserFirst.mockResolvedValueOnce({
+      id: "u1",
+      email: "stuck@user.se",
+      isBanned: false,
+      emailVerified: false,
+    });
+
+    const res = await resendVerificationEmail(
+      makeFormData({ email: "stuck@user.se" }),
+    );
+
+    expect(res.success).toBe(true);
+    expect(mockCreateToken).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "verify_email", userId: "u1" }),
+    );
+    expect(mockSendVerification).toHaveBeenCalledWith(
+      "stuck@user.se",
+      "FAKE_VERIFY_TOKEN",
+    );
+  });
+
+  it("sends nothing for an already verified user but answers the same", async () => {
+    mockFindUserFirst.mockResolvedValueOnce({
+      id: "u2",
+      email: "done@user.se",
+      isBanned: false,
+      emailVerified: true,
+    });
+
+    const res = await resendVerificationEmail(
+      makeFormData({ email: "done@user.se" }),
+    );
+
+    expect(res.success).toBe(true);
+    if (res.success) expect(res.message).toMatch(NEUTRAL);
+    expect(mockCreateToken).not.toHaveBeenCalled();
+    expect(mockSendVerification).not.toHaveBeenCalled();
+  });
+
+  it("sends nothing for a banned user", async () => {
+    mockFindUserFirst.mockResolvedValueOnce({
+      id: "u3",
+      email: "banned@user.se",
+      isBanned: true,
+      emailVerified: false,
+    });
+
+    const res = await resendVerificationEmail(
+      makeFormData({ email: "banned@user.se" }),
+    );
+
+    expect(res.success).toBe(true);
+    expect(mockCreateToken).not.toHaveBeenCalled();
+    expect(mockSendVerification).not.toHaveBeenCalled();
+  });
+
+  // Samma svar för okänd adress som för känd, annars går formuläret att
+  // använda för att ta reda på vilka adresser som har konto.
+  it("answers identically for an unknown address", async () => {
+    mockFindUserFirst.mockResolvedValueOnce(null);
+
+    const res = await resendVerificationEmail(
+      makeFormData({ email: "nobody@user.se" }),
+    );
+
+    expect(res.success).toBe(true);
+    if (res.success) expect(res.message).toMatch(NEUTRAL);
+    expect(mockSendVerification).not.toHaveBeenCalled();
+  });
+
+  it("stops at the rate limit without issuing a token", async () => {
+    mockCheckRate.mockResolvedValueOnce({ allowed: false, remaining: 0 });
+
+    const res = await resendVerificationEmail(
+      makeFormData({ email: "spammer@user.se" }),
+    );
+
+    expect(res.success).toBe(true);
+    if (res.success) expect(res.message).toMatch(NEUTRAL);
+    expect(mockFindUserFirst).not.toHaveBeenCalled();
+    expect(mockCreateToken).not.toHaveBeenCalled();
+  });
+
+  it("still answers neutrally when the mail send throws", async () => {
+    mockFindUserFirst.mockResolvedValueOnce({
+      id: "u4",
+      email: "stuck@user.se",
+      isBanned: false,
+      emailVerified: false,
+    });
+    mockSendVerification.mockRejectedValueOnce(new Error("Resend failed"));
+
+    const res = await resendVerificationEmail(
+      makeFormData({ email: "stuck@user.se" }),
+    );
+
+    expect(res.success).toBe(true);
+    if (res.success) expect(res.message).toMatch(NEUTRAL);
   });
 });
 
