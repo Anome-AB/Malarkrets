@@ -13,6 +13,7 @@ import { useToast } from "@/components/ui/toast";
 import { joinActivity, leaveActivity, getActivityDetail } from "@/actions/activities";
 import { createComment, deleteComment, editComment } from "@/actions/comments";
 import { ShareButton } from "@/components/ui/share-button";
+import { StaticMapImage } from "@/components/ui/static-map-image";
 import {
   ParticipantAvatars,
   type ParticipantPreview,
@@ -381,9 +382,11 @@ export function ActivityPanel({ activityId, open, onClose }: ActivityPanelProps)
                       rel="noopener noreferrer"
                       className="shrink-0 w-44 aspect-square rounded-control overflow-hidden border border-border hover:shadow-md transition-shadow"
                     >
-                      <img
-                        src={`https://maps.googleapis.com/maps/api/staticmap?center=${detail.latitude},${detail.longitude}&zoom=15&size=400x400&scale=2&markers=color:0x3d6b5e%7C${detail.latitude},${detail.longitude}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`}
-                        alt={`Karta: ${detail.location}`}
+                      <StaticMapImage
+                        lat={detail.latitude}
+                        lng={detail.longitude}
+                        location={detail.location}
+                        size="400x400"
                         className="w-full h-full object-cover"
                       />
                     </a>

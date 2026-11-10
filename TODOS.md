@@ -189,7 +189,7 @@ Ramverket i schema:t finns redan (`user_blocks`-tabell), men den används inte. 
 - ~~**Lägg till GitHub Secret `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`**~~ KLAR 2026-04-15. Satt på Anome-AB/Malarkrets, plockas upp av release.yml + Dockerfile som build-arg.
 - **Restriktera nyckeln i Google Cloud Console**:
   - ✅ HTTP referrers begränsade till localhost (2026-04-15).
-  - ✅ `malarkrets.se` tillagd som tillåten referrer (2026-04-23).
+  - ⚠️ `malarkrets.se` lades till 2026-04-23 men står **inte** i allowlistan längre. Verifierat 2026-11-10: Static Maps svarar 403 "This IP, site or mobile application is not authorized to use this API key" för den referrern, medan `vanligavasteras.se` och `localhost` svarar 200. Harmlöst så länge gamla domänen inte används, men lägg tillbaka den i konsolen om den ska fortsätta svara.
   - ✅ `vanligavasteras.se` tillagd som tillåten referrer (2026-08-04). Fram tills dess gav kartan på `/activity/new` `RefererNotAllowedMapError` i prod, som fallout från domänbytet.
   - ✅ API restrictions: Maps JavaScript API + Maps Static API (2026-04-23), samt `Places API` och `Places API (New)` (verifierat i konsolen 2026-08-04). Places krävs av `places.Autocomplete` i adressökningen. Den tidigare formuleringen "endast Maps JavaScript API + Maps Static API" stämde inte.
   - ⏳ Dygns-/månadskvot så stulen nyckel inte kan debiteras oändligt.
